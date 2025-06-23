@@ -107,6 +107,31 @@ function marcarEventosPasados() {
 updateCarousel();
 marcarEventosPasados();
 
+// Swipe para mobile
+let startX = 0;
+let endX = 0;
+
+track.addEventListener('touchstart', (e) => {
+  startX = e.touches[0].clientX;
+});
+
+track.addEventListener('touchend', (e) => {
+  endX = e.changedTouches[0].clientX;
+  const diff = startX - endX;
+
+  if (Math.abs(diff) > 50) { // Umbral mínimo para evitar falsos positivos
+    if (diff > 0) {
+      // Swipe izquierda → siguiente
+      activeIndex = Math.min(cards.length - 1, activeIndex + 1);
+      updateCarousel();
+    } else {
+      // Swipe derecha → anterior
+      activeIndex = Math.max(0, activeIndex - 1);
+      updateCarousel();
+    }
+  }
+});
+
 
 //ESTO CREO QUE NO VA
 

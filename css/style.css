@@ -726,7 +726,24 @@ body {
     flex: 0 0 80%;
   }
   .card-content {
-    height: auto;
+    height: 40%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .card-content p {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3; /* número de líneas mostradas */
+    -webkit-box-orient: vertical;
+    margin-bottom: 0.8rem;
+  }
+
+  .btn-reservar {
+    align-self: flex-start;
   }
 
   }
