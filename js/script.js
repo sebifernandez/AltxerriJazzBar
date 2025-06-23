@@ -1,3 +1,37 @@
+    // EFECTO HAMBURGUESA
+
+      document.addEventListener('DOMContentLoaded', () => {
+      const hamburger = document.getElementById('hamburger');
+      const navLinks = document.querySelector('.nav-links');
+
+      hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('active');
+      });
+
+      const links = navLinks.querySelectorAll('a');
+      links.forEach(link => {
+        link.addEventListener('click', () => {
+          navLinks.classList.remove('active');
+        });
+      });
+    });
+    
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.querySelector('.nav-links');
+
+    // Toggle para abrir/cerrar menú
+    hamburger.addEventListener('click', () => {
+      navLinks.classList.toggle('active');
+    });
+
+    // Cerrar menú al hacer clic en un enlace
+    const links = navLinks.querySelectorAll('a');
+    links.forEach(link => {
+      link.addEventListener('click', () => {
+        navLinks.classList.remove('active');
+      });
+    });
+    
     // EFECTO DESVANECIMIENTO
     
     let img1 = document.querySelector('.fondo');
@@ -76,38 +110,52 @@ rightBtn.addEventListener('click', () => {
   updateCarousel();
 });
 
-// CAMBIAR FECHA DEL EVENTO DEL CARROUSEL A FINALIZADO
+// Marcar eventos pasados según la hora de San Sebastián (Madrid)
+const { DateTime } = luxon;
 
 function marcarEventosPasados() {
-  const ahora = new Date();
-  const horaLimite = 10; // 10 de la mañana
-  const fechaLimite = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), horaLimite);
+  // Obtener fecha/hora actual en la zona horaria de Madrid
+  const ahoraMadrid = DateTime.now().setZone("Europe/Madrid");
 
-  if (ahora < fechaLimite) {
-    fechaLimite.setDate(fechaLimite.getDate() - 1);
-  }
+  const horaLimiteEvento = 10; // Hora límite de los eventos (10:00 AM)
+  const meses = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
 
-  cards.forEach(card => {
+  let foundActive = false;
+
+  cards.forEach((card, index) => {
     const fechaTexto = card.querySelector('.event-date').textContent;
     const [dia, mesTexto] = fechaTexto.split(" ");
-    const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-    const mes = meses.indexOf(mesTexto);
+    const mes = meses.indexOf(mesTexto) + 1; // Luxon usa 1-12
 
-    const fechaEvento = new Date(ahora.getFullYear(), mes, parseInt(dia));
+    // Crear fecha del evento a las 10:00 AM hora Madrid
+const fechaEvento = DateTime.fromObject(
+  { year: ahoraMadrid.year, month: mes, day: parseInt(dia) + 1, hour: horaLimiteEvento },
+  { zone: "Europe/Madrid" }
+);
 
-    if (fechaEvento < fechaLimite) {
+    if (ahoraMadrid >= fechaEvento) {
       card.classList.add('past');
       card.querySelector('.btn-reservar').disabled = true;
       card.querySelector('.btn-reservar').textContent = "Finalizado";
+    } else if (!foundActive) {
+      activeIndex = index;
+      foundActive = true;
     }
   });
+
+  updateCarousel();
 }
 
 
-updateCarousel();
+// Inicialización al cargar
 marcarEventosPasados();
 
-// Swipe para mobile
+
+// SWIPE PARA MOBILE
+
 let startX = 0;
 let endX = 0;
 
