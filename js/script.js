@@ -50,6 +50,62 @@
     });
     });
 
+    // MOVIMIENTO DE CARROUSEL DE FECHAS
+
+const track = document.querySelector('.carousel-track');
+const cards = document.querySelectorAll('.event-card');
+const leftBtn = document.querySelector('.carousel-btn.left');
+const rightBtn = document.querySelector('.carousel-btn.right');
+let activeIndex = 2;
+
+function updateCarousel() {
+  const offset = -activeIndex * (cards[0].offsetWidth + 16);
+  track.style.transform = `translateX(${offset}px)`;
+
+  cards.forEach(card => card.classList.remove('active'));
+  if (cards[activeIndex]) cards[activeIndex].classList.add('active');
+}
+
+leftBtn.addEventListener('click', () => {
+  activeIndex = Math.max(0, activeIndex - 1);
+  updateCarousel();
+});
+
+rightBtn.addEventListener('click', () => {
+  activeIndex = Math.min(cards.length - 1, activeIndex + 1);
+  updateCarousel();
+});
+
+// CAMBIAR FECHA DEL EVENTO DEL CARROUSEL A FINALIZADO
+
+function marcarEventosPasados() {
+  const ahora = new Date();
+  const horaLimite = 10; // 10 de la mañana
+  const fechaLimite = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), horaLimite);
+
+  if (ahora < fechaLimite) {
+    fechaLimite.setDate(fechaLimite.getDate() - 1);
+  }
+
+  cards.forEach(card => {
+    const fechaTexto = card.querySelector('.event-date').textContent;
+    const [dia, mesTexto] = fechaTexto.split(" ");
+    const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+    const mes = meses.indexOf(mesTexto);
+
+    const fechaEvento = new Date(ahora.getFullYear(), mes, parseInt(dia));
+
+    if (fechaEvento < fechaLimite) {
+      card.classList.add('past');
+      card.querySelector('.btn-reservar').disabled = true;
+      card.querySelector('.btn-reservar').textContent = "Finalizado";
+    }
+  });
+}
+
+
+updateCarousel();
+marcarEventosPasados();
 
 
 //ESTO CREO QUE NO VA

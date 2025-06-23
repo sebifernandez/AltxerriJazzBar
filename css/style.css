@@ -320,6 +320,157 @@ body {
   opacity: 0.8;
 }
 
+    /* ------ SECCIÓN CALENDARIO --------*/
+
+.event-carousel {
+  background: #0a0a0a;
+  padding: 4rem 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.event-section-title {
+  text-align: center;
+  font-size: 2.8rem;
+  color: #fff;
+  margin-bottom: 2rem;
+  font-family: 'Abril Fatface', serif;
+  letter-spacing: 1px;
+}
+
+.carousel-container {
+  position: relative;
+  padding: 0 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #111;
+}
+
+.carousel-track {
+  display: flex;
+  gap: 1rem;
+  transition: transform 0.5s ease;
+  padding: 1rem;
+}
+
+.event-card {
+  flex: 0 0 22%;
+  background: #222;
+  color: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  transform: scale(0.9);
+  transition: transform 0.4s ease;
+  opacity: 0.9;
+  position: relative;
+}
+
+.event-card.active {
+  transform: scale(1.05);
+  opacity: 1;
+}
+
+.event-card.past::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(50, 50, 50, 0.7);
+  z-index: 2;
+}
+
+.card-image {
+  position: relative;
+  height: 60%;
+  overflow: hidden;
+}
+
+.card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.event-date {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  padding: 0.2rem 0.5rem;
+  font-weight: bold;
+  border-radius: 4px;
+}
+
+.card-content {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 40%;
+}
+
+.card-content h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-content p {
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.btn-reservar {
+  background: #fff;
+  color: #000;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.btn-reservar:hover {
+  background: #ddd;
+  transform: scale(1.05);
+}
+
+.btn-reservar:disabled {
+  background: #666;
+  cursor: not-allowed;
+}
+
+.carousel-btn {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+  color: #fff;
+  font-size: 2rem;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.3s;
+}
+
+.carousel-btn.left {
+  left: 0;
+}
+
+.carousel-btn.right {
+  right: 0;
+}
+
+.carousel-btn:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
     /* ------ SECCIÓN FORMULARIO --------*/
 
 .contact-section {
@@ -569,6 +720,13 @@ body {
   .historia-texto p {
     color: #ddd;
     font-size: 1.1rem;
+  }
+
+  .event-card {
+    flex: 0 0 80%;
+  }
+  .card-content {
+    height: auto;
   }
 
   }
