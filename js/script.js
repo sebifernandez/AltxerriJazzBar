@@ -63,11 +63,17 @@
 
     // EFECTO PARALLAX
 
-    window.addEventListener('scroll', function() {
+window.addEventListener('scroll', function() {
     const parallax = document.querySelector('.parallax-section');
-    const scrollPosition = window.scrollY;
-    parallax.style.backgroundPositionY = `${scrollPosition * 0.5}px`; //0.3 más lento / 0.7 más rapido
-    });
+    if (parallax) {
+        const rect = parallax.getBoundingClientRect();
+        const viewportCenter = window.innerHeight / 2;
+        const sectionCenter = rect.top + parallax.offsetHeight / 2;
+        const distanceToCenter = viewportCenter - sectionCenter;
+        const backgroundPositionY = (distanceToCenter * 0.5);
+        parallax.style.backgroundPositionY = `calc(50% + ${backgroundPositionY}px)`;
+    }
+});
 
     // EFECTO CAMBIO FORMULARIOS DE CONTACTO
 

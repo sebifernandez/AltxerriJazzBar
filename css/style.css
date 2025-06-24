@@ -241,7 +241,7 @@ body {
   position: relative;
   background-image: url('../img/parallax.jpg');
   background-size: cover;
-  background-position: center;
+  background-position: center center;
   height: 100vh;
   display: flex;
   align-items: center;
