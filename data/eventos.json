@@ -1,0 +1,137 @@
+[
+  {
+    "fecha": "2025-10-10",
+    "tipoEvento": "Regular",
+    "imagen": "banda3.jpeg",
+    "titulo": "Regreso al Soul Jazz",
+    "descripcion": "Una noche íntima con los mejores músicos locales de jazz fusionado con soul.",
+    "live": "",
+    "concierto": "https://www.youtube.com/watch?v=soul-jazz-archive"
+  },
+  {
+    "fecha": "2025-10-11",
+    "tipoEvento": "Regular",
+    "imagen": "banda4.jpeg",
+    "titulo": "Regreso al Soul Jazz",
+    "descripcion": "Una noche íntima con los mejores músicos locales de jazz fusionado con soul.",
+    "live": "",
+    "concierto": "https://www.youtube.com/watch?v=soul-jazz-archive"
+  },
+  {
+    "fecha": "2025-10-12",
+    "tipoEvento": "Regular",
+    "imagen": "banda5.jpeg",
+    "titulo": "Regreso al Soul Jazz",
+    "descripcion": "Una noche íntima con los mejores músicos locales de jazz fusionado con soul.",
+    "live": "",
+    "concierto": "https://www.youtube.com/watch?v=soul-jazz-archive"
+  },
+  {
+    "fecha": "2025-10-13",
+    "tipoEvento": "Regular",
+    "imagen": "banda6.jpeg",
+    "titulo": "Regreso al Soul Jazz",
+    "descripcion": "Una noche íntima con los mejores músicos locales de jazz fusionado con soul.",
+    "live": "",
+    "concierto": "https://www.youtube.com/watch?v=soul-jazz-archive"
+  },
+  {
+    "fecha": "2025-10-14",
+    "tipoEvento": "Regular",
+    "imagen": "banda7.jpg",
+    "titulo": "Regreso al Soul Jazz",
+    "descripcion": "Una noche íntima con los mejores músicos locales de jazz fusionado con soul.",
+    "live": "",
+    "concierto": "https://www.youtube.com/watch?v=soul-jazz-archive"
+  },
+  {
+    "fecha": "2025-10-15",
+    "tipoEvento": "Regular",
+    "imagen": "banda1.jpg",
+    "titulo": "Regreso al Soul Jazz",
+    "descripcion": "Una noche íntima con los mejores músicos locales de jazz fusionado con soul.",
+    "live": "",
+    "concierto": "https://www.youtube.com/watch?v=soul-jazz-archive"
+  },
+  {
+    "fecha": "2025-10-16",
+    "tipoEvento": "Regular",
+    "imagen": "banda2.jpg",
+    "titulo": "Jam Session Urbana",
+    "descripcion": "Improvisaciones abiertas con artistas invitados y ritmos de la ciudad.",
+    "live": "https://www.youtube.com/watch?v=live-jam-stream",
+    "concierto": "https://www.youtube.com/watch?v=live-jam-stream"
+  },
+  {
+    "fecha": "2025-10-17",
+    "tipoEvento": "Regular",
+    "imagen": "banda3.jpeg",
+    "titulo": "Especial Big Band",
+    "descripcion": "Una orquesta de 15 músicos reviviendo los clásicos de los años 40.",
+    "live": "https://www.youtube.com/watch?v=friends-archive",
+    "concierto": ""
+  },
+  {
+    "fecha": "2025-10-18",
+    "tipoEvento": "Regular",
+    "imagen": "banda4.jpeg",
+    "titulo": "Concierto Invitado Estelar",
+    "descripcion": "Invitados especiales que llenarán la noche de magia musical internacional.",
+    "live": "",
+    "concierto": ""
+  },
+  {
+    "fecha": "2025-10-19",
+    "tipoEvento": "Privado",
+    "imagen": "",
+    "titulo": "",
+    "descripcion": "",
+    "live": "",
+    "concierto": ""
+  },
+  {
+    "fecha": "2025-10-20",
+    "tipoEvento": "Regular",
+    "imagen": "banda5.jpeg",
+    "titulo": "Noche de Blues Fusión",
+    "descripcion": "Ritmos lentos y profundos con toques modernos para una velada vibrante.",
+    "live": "",
+    "concierto": ""
+  },
+  {
+    "fecha": "2025-10-21",
+    "tipoEvento": "Cerrado",
+    "imagen": "",
+    "titulo": "",
+    "descripcion": "",
+    "live": "",
+    "concierto": ""
+  },
+  {
+    "fecha": "2025-10-22",
+    "tipoEvento": "Regular",
+    "imagen": "banda6.jpeg",
+    "titulo": "Concierto de Vanguardia",
+    "descripcion": "Improvisación libre y experimentación sonora.",
+    "live": "",
+    "concierto": ""
+  },
+  {
+    "fecha": "2025-10-23",
+    "tipoEvento": "Regular",
+    "imagen": "banda7.jpg",
+    "titulo": "Jam & Friends",
+    "descripcion": "Colaboraciones espontáneas y diversión garantizada para músicos y público.",
+    "live": "",
+    "concierto": ""
+  },
+  {
+    "fecha": "2025-10-24",
+    "tipoEvento": "Regular",
+    "imagen": "banda1.jpg",
+    "titulo": "Cierre de Semana: Standards",
+    "descripcion": "Una noche de clásicos del jazz y cócteles.",
+    "live": "",
+    "concierto": ""
+  }
+]

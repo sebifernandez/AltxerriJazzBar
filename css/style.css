@@ -14,6 +14,11 @@ body {
     max-width: 100vw;
 }
 
+/* Ocultar botones de reserva antiguos temporalmente */
+.btn-reservar, .btn-reservar2 {
+    display: none !important;
+}
+
 .navbar {
   position: fixed;
   width: 100%;
@@ -70,19 +75,20 @@ body {
   gap: 0.5rem;
 }
 
-.btn-reservar {
+/* ------ BOTÓN NEWSLETTER (Basado en .btn-reservar) --------*/
+.btn-newsletter {
     text-decoration: none;
     margin: 5px;
     height: 50px;
     padding-left: 16px;
     padding-right: 16px;
     text-transform: uppercase;
-    background-color: rgb(66, 0, 0);
+    background-color: #f9f9f9; /* Color claro para destacar */
     border: none;
     cursor: pointer;
     font-size: 16px;
-    color: #f9f9f9;
-    font-weight: 400;
+    color: #000; /* Texto oscuro */
+    font-weight: 700;
     letter-spacing: 1px;
     line-height: 18px;
     text-align: center;
@@ -96,8 +102,8 @@ body {
     font-style: normal;
 }
 
-.btn-reservar:hover {
-    background-color: rgb(90, 0, 0);
+.btn-newsletter:hover {
+    background-color: #ddd;
     transform: scale(1.05);
 }
 
@@ -122,17 +128,6 @@ body {
     display: none;
   }
 
-  /* UTILIZAR CON VIDEO PROPIO */
-  /* .video-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: -3;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-  } */
-
   /* UTILIZAR UNICAMENTE CON VIDEO MEDIANTE ENLACE */
     .video-container {
     position: fixed;
@@ -142,9 +137,6 @@ body {
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    /* display: flex;
-    justify-content: center;
-    align-items: center; */
   }
 
   /* UTILIZAR UNICAMENTE CON VIDEO MEDIANTE ENLACE */
@@ -320,6 +312,107 @@ body {
   opacity: 0.8;
 }
 
+    /* ------ SECCIÓN GALERÍA --------*/
+
+.gallery-section {
+    background-color: #000;
+    color: #fff;
+    padding-top: 5rem;
+    padding-bottom: 2rem;
+}
+
+.gallery-title-container {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.gallery-title-container h2 {
+    font-size: 2.8rem;
+    font-family: 'Abril Fatface', serif;
+}
+
+.gallery-title-container p {
+    color: #ccc;
+}
+
+.carousel-gallery-container {
+    position: relative;
+    max-width: 100vw;
+    overflow: hidden;
+}
+
+.gallery-track {
+    display: flex;
+    /* Efecto 'Jiggle' o 'Overshoot' con curva cubic-bezier */
+    transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); 
+}
+
+.gallery-slide {
+    flex: 0 0 100vw; 
+    height: 60vh; 
+    width: 100vw;
+    
+    /* Mostrar la imagen COMPLETA (con posible fondo negro) */
+    object-fit: contain; 
+    background-color: #000; 
+    
+    pointer-events: none; 
+}
+
+/* Controles de Navegación */
+.gallery-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    border: none;
+    padding: 1rem 0.5rem;
+    cursor: pointer;
+    z-index: 10;
+    font-size: 1.5rem;
+    transition: background 0.3s;
+}
+
+.gallery-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.left-gallery-btn {
+    left: 0;
+    border-radius: 0 4px 4px 0;
+}
+
+.right-gallery-btn {
+    right: 0;
+    border-radius: 4px 0 0 4px;
+}
+
+/* Indicadores */
+.gallery-indicators {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+}
+
+.gallery-indicators .indicator {
+    width: 10px;
+    height: 10px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.gallery-indicators .indicator.active {
+    background-color: #fff;
+    transform: scale(1.2);
+}
+
+
     /* ------ SECCIÓN CALENDARIO --------*/
 
 .event-carousel {
@@ -421,19 +514,49 @@ body {
   margin-bottom: 1rem;
 }
 
-.btn-reservar {
-  background: #fff;
-  color: #000;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.3s, transform 0.2s;
+/* ------ BOTÓN LIVE Y ARCHIVO --------*/
+
+.btn-adicional {
+    margin-top: 0.5rem; /* Espacio entre el botón principal y este */
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    color: #fff;
+    font-weight: bold;
+    border-radius: 4px;
+    text-align: center;
+    transition: all 0.3s ease;
+    display: block; /* Ocupa todo el ancho disponible */
+    position: relative; 
+    z-index: 3;
 }
 
-.btn-reservar:hover {
-  background: #ddd;
-  transform: scale(1.05);
+/* Estilo para REVIVÍ EL CONCIERTO (Archivo) */
+.btn-archive {
+    background-color: rgb(66, 0, 0);
+}
+
+.btn-archive:hover {
+    background-color: rgb(90, 0, 0);
+    transform: scale(1.02);
+}
+
+/* Estilo para VER EN VIVO (LIVE) */
+.btn-live {
+    background-color: #ff0000; /* Rojo vibrante */
+    animation: pulse 1.5s infinite; /* Aplicar animación de pulso */
+}
+
+.btn-live:hover {
+    background-color: #cc0000;
+    transform: scale(1.05);
+}
+
+/* Animación de Pulso (El efecto "Live") */
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
 }
 
 .btn-reservar:disabled {
@@ -469,6 +592,126 @@ body {
 
 .carousel-btn:hover {
   background: rgba(0, 0, 0, 0.7);
+}
+
+    /* ------ SECCIÓN MODAL CALENDARIO --------*/
+
+.modal-calendario {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(5px);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-contenido {
+  background: #111;
+  color: #fff;
+  padding: 2rem;
+  border-radius: 10px;
+  width: 95%;
+  max-width: 1000px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.cerrar-modal {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
+.barra-filtros {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.barra-filtros input,
+.barra-filtros select {
+  flex: 1;
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.contenido-modal {
+  display: flex;
+  flex-direction: column;
+}
+
+.calendario-acceso {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+    /* ------ ESTILOS ADICIONALES PARA EVENTOS ESPECIALES --------*/
+
+/* Estilo general para cards especiales (Cerrado/Privado) */
+.event-card.special {
+  background: #333;
+  color: #fff;
+  border: 1px dashed #666;
+  text-align: center;
+  flex: 0 0 22%; /* Mantener el ancho del carrusel */
+  transform: scale(0.9);
+}
+.event-card.special.active {
+    transform: scale(1.05);
+}
+
+/* Fuerza el texto a ser blanco en cards especiales */
+.event-card.special h3, 
+.event-card.special p {
+  color: #fff;
+}
+
+/* Asegura que el contenido se ajuste correctamente */
+.event-card.special .card-content {
+  justify-content: center;
+  align-items: center;
+  height: 40%;
+}
+
+/* Estilo para el fondo de la imagen de evento especial */
+.card-image.special {
+  filter: grayscale(100%) brightness(0.5); /* Oscurece y desatura la imagen especial */
+}
+
+/* Estilo específico para "Cerrado" */
+.event-card.closed {
+  border-color: #000;
+  background-color: #1a1a1a;
+}
+
+/* Estilo específico para "Privado" */
+.event-card.private {
+  border-color: gold;
+  background-color: #2b2b00;
+}
+
+.special-links {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.special-links a {
+    color: #ffd700;
+    text-decoration: none;
+    font-weight: bold;
+    margin: 0 5px;
+}
+
+.special-links a:hover {
+    text-decoration: underline;
 }
 
     /* ------ SECCIÓN FORMULARIO --------*/
@@ -608,7 +851,107 @@ body {
 }
 
 
-/* ------ MEDIAQUERYS ------*/
+/* ------ SECCIÓN MODAL NEWSLETTER --------*/
+
+.newsletter-modal {
+    display: none; /* Oculto por defecto */
+    position: fixed;
+    z-index: 2000; /* Mayor que cualquier otro elemento */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.85); /* Oscurecer el fondo */
+    backdrop-filter: blur(4px);
+    justify-content: center;
+    align-items: center;
+}
+
+.newsletter-modal.show {
+    display: flex;
+}
+
+.modal-content-newsletter {
+    background-color: #111;
+    margin: 10% auto;
+    padding: 40px;
+    border: 1px solid #333;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    position: relative;
+    color: #f9f9f9;
+    text-align: center;
+    animation: fadeIn 0.4s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.close-newsletter-modal {
+    color: #aaa;
+    float: right;
+    font-size: 30px;
+    font-weight: bold;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    cursor: pointer;
+}
+
+.close-newsletter-modal:hover,
+.close-newsletter-modal:focus {
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal-content-newsletter h3 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    font-family: 'Abril Fatface', serif;
+}
+
+.modal-content-newsletter p {
+    margin-bottom: 25px;
+    color: #ccc;
+}
+
+#newsletterForm input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #444;
+    background-color: #222;
+    color: #fff;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+#newsletterForm button {
+    width: 100%;
+}
+
+.error-message {
+    color: #ff4d4d;
+    display: block;
+    height: 1.2rem;
+    margin-top: -10px;
+    text-align: left;
+}
+
+/* Mensaje de Éxito */
+#newsletterSuccessMessage {
+    display: none;
+    padding: 20px;
+}
+
+
+/* ------ MEDIAQUERYS --------*/
 
 @media (max-width: 900px) {
   .nav-links {
@@ -732,6 +1075,10 @@ body {
     justify-content: space-between;
   }
 
+  .event-card.special {
+      flex: 0 0 80%;
+  }
+
   .card-content p {
     flex-grow: 1;
     overflow: hidden;
@@ -746,6 +1093,26 @@ body {
     align-self: flex-start;
   }
 
+  .contenido-modal {
+    flex-direction: row;
+    gap: 2rem;
+  }
+
+  #calendario {
+    flex: 1;
+  }
+
+  #detalleEvento {
+    flex: 1;
+  }
+  
+    .gallery-slide {
+        height: 40vh; /* Menos altura en móvil */
+    }
+    .gallery-btn {
+        padding: 0.5rem 0.3rem;
+    }
+
   }
 
 @media (max-width: 600px) {
@@ -757,5 +1124,8 @@ body {
   .footer-right {
     justify-content: center;
   }
+  
+  .contenido-modal {
+    flex-direction: column;
+  }
 }
-
