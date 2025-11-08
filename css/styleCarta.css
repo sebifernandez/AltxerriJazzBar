@@ -434,7 +434,7 @@ img {
 
 .listado-item {
     padding: 1.5rem 10%;
-    border-bottom: 1px dashed var(--color-texto-secundario);
+    border-bottom: 3px double var(--color-texto-secundario);
     /* Transición suave por si añadimos 'hover' en el futuro */
     transition: background-color 0.3s ease;
 }
@@ -449,13 +449,18 @@ img {
 }
 
 .listado-item-precios {
-    flex-basis: 25%;
-    flex-shrink: 0;
     display: flex;
-    justify-content: flex-end; /* Precios alineados a la derecha */
-    font-size: 1.1rem;
-    font-weight: 600;
+    justify-content: center; /* ¡Centra el contenido! */
+    align-items: center;
+    width: 100%;
+    padding-left: 0; /* Anula el padding de desktop */
+
+    /* La línea punteada que separa del texto */
+    *border-top: 1px dashed var(--color-texto-secundario);
+    padding-top: 1rem;
 }
+
+/*arrancamos cambios*/
 
 .listado-header .listado-item-precios {
     font-size: 0.9rem;
@@ -465,9 +470,10 @@ img {
 
 /* Plantillas de Precios */
 .precios-dos {
-    width: 100%;
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
+    width: 100%; /* Ocupa el ancho para centrar bien */
+    gap: 2.5rem;
 }
 .listado-item .precios-dos span {
     width: 80px; /* Ancho fijo para alinear en columnas */
@@ -487,8 +493,7 @@ img {
 }
 
 .precios-uno {
-    width: 100%;
-    text-align: right;
+    white-space: nowrap;
 }
 
 /* Estilos de Textos de Listado */
@@ -623,10 +628,18 @@ img {
     font-style: italic;
 }
 
+.precio-etiqueta {
+    display: none;
+}
+
 
 /* --- RESPONSIVE (Ajustes para Móvil) --- */
 
 @media (max-width: 900px) {
+
+    /* .precio-etiqueta {
+    display:block;
+    } */
     .seccion-titulo {
         font-size: 2rem;
     }
@@ -648,6 +661,7 @@ img {
     .card-coctel-imagen {
         width: 100%;
         max-height: 200px;
+        mask-image: linear-gradient(to bottom, black 60%, transparent 100%) !important;
     }
     .card-coctel-textos {
         padding: 1rem;
@@ -673,20 +687,29 @@ img {
         margin-bottom: 1rem;
     }
     .listado-item-precios {
-        justify-content: flex-start; /* Alineamos a la izquierda */
-        padding-left: 1rem;
-        border-top: 1px dashed var(--color-texto-secundario);
-        padding-top: 1rem;
+    /* (Tus estilos existentes) */
+    border-top: 1px dashed var(--color-texto-secundario);
+    padding-top: 1rem;
+    display: flex;           /* Ya lo era, pero confirmamos */
+    justify-content: center; /* ¡Centra el contenido! */
+    align-items: center;
+    width: 100%;             /* Asegura que ocupe el ancho */
+    padding-left: 0;         /* ¡Quitamos el padding que lo corría! */
     }
-    .precios-dos span {
-        width: auto;
-        margin-left: 0;
-        margin-right: 2rem; /* Espacio entre precios */
-        /* Añadimos las etiquetas (Caña/Copa) en móvil */
+
+    .precios-dos {
+    display: flex;
+    justify-content: center;
+    width: auto; /* Anula el width: 100% de desktop */
+    gap: 2.5rem; /* <-- ESTA ES LA "BUENA SEPARACIÓN" (40px) */
     }
-    .precios-dos span:nth-child(1)::before {
-        /* Esta lógica es compleja, la dejamos para Fase 4 si es necesario */
-        /* content: 'Copa: '; */
+
+    .precio-etiqueta {
+    font-size: 0.8em; /* Más pequeña */
+    font-style: italic; /* En cursiva */
+    font-weight: 400; /* No negrita */
+    color: var(--color-texto-secundario);
+    margin-left: 0.25em; /* Un pequeño espacio */
     }
 
     /* Banners Destacados en Móvil */
@@ -694,6 +717,10 @@ img {
         flex-direction: column;
         height: auto;
         max-height: none;
+    }
+        .banner-destacado.layout-texto-img .banner-imagen,
+        .banner-destacado.layout-texto-img .banner-textos {
+        order: unset; /* 'unset' resetea la propiedad a su valor por defecto */
     }
     .banner-imagen {
         flex-basis: auto; /* Reseteamos base */
@@ -707,4 +734,66 @@ img {
         align-items: flex-start !important;
         padding: 1.5rem;
     }
+
+    /* --- INICIO DEL ARREGLO DE PRECIOS MÓVIL --- */
+
+/*
+  SOLUCIÓN PROBLEMA 1 (Centrado):
+  El contenedor principal de precios.
+  Lo hacemos flex y centramos su contenido.
+*/
+.listado-item-precios {
+    display: flex;
+    justify-content: center; /* ¡Centra el contenido! */
+    align-items: center;
+    width: 100%;
+    padding-left: 0; /* Anula el padding de desktop */
+
+    /* La línea punteada que separa del texto */
+    border-top: 1px dashed var(--color-texto-secundario);
+    padding-top: 1rem;
+}
+
+/*
+  Organiza los DOS precios (ej. Copa y Botella)
+*/
+.precios-dos {
+    display: flex;
+    justify-content: center;
+    width: 100%; /* Ocupa el ancho para centrar bien */
+    gap: 2.5rem; /* <-- La "buena separación" entre precios */
+}
+
+/*
+  Organiza el precio ÚNICO (ej. Cerveza Envasada)
+*/
+.precios-uno {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+/*
+  SOLUCIÓN PROBLEMA 2 (Etiqueta abajo):
+  Esto FUERZA a que el precio y su etiqueta
+  permanezcan juntos en la misma línea.
+*/
+.precio-item {
+    white-space: nowrap;
+}
+
+/*
+  SOLUCIÓN PROBLEMA 3 (Mostrar en móvil):
+  Re-mostramos la etiqueta y le damos estilo.
+*/
+.precio-etiqueta {
+    display: inline; /* ¡Se muestra en móvil! */
+    font-size: 0.8em; /* Más pequeña */
+    font-style: italic; /* En cursiva */
+    font-weight: 400; /* No negrita */
+    color: var(--color-texto-secundario);
+    margin-left: 0.25em; /* Un pequeño espacio */
+}
+
+/* --- FIN DEL ARREGLO DE PRECIOS MÓVIL --- */
 }
