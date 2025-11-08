@@ -407,6 +407,10 @@ img {
 .card-coctel.layout-texto-img .card-coctel-textos { order: 1; }
 .card-coctel.layout-texto-img .card-coctel-precio { order: 2; }
 
+/* Ajuste para dar padding al texto en las cards invertidas */
+.card-coctel.layout-texto-img .card-coctel-textos {
+    padding-left: 1.5rem; /* 24px - ¡Ajusta este valor si lo necesitas! */
+}
 
 /* --- Estilos de Listado (Cervezas, Vinos, etc.) --- */
 
@@ -465,10 +469,21 @@ img {
     display: flex;
     justify-content: flex-end;
 }
-.precios-dos span {
+.listado-item .precios-dos span {
     width: 80px; /* Ancho fijo para alinear en columnas */
     text-align: right;
     margin-left: 1rem;
+}
+
+.listado-header .precios-dos span {
+    width: 80px; 
+    text-align: right;
+    position: relative;
+    left: 18px; 
+}
+
+.listado-header .precios-dos span + span {
+    margin-left: 1.5rem;
 }
 
 .precios-uno {
@@ -537,7 +552,7 @@ img {
     background-color: #000;
     overflow: hidden;
     border-radius: 8px;
-    border: 1px solid var(--color-primario-rojo);
+    *border: 1px solid var(--color-primario-rojo);
 }
 
 .banner-imagen {
