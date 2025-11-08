@@ -527,8 +527,6 @@ body {
     text-align: center;
     transition: all 0.3s ease;
     display: block; /* Ocupa todo el ancho disponible */
-    position: relative; 
-    z-index: 3;
 }
 
 /* Estilo para REVIVÍ EL CONCIERTO (Archivo) */

@@ -1,0 +1,653 @@
+/**
+ * Carga el archivo JSON correspondiente al idioma.
+ * @param {string} lang - El idioma a cargar ('es' o 'en').
+ * @returns {Promise<object | null>} Los datos del JSON o null si hay error.
+ */
+async function cargarDatos(lang) {
+    const filePath = `data/carta_${lang}.json`;
+    try {
+        const response = await fetch(filePath);
+        if (!response.ok) {
+            throw new Error(`Error al cargar ${filePath}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error(error);
+        return null; // Devuelve null en caso de error
+    }
+}
+
+/**
+ * Genera el HTML del navbar y lo inserta en el DOM.
+ * @param {object} textosUI - El objeto 'textosUI' del JSON.
+ */
+function renderizarNavbar(textosUI) {
+    const navContainer = document.getElementById('navbar-container');
+    if (!navContainer) return; // Salir si no se encuentra el contenedor
+
+    // --- Generar los enlaces del Navbar (Desktop y Mobile) ---
+    // Usamos .map() para transformar cada item del array 'navbar' en un string HTML <a>
+    const enlacesNav = textosUI.navbar.map(link => {
+        // El 'id' (ej. 'cocteles') se usa para el ancla (href="#cocteles")
+        // El 'texto' (ej. 'Cocteles') es lo que ve el usuario
+        return `<a href="#${link.id}" class="nav-link-desktop">${link.texto}</a>`;
+    }).join(''); // .join('') une todos los strings en uno solo
+
+    // Generamos los enlaces para el menú móvil (tienen una clase diferente)
+    const enlacesMobile = textosUI.navbar.map(link => {
+        return `<a href="#${link.id}" class="nav-link-mobile">${link.texto}</a>`;
+    }).join('');
+
+    // --- Construir el HTML final del Navbar ---
+    const proximoLang = textosUI.lang === 'es' ? 'en' : 'es';
+    const htmlNavbar = `
+        <div class="navbar-content">
+            <div class="nav-logo">
+                <a href="index.html"><img src="img/altxerrilogo.png" alt="Altxerri Logo"></a>
+            </div>
+
+            <nav class="nav-desktop">
+                ${enlacesNav}
+                <button class="lang-btn" data-lang="${proximoLang}">
+                    ${textosUI.langButton}
+                </button>
+            </nav>
+
+            <button class="nav-hamburger-btn" aria-label="Abrir menú">
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+            </button>
+        </div>
+
+        <div class="nav-mobile-menu">
+            <button class="lang-btn lang-btn-mobile" data-lang="${proximoLang}">
+                ${textosUI.langButton}
+            </button>
+            ${enlacesMobile}
+        </div>
+    `;
+
+    // Insertar el HTML generado dentro del <header id="navbar-container">
+    navContainer.innerHTML = htmlNavbar;
+}
+
+/**
+ * Configura los event listeners (clics) para el menú hamburguesa.
+ */
+/**
+ * Configura los event listeners (clics) para TODO el navbar.
+ * (Versión Fase 4: Incluye scroll suave y cambio de idioma)
+ */
+function configurarEventosNavbar() {
+    const hamburgerBtn = document.querySelector('.nav-hamburger-btn');
+    const mobileMenu = document.querySelector('.nav-mobile-menu');
+    const mobileLinks = document.querySelectorAll('.nav-link-mobile');
+    const desktopLinks = document.querySelectorAll('.nav-link-desktop');
+    const langButtons = document.querySelectorAll('.lang-btn'); // Coge AMBOS botones (desktop y mobile)
+
+    // --- 1. Lógica del Menú Hamburguesa ---
+    if (hamburgerBtn && mobileMenu) {
+        hamburgerBtn.addEventListener('click', () => {
+            hamburgerBtn.classList.toggle('open');
+            mobileMenu.classList.toggle('open');
+        });
+    }
+
+    // --- 2. Lógica de Scroll Suave (Móvil) ---
+    mobileLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault(); // Evita el salto brusco del ancla
+            const targetId = link.getAttribute('href');
+            
+            // Llamamos a nuestra función de scroll personalizada
+            smoothScrollTo(targetId, 500); // 500ms = 0.5s
+
+            // Cierra el menú (¡tu requisito clave!)
+            hamburgerBtn.classList.remove('open');
+            mobileMenu.classList.remove('open');
+        });
+    });
+
+    // --- 3. Lógica de Scroll Suave (Desktop) ---
+    desktopLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault(); // Evita el salto brusco del ancla
+            const targetId = link.getAttribute('href');
+            
+            // Llamamos a nuestra función de scroll personalizada
+            smoothScrollTo(targetId, 500); // 500ms = 0.5s
+        });
+    });
+
+    // --- 4. Lógica de Cambio de Idioma ---
+    langButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const nuevoLang = e.target.getAttribute('data-lang'); // 'es' o 'en'
+            
+            // ¡Simplemente reiniciamos la app con el nuevo idioma!
+            // Esto recargará y re-renderizará todo (navbar y contenido).
+            iniciarAplicacion(nuevoLang);
+        });
+    });
+}
+
+/* --- FASE 3: RENDERIZADO DE CONTENIDO (SECCIONES Y PRODUCTOS) --- */
+
+/**
+ * Modificamos la función principal para que también llame a 
+ * renderizarContenido después de renderizar el navbar.
+ */
+async function iniciarAplicacion(lang) {
+    const datos = await cargarDatos(lang);
+    if (!datos) {
+        console.error('Error: No se pudieron cargar los datos de la carta.');
+        return;
+    }
+
+    // FASE 2 (Ya existente)
+    renderizarNavbar(datos.textosUI);
+    configurarEventosNavbar();
+
+    // FASE 3 (Nueva llamada)
+    renderizarContenido(datos);
+}
+
+/**
+ * Función "Maestra" que construye todas las secciones de contenido.
+ * @param {object} datos - El objeto JSON completo (textosUI y productos).
+ */
+function renderizarContenido(datos) {
+    const mainContainer = document.getElementById('main-container');
+    if (!mainContainer) return;
+
+    const { textosUI, productos } = datos;
+
+    // Generamos el HTML para cada sección llamando a su función específica
+    const htmlCocteles = renderizarSeccionCocteles(productos, textosUI);
+    const htmlCervezas = renderizarSeccionCervezas(productos, textosUI);
+    const htmlVinos = renderizarSeccionVinos(productos, textosUI);
+    const htmlDestilados = renderizarSeccionDestilados(productos, textosUI);
+    const htmlSinAlcohol = renderizarSeccionSinAlcohol(productos, textosUI);
+
+    // Unimos todo el HTML y lo insertamos en el contenedor principal
+    mainContainer.innerHTML = `
+        ${htmlCocteles}
+        ${htmlCervezas}
+        ${htmlVinos}
+        ${htmlDestilados}
+        ${htmlSinAlcohol}
+    `;
+}
+
+// --- RENDERIZADOR: COCTELES (Cards) ---
+
+function renderizarSeccionCocteles(productos, textosUI) {
+    const { titulosSeccion } = textosUI;
+
+    // 1. Filtrar y ordenar productos
+    const cocteles = productos
+        .filter(p => p.tipo === 'coctel' && p.visualizacion)
+        .sort((a, b) => a.titulo.localeCompare(b.titulo));
+
+    // Si no hay cocteles, no mostramos nada
+    if (cocteles.length === 0) return '';
+
+    // 2. Generar el HTML de las cards
+    const cardsHtml = cocteles.map((coctel, index) => {
+        // Lógica de alternancia: par (0, 2, 4...) o impar (1, 3, 5...)
+        const esPar = index % 2 === 0;
+        const claseLayout = esPar ? 'layout-img-texto' : 'layout-texto-img';
+        
+        // IMPORTANTE: Asumimos que las imágenes están en 'img/'
+        const rutaImagen = `img/${coctel.imagen}`; 
+
+        return `
+            <div class="card-coctel ${claseLayout}">
+                <div class="card-coctel-imagen">
+                    <img src="${rutaImagen}" alt="${coctel.titulo}">
+                </div>
+                <div class="card-coctel-textos">
+                    <h4 class="card-coctel-titulo">${coctel.titulo}</h4>
+                    <p class="card-coctel-descripcion">${coctel.descripcion}</p>
+                </div>
+                <div class="card-coctel-precio">
+                    <span>${coctel.precioCopa}€</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // 3. Devolver la sección completa
+    return `
+        <section id="cocteles" class="seccion seccion-con-fondo" style="background-image: url('img/fondo_cocteles.jpg');">
+            <div class="seccion-contenido">
+                <h2 class="seccion-titulo">${titulosSeccion.cocteles}</h2>
+                <div class="cocteles-container">
+                    ${cardsHtml}
+                </div>
+            </div>
+        </section>
+    `;
+}
+
+// --- RENDERIZADOR: SECCIONES DE LISTADO (Cervezas, Vinos, etc.) ---
+
+/**
+ * Función REUTILIZABLE para crear secciones de listado.
+ * @param {Array} productos - Lista de productos YA FILTRADOS Y ORDENADOS.
+ * @param {string} subtitulo - El subtítulo de la sección (ej. "Cervezas de Barril").
+ * @param {object} etiquetas - Objeto de etiquetas (ej. textosUI.etiquetasPrecio).
+ * @param {string} tipoPlantilla - 'dosPrecios' (Caña/Pinta), 'unPrecio' (Botella), 'vino', 'destilado'.
+ */
+function renderizarListado(productos, subtitulo, etiquetas, tipoPlantilla) {
+    // Si no hay productos en esta lista, no se renderiza nada (¡lógica clave!)
+    if (productos.length === 0) return '';
+
+    let headerHtml = '';
+    const { etiquetasPrecio, etiquetasVino } = etiquetas;
+
+    // 1. Crear el "Header Fantasma" según la plantilla
+    switch (tipoPlantilla) {
+        case 'dosPrecios': // Cerveza Barril
+            headerHtml = `
+                <div class="listado-header">
+                    <div class="listado-item-textos"></div>
+                    <div class="listado-item-precios precios-dos">
+                        <span>${etiquetasPrecio.cana}</span>
+                        <span>${etiquetasPrecio.pinta}</span>
+                    </div>
+                </div>
+            `;
+            break;
+        case 'vino':
+            headerHtml = `
+                <div class="listado-header">
+                    <div class="listado-item-textos"></div>
+                    <div class="listado-item-precios precios-dos">
+                        <span>${etiquetasPrecio.copa}</span>
+                        <span>${etiquetasPrecio.botella}</span>
+                    </div>
+                </div>
+            `;
+            break;
+        case 'destilado':
+            headerHtml = `
+                <div class="listado-header">
+                    <div class="listado-item-textos"></div>
+                    <div class="listado-item-precios precios-dos">
+                        <span>${etiquetasPrecio.vaso}</span>
+                        <span>${etiquetasPrecio.botella}</span>
+                    </div>
+                </div>
+            `;
+            break;
+        case 'unPrecio': // Cerveza Envasada / Sin Alcohol
+            // No lleva header, se queda vacío.
+            headerHtml = '';
+            break;
+    }
+
+    // 2. Crear cada "fila" de la lista
+    const itemsHtml = productos.map(item => 
+        renderizarItemLista(item, etiquetas, tipoPlantilla)
+    ).join('');
+
+    // 3. Devolver el bloque HTML completo (subtítulo + header + items)
+    return `
+        <div class="listado-subseccion">
+            <h3 class="seccion-subtitulo">${subtitulo}</h3>
+            ${headerHtml}
+            <div class="listado-items-container">
+                ${itemsHtml}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Función REUTILIZABLE para CADA item de un listado.
+ */
+function renderizarItemLista(item, etiquetas, tipoPlantilla) {
+    const { etiquetasVino } = etiquetas;
+    let preciosHtml = '';
+    let descripcionHtml = '';
+
+    // 1. Generar el HTML de los precios
+    switch (tipoPlantilla) {
+        case 'dosPrecios':
+            preciosHtml = `
+                <div class="listado-item-precios precios-dos">
+                    <span>${item.precioCana}€</span>
+                    <span>${item.precioPinta}€</span>
+                </div>
+            `;
+            break;
+        case 'vino':
+            preciosHtml = `
+                <div class="listado-item-precios precios-dos">
+                    <span>${item.precioCopa}€</span>
+                    <span>${item.precioBotella}€</span>
+                </div>
+            `;
+            break;
+        case 'destilado':
+            preciosHtml = `
+                <div class="listado-item-precios precios-dos">
+                    <span>${item.precioCopa}€</span>
+                    <span>${item.precioBotella}€</span>
+                </div>
+            `;
+            break;
+        case 'unPrecio':
+            preciosHtml = `
+                <div class="listado-item-precios precios-uno">
+                    <span>${item.precioBotella}€</span>
+                </div>
+            `;
+            break;
+    }
+    
+    // 2. Generar el HTML de la descripción (con lógica especial para Vinos)
+    if (tipoPlantilla === 'vino') {
+        // Construimos la línea de datos del vino, omitiendo campos nulos
+        const datosVino = [
+            item.productor ? `<strong>${etiquetasVino.bodega}:</strong> ${item.productor}` : '',
+            item.varietal ? `<strong>${etiquetasVino.varietal}:</strong> ${item.varietal}` : '',
+            item.ano ? `<strong>${etiquetasVino.ano}:</strong> ${item.ano}` : '',
+            item.crianza ? `<strong>${etiquetasVino.crianza}:</strong> ${item.crianza}` : ''
+        ].filter(Boolean).join(' – '); // 'filter(Boolean)' elimina strings vacíos
+
+        descripcionHtml = `
+            <div class="listado-item-descripcion-vino">
+                <p class="vino-datos">${datosVino}</p>
+                <p class="vino-descripcion"><em>${item.descripcion}</em></p>
+            </div>
+        `;
+    } else {
+        // Para cervezas, destilados, etc. (solo mostramos info si existe)
+        const datosGenerales = [item.region, item.pais, item.abv ? `${item.abv}% ABV` : '', item.ibu ? `${item.ibu} IBU` : '']
+            .filter(Boolean).join(' | ');
+            
+        descripcionHtml = `
+            <div class="listado-item-descripcion-general">
+                ${datosGenerales ? `<p class="datos-generales">${datosGenerales}</p>` : ''}
+                <p class="descripcion-general">${item.descripcion}</p>
+            </div>
+        `;
+    }
+
+    // 3. Ensamblar el item completo
+    const regionPais = (item.region || item.pais) 
+        ? `(${[item.region, item.pais].filter(Boolean).join(' – ')})` 
+        : '';
+
+    return `
+        <div class="listado-item">
+            <div class="listado-item-textos">
+                <h4 class="listado-item-titulo">${item.titulo} <span class="titulo-region">${regionPais}</span></h4>
+                ${descripcionHtml}
+            </div>
+            ${preciosHtml}
+        </div>
+    `;
+}
+
+// --- RENDERIZADOR: SECCIÓN CERVEZAS ---
+
+function renderizarSeccionCervezas(productos, textosUI) {
+    const { subtitulos, etiquetasPrecio, titulosSeccion } = textosUI;
+    const etiquetas = { etiquetasPrecio }; // Pasamos solo las etiquetas necesarias
+
+    // 1. Filtrar y ordenar Barril
+    const cervezasBarril = productos
+        .filter(p => p.tipo === 'cervezaBarril' && p.visualizacion)
+        .sort((a, b) => a.titulo.localeCompare(b.titulo));
+    
+    // 2. Filtrar y ordenar Envasada
+    const cervezasEnvasadas = productos
+        .filter(p => p.tipo === 'cervezaEnvasada' && p.visualizacion)
+        .sort((a, b) => a.titulo.localeCompare(b.titulo));
+
+    // 3. Generar HTML de cada sub-sección
+    const htmlBarril = renderizarListado(cervezasBarril, subtitulos.cervezaBarril, etiquetas, 'dosPrecios');
+    const htmlEnvasada = renderizarListado(cervezasEnvasadas, subtitulos.cervezaEnvasada, etiquetas, 'unPrecio');
+
+    // Si ambas sub-secciones están vacías, no mostramos nada
+    if (!htmlBarril && !htmlEnvasada) return '';
+
+    // 4. Devolver la sección completa
+    return `
+        <section id="cervezas" class="seccion seccion-con-fondo" style="background-image: url('img/fondo_cervezas.jpg');">
+            <div class="seccion-contenido">
+                <h2 class="seccion-titulo">${titulosSeccion.cervezas}</h2>
+                ${htmlBarril}
+                ${htmlEnvasada}
+            </div>
+        </section>
+    `;
+}
+
+// --- RENDERIZADOR: SECCIÓN VINOS (Destacados + Listado) ---
+
+function renderizarSeccionVinos(productos, textosUI) {
+    const { subtitulos, etiquetasPrecio, etiquetasVino, titulosSeccion } = textosUI;
+    const etiquetas = { etiquetasPrecio, etiquetasVino };
+
+    // 1. Generar HTML Vinos Destacados
+    const htmlDestacados = renderizarVinosDestacados(productos, textosUI);
+
+    // 2. Generar HTML Listados de Vinos
+    const vinosTinto = productos
+        .filter(p => p.tipo === 'vinoTinto' && p.visualizacion)
+        .sort((a, b) => a.titulo.localeCompare(b.titulo));
+    const vinosBlanco = productos
+        .filter(p => p.tipo === 'vinoBlanco' && p.visualizacion)
+        .sort((a, b) => a.titulo.localeCompare(b.titulo));
+    const vinosOtros = productos
+        .filter(p => p.tipo === 'vinoOtros' && p.visualizacion)
+        .sort((a, b) => a.titulo.localeCompare(b.titulo));
+
+    const htmlTintos = renderizarListado(vinosTinto, subtitulos.vinosTintos, etiquetas, 'vino');
+    const htmlBlancos = renderizarListado(vinosBlanco, subtitulos.vinosBlancos, etiquetas, 'vino');
+    const htmlOtros = renderizarListado(vinosOtros, subtitulos.vinosOtros, etiquetas, 'vino');
+
+    // Si no hay NADA (ni destacados, ni tintos, ni blancos, ni otros), no mostramos la sección
+    if (!htmlDestacados && !htmlTintos && !htmlBlancos && !htmlOtros) return '';
+
+    // 3. Devolver sección completa
+    return `
+        <section id="vinos" class="seccion seccion-con-fondo" style="background-image: url('img/fondo_vinos.jpg');">
+            <div class="seccion-contenido">
+                <h2 class="seccion-titulo">${titulosSeccion.vinos}</h2>
+                ${htmlDestacados}
+                ${htmlTintos}
+                ${htmlBlancos}
+                ${htmlOtros}
+            </div>
+        </section>
+    `;
+}
+
+function renderizarVinosDestacados(productos, textosUI) {
+    const { subtitulos, etiquetasVino } = textosUI;
+
+    // 1. Filtrar productos
+    const vinosDestacados = productos.filter(p =>
+        ['vinoTinto', 'vinoBlanco', 'vinoOtros'].includes(p.tipo) &&
+        p.destacado &&
+        p.visualizacion
+    );
+
+    // Si no hay destacados, no renderizamos nada (¡lógica clave!)
+    if (vinosDestacados.length === 0) return '';
+
+    // 2. Generar HTML para cada banner
+    const bannersHtml = vinosDestacados.map((vino, index) => {
+        const esPar = index % 2 === 0;
+        const claseLayout = esPar ? 'layout-img-texto' : 'layout-texto-img';
+        
+        const rutaImagen = `img/${vino.imagen}`;
+        
+        // Formateo de datos del vino (igual que en el listado)
+        const datosVino = [
+            vino.productor ? `<strong>${etiquetasVino.bodega}:</strong> ${vino.productor}` : '',
+            vino.varietal ? `<strong>${etiquetasVino.varietal}:</strong> ${vino.varietal}` : '',
+            vino.ano ? `<strong>${etiquetasVino.ano}:</strong> ${vino.ano}` : '',
+            vino.crianza ? `<strong>${etiquetasVino.crianza}:</strong> ${vino.crianza}` : ''
+        ].filter(Boolean).join(' – ');
+        
+        const regionPais = (vino.region || vino.pais) 
+            ? `${[vino.region, vino.pais].filter(Boolean).join(' – ')}` 
+            : '';
+
+        return `
+            <div class="banner-destacado ${claseLayout}">
+                <div class="banner-imagen" style="background-image: url('${rutaImagen}');">
+                </div>
+                <div class="banner-textos">
+                    <h4 class="banner-titulo">${vino.titulo}</h4>
+                    <p class="banner-region">${regionPais}</p>
+                    <p class="banner-datos">${datosVino}</p>
+                    <p class="banner-descripcion"><em>${vino.descripcion}</em></p>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // 3. Devolver la sub-sección completa
+    return `
+        <div class="listado-subseccion">
+            <h3 class="seccion-subtitulo">${subtitulos.vinosDestacados}</h3>
+            <div class="banners-container">
+                ${bannersHtml}
+            </div>
+        </div>
+    `;
+}
+
+// --- RENDERIZADOR: SECCIÓN DESTILADOS ---
+
+function renderizarSeccionDestilados(productos, textosUI) {
+    const { etiquetasPrecio, titulosSeccion, subtitulos } = textosUI;
+    const etiquetas = { etiquetasPrecio };
+
+    const destilados = productos
+        .filter(p => p.tipo === 'destilado' && p.visualizacion)
+        .sort((a, b) => a.titulo.localeCompare(b.titulo));
+
+    // Usamos un subtítulo genérico, o podrías añadir uno específico en el JSON
+    const htmlDestilados = renderizarListado(destilados, '', etiquetas, 'destilado');
+
+    if (!htmlDestilados) return '';
+
+    return `
+        <section id="destilados" class="seccion seccion-con-fondo" style="background-image: url('img/fondo_destilados.jpg');">
+            <div class="seccion-contenido">
+                <h2 class="seccion-titulo">${titulosSeccion.destilados}</h2>
+                ${htmlDestilados}
+            </div>
+        </section>
+    `;
+}
+
+// --- RENDERIZADOR: SECCIÓN SIN ALCOHOL ---
+
+function renderizarSeccionSinAlcohol(productos, textosUI) {
+    const { etiquetasPrecio, titulosSeccion } = textosUI;
+    const etiquetas = { etiquetasPrecio };
+
+    const sinAlcohol = productos
+        .filter(p => p.tipo === 'sinAlcohol' && p.visualizacion)
+        .sort((a, b) => a.titulo.localeCompare(b.titulo));
+
+    const htmlSinAlcohol = renderizarListado(sinAlcohol, '', etiquetas, 'unPrecio');
+
+    if (!htmlSinAlcohol) return '';
+
+    return `
+        <section id="sinAlcohol" class="seccion seccion-con-fondo" style="background-image: url('img/fondo_sinalcohol.jpg');">
+            <div class="seccion-contenido">
+                <h2 class="seccion-titulo">${titulosSeccion.sinAlcohol}</h2>
+                ${htmlSinAlcohol}
+            </div>
+        </section>
+    `;
+}
+
+
+/**
+ * Re-escribimos la función 'iniciarAplicacion' para que llame a 
+ * renderizarContenido.
+ * IMPORTANTE: Esta función REEMPLAZA la 'iniciarAplicacion' de la Fase 2.
+ */
+async function iniciarAplicacion(lang) {
+    const datos = await cargarDatos(lang);
+    if (!datos) {
+        console.error('Error: No se pudieron cargar los datos de la carta.');
+        return;
+    }
+
+    // FASE 2
+    renderizarNavbar(datos.textosUI);
+    configurarEventosNavbar();
+
+    // FASE 3 (NUEVO)
+    renderizarContenido(datos);
+}
+
+/**
+ * Re-declaramos addEventListener para asegurarnos de que se llama
+ * a la NUEVA versión de iniciarAplicacion.
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    iniciarAplicacion('es'); 
+});
+
+/* --- FASE 4: FUNCIONES DE SCROLL E IDIOMA --- */
+
+/**
+ * Función de "Easing" (Aceleración/Desaceleración)
+ * Ayuda a que el scroll se vea suave y no robótico.
+ * @param {number} t - Progreso (0.0 a 1.0)
+ */
+function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+/**
+ * Función de Scroll Suave con Duración Constante (¡Tu requisito!)
+ * @param {string} targetId - El ID del elemento al que scrollear (ej. "#cocteles").
+ * @param {number} duration - La duración total en milisegundos (ej. 500).
+ */
+function smoothScrollTo(targetId, duration) {
+    const targetElement = document.querySelector(targetId);
+    if (!targetElement) return;
+
+    const navbarHeight = document.getElementById('navbar-container').clientHeight || 70;
+    
+    // Posición del elemento - altura del navbar (para el 'offset')
+    const targetPosition = targetElement.getBoundingClientRect().top + window.scrollY - navbarHeight;
+    const startPosition = window.scrollY;
+    const distance = targetPosition - startPosition;
+    let startTime = null;
+
+    function animationStep(currentTime) {
+        if (startTime === null) startTime = currentTime;
+        const timeElapsed = currentTime - startTime;
+        const progress = Math.min(timeElapsed / duration, 1); // Progreso de 0.0 a 1.0
+        
+        // Aplicamos la función de easing
+        const easedProgress = easeInOutCubic(progress);
+
+        window.scrollTo(0, startPosition + distance * easedProgress);
+
+        // Si no hemos terminado, seguimos pidiendo el siguiente frame
+        if (timeElapsed < duration) {
+            requestAnimationFrame(animationStep);
+        }
+    }
+
+    requestAnimationFrame(animationStep);
+}
