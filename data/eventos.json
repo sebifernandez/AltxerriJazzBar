@@ -4,7 +4,6 @@
     "tipoEvento": "Regular",
     "imagen": "banda3.jpeg",
     "titulo": "Regreso al Soul Jazz",
-    "descripcion": "Una noche íntima con los mejores músicos locales de jazz fusionado con soul.",
     "live": "",
     "concierto": "https://www.youtube.com/watch?v=soul-jazz-archive"
   },
@@ -13,7 +12,6 @@
     "tipoEvento": "Regular",
     "imagen": "banda4.jpeg",
     "titulo": "Regreso al Soul Jazz",
-    "descripcion": "Una noche íntima con los mejores músicos locales de jazz fusionado con soul.",
     "live": "",
     "concierto": "https://www.youtube.com/watch?v=soul-jazz-archive"
   },
@@ -22,7 +20,6 @@
     "tipoEvento": "Regular",
     "imagen": "banda5.jpeg",
     "titulo": "Regreso al Soul Jazz",
-    "descripcion": "Una noche íntima con los mejores músicos locales de jazz fusionado con soul.",
     "live": "",
     "concierto": "https://www.youtube.com/watch?v=soul-jazz-archive"
   },
@@ -31,7 +28,6 @@
     "tipoEvento": "Regular",
     "imagen": "banda6.jpeg",
     "titulo": "Regreso al Soul Jazz",
-    "descripcion": "Una noche íntima con los mejores músicos locales de jazz fusionado con soul.",
     "live": "",
     "concierto": "https://www.youtube.com/watch?v=soul-jazz-archive"
   },
@@ -40,8 +36,7 @@
     "tipoEvento": "Regular",
     "imagen": "banda7.jpg",
     "titulo": "Regreso al Soul Jazz",
-    "descripcion": "Una noche íntima con los mejores músicos locales de jazz fusionado con soul.",
-    "live": "",
+    "live": "https://www.youtube.com/watch?v=soul-jazz-archive",
     "concierto": "https://www.youtube.com/watch?v=soul-jazz-archive"
   },
   {
@@ -49,7 +44,6 @@
     "tipoEvento": "Regular",
     "imagen": "banda1.jpg",
     "titulo": "Regreso al Soul Jazz",
-    "descripcion": "Una noche íntima con los mejores músicos locales de jazz fusionado con soul.",
     "live": "",
     "concierto": "https://www.youtube.com/watch?v=soul-jazz-archive"
   },
@@ -58,7 +52,6 @@
     "tipoEvento": "Regular",
     "imagen": "banda2.jpg",
     "titulo": "Jam Session Urbana",
-    "descripcion": "Improvisaciones abiertas con artistas invitados y ritmos de la ciudad.",
     "live": "https://www.youtube.com/watch?v=live-jam-stream",
     "concierto": "https://www.youtube.com/watch?v=live-jam-stream"
   },
@@ -67,7 +60,6 @@
     "tipoEvento": "Regular",
     "imagen": "banda3.jpeg",
     "titulo": "Especial Big Band",
-    "descripcion": "Una orquesta de 15 músicos reviviendo los clásicos de los años 40.",
     "live": "https://www.youtube.com/watch?v=friends-archive",
     "concierto": ""
   },
@@ -76,7 +68,6 @@
     "tipoEvento": "Regular",
     "imagen": "banda4.jpeg",
     "titulo": "Concierto Invitado Estelar",
-    "descripcion": "Invitados especiales que llenarán la noche de magia musical internacional.",
     "live": "",
     "concierto": ""
   },
@@ -85,7 +76,6 @@
     "tipoEvento": "Privado",
     "imagen": "",
     "titulo": "",
-    "descripcion": "",
     "live": "",
     "concierto": ""
   },
@@ -94,7 +84,6 @@
     "tipoEvento": "Regular",
     "imagen": "banda5.jpeg",
     "titulo": "Noche de Blues Fusión",
-    "descripcion": "Ritmos lentos y profundos con toques modernos para una velada vibrante.",
     "live": "",
     "concierto": ""
   },
@@ -103,7 +92,6 @@
     "tipoEvento": "Cerrado",
     "imagen": "",
     "titulo": "",
-    "descripcion": "",
     "live": "",
     "concierto": ""
   },
@@ -112,7 +100,6 @@
     "tipoEvento": "Regular",
     "imagen": "banda6.jpeg",
     "titulo": "Concierto de Vanguardia",
-    "descripcion": "Improvisación libre y experimentación sonora.",
     "live": "",
     "concierto": ""
   },
@@ -121,7 +108,6 @@
     "tipoEvento": "Regular",
     "imagen": "banda7.jpg",
     "titulo": "Jam & Friends",
-    "descripcion": "Colaboraciones espontáneas y diversión garantizada para músicos y público.",
     "live": "",
     "concierto": ""
   },
@@ -130,7 +116,22 @@
     "tipoEvento": "Regular",
     "imagen": "banda1.jpg",
     "titulo": "Cierre de Semana: Standards",
-    "descripcion": "Una noche de clásicos del jazz y cócteles.",
+    "live": "",
+    "concierto": ""
+  },
+  {
+    "fecha": "2025-11-08",
+    "tipoEvento": "Regular",
+    "imagen": "banda1.jpg",
+    "titulo": "Cierre de Semana: Standards",
+    "live": "https://www.youtube.com/watch?v=Nnk7IFcL76g",
+    "concierto": ""
+  },
+  {
+    "fecha": "2025-11-09",
+    "tipoEvento": "Regular",
+    "imagen": "banda1.jpg",
+    "titulo": "Cierre de Semana: Standards",
     "live": "",
     "concierto": ""
   }

@@ -121,6 +121,15 @@ function updateCarousel() {
 function createEventCard(evento) {
     const luxonFecha = DateTimeLuxon.fromISO(evento.fecha);
     const ahoraMadrid = DateTimeLuxon.now().setZone("Europe/Madrid");
+
+    // --- ¡ARREGLO AQUÍ! ---
+    // 1. Lógica de "Evento Pasado" (FINALIZADO)
+    // Se mueve aquí arriba para que esté disponible para TODOS los tipos de evento.
+    const fechaCorteFinalizado = DateTimeLuxon.fromISO(evento.fecha, { zone: "Europe/Madrid" })
+        .plus({ days: 1 })
+        .set({ hour: HORA_LIMITE, minute: 0, second: 0, millisecond: 0 });
+
+    const esPasado = ahoraMadrid >= fechaCorteFinalizado;
     
     // ----------------------------------------------------
     // LÓGICA DE EVENTOS CERRADO/PRIVADO
@@ -131,11 +140,15 @@ function createEventCard(evento) {
         const specialClass = isClosed ? "closed" : "private";
         const specialTitle = isClosed ? "Cerrado por Descanso" : "Evento Privado";
         const specialText = isClosed 
-            ? "El local permanecerá cerrado al público. ¡Volvemos pronto con más Jazz!"
-            : "Lo sentimos, el local está reservado para un evento privado. ¡Te esperamos el resto de la semana!";
+            ? "¡Volvemos pronto con más Jazz!"
+            : "Lo sentimos... ¡Te esperamos el resto de la semana!";
         
+        // --- ¡ARREGLO AQUÍ! ---
+        // 2. Añadimos la clase 'past' si el evento especial ya pasó.
+        const finalizadoClass = esPasado ? 'past' : '';
+
         return `
-            <div class="event-card special ${specialClass}">
+            <div class="event-card special ${specialClass} ${finalizadoClass}">
                 <div class="card-image special">
                     <img src="img/${specialImage}" alt="${specialTitle}">
                     <div class="event-date">${luxonFecha.toFormat("dd LLLL")}</div>
@@ -157,14 +170,8 @@ function createEventCard(evento) {
     // LÓGICA DE EVENTOS REGULARES (Regular)
     // ----------------------------------------------------
 
-    // 1. Lógica de "Evento Pasado" (FINALIZADO)
-    const fechaCorteFinalizado = DateTimeLuxon.fromISO(evento.fecha, { zone: "Europe/Madrid" })
-        .plus({ days: 1 })
-        .set({ hour: HORA_LIMITE, minute: 0, second: 0, millisecond: 0 });
-
-    const esPasado = ahoraMadrid >= fechaCorteFinalizado;
-
     // 2. Lógica de Botones Adicionales (LIVE y CONCIERTO)
+    // (Esta lógica ya estaba perfecta en tu archivo, no se toca)
     let botonAdicionalHTML = '';
 
     // Criterio 1: ¿Debe aparecer "Reviví el concierto"? (Prioridad máxima)
@@ -203,7 +210,7 @@ function createEventCard(evento) {
         </div>
         <div class="card-content">
           <h3>${evento.titulo}</h3>
-          <p>${evento.descripcion}</p>
+
           <button class="btn-reservar" ${finalizadoDisabled}>
             ${finalizadoText}
           </button>
@@ -317,6 +324,11 @@ function mostrarEvento(fecha) {
     detalleEvento.innerHTML = `<p>No hay evento en esta fecha.</p>`;
     return;
   }
+  
+  const ahora = DateTimeLuxon.now().setZone("Europe/Madrid");
+  const fechaEvento = DateTimeLuxon.fromISO(evento.fecha, { zone: "Europe/Madrid" });
+  const fechaCorteFinalizado = fechaEvento.plus({ days: 1 }).set({ hour: HORA_LIMITE });
+  const esPasado = ahora >= fechaCorteFinalizado;
 
   // Lógica de "Cerrado/Privado" para el Modal
   if (evento.tipoEvento === "Cerrado" || evento.tipoEvento === "Privado") {
@@ -326,9 +338,13 @@ function mostrarEvento(fecha) {
       const specialText = isClosed 
           ? "El local permanecerá cerrado al público."
           : "El local está reservado para un evento privado.";
+      
+      // --- ¡ARREGLO AQUÍ! ---
+      // 3. Añadimos la clase 'past' al modal también
+      const finalizadoClass = esPasado ? 'past' : '';
 
       detalleEvento.innerHTML = `
-          <div class="event-card special ${isClosed ? 'closed' : 'private'}">
+          <div class="event-card special ${isClosed ? 'closed' : 'private'} ${finalizadoClass}">
               <div class="card-image special">
                   <img src="img/${specialImage}" alt="${specialTitle}">
                   <div class="event-date">${DateTimeLuxon.fromISO(evento.fecha).toFormat("dd LLLL")}</div>
@@ -342,12 +358,7 @@ function mostrarEvento(fecha) {
   }
 
   // Lógica de Evento Regular para el Modal
-  const ahora = DateTimeLuxon.now().setZone("Europe/Madrid");
-  const fechaEvento = DateTimeLuxon.fromISO(evento.fecha, { zone: "Europe/Madrid" });
-  const fechaCorteFinalizado = fechaEvento.plus({ days: 1 }).set({ hour: HORA_LIMITE });
-  const esPasado = ahora >= fechaCorteFinalizado;
-
-  // Lógica de Botones para el Modal
+  // (La lógica de botones aquí ya era correcta, priorizando 'concierto')
   let botonAdicionalHTML = '';
   if (evento.concierto && evento.concierto.trim() !== '') {
       botonAdicionalHTML = `<a href="${evento.concierto}" target="_blank" class="btn-adicional btn-archive">Reviví el concierto</a>`;
@@ -361,7 +372,7 @@ function mostrarEvento(fecha) {
       </div>
       <div class="card-content">
         <h3>${evento.titulo}</h3>
-        <p>${evento.descripcion}</p>
+
         <button class="btn-reservar" ${esPasado ? "disabled" : ""}>
           ${esPasado ? "Finalizado" : "Reservar"}
         </button>
@@ -614,28 +625,6 @@ newsletterForm.addEventListener('submit', (e) => {
 
 });
 
-
-//ESTO CREO QUE NO VA (código antiguo de slick.js que puede eliminarse)
-
-        $(document).ready(function(){
-			$('.customer-logos').slick({
-				slidesToShow: 8,
-				slidesToScroll: 1,
-				autoplay: true,
-				autoplaySpeed: 1000,
-				arrows: false,
-				dots: false,
-					pauseOnHover: false,
-					responsive: [{
-					breakpoint: 768,
-					settings: {
-						slidesToShow: 3
-					}
-				}, {
-					breakpoint: 520,
-					settings: {
-						slidesToShow: 2
-					}
-				}]
-			});
-		});
+// --- ¡ARREGLO AQUÍ! ---
+// 4. Eliminamos el código antiguo de JQuery/Slick
+// (El bloque que estaba aquí fue eliminado)

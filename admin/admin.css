@@ -1,0 +1,903 @@
+/* --- ADMIN.CSS - CMS Altxerri --- */
+/* --- FASE 1: Estilos Base, Login y Dashboard Shell --- */
+
+/* 1. VARIABLES Y RESET */
+:root {
+    --color-bg: #2b2b2b; /* Fondo oscuro (no negro puro) */
+    --color-bg-light: #353535; /* Para inputs y tarjetas */
+    --color-bg-dark: #202020;
+    --color-shadow-light: rgba(48, 48, 48, 0.7);
+    --color-shadow-dark: rgba(18, 18, 18, 0.9);
+    --color-texto-principal: #E0E0E0;
+    --color-texto-secundario: #9E9E9E;
+    --color-primario-rojo: #B71C1C; /* Rojo Altxerri */
+    --color-primario-rojo-hover: #D32F2F;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-texto-principal);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* 2. ESTILOS DEL LOGIN (admin/index.html) */
+
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 1rem;
+}
+
+.login-box {
+    width: 100%;
+    max-width: 400px;
+    padding: 2.5rem 2rem;
+    background-color: var(--color-bg);
+    border-radius: 20px;
+    box-shadow: 
+        12px 12px 24px var(--color-shadow-dark),
+        -12px -12px 24px var(--color-shadow-light);
+    text-align: center;
+}
+
+.admin-logo {
+    width: 100px;
+    margin-bottom: 1rem;
+}
+
+.login-box h2 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.login-box p {
+    color: var(--color-texto-secundario);
+    margin-bottom: 2rem;
+}
+
+.login-form .input-group {
+    text-align: left;
+    margin-bottom: 1.5rem;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--color-texto-secundario);
+}
+
+.input-group input {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: 10px;
+    background-color: var(--color-bg-light);
+    color: var(--color-texto-principal);
+    font-size: 1rem;
+    /* Sombra "hundida" (neumorfismo) */
+    box-shadow: 
+        inset 5px 5px 10px var(--color-shadow-dark),
+        inset -5px -5px 10px var(--color-shadow-light);
+}
+
+.btn-login {
+    display: inline-block;
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: 10px;
+    background-color: var(--color-primario-rojo);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 
+        5px 5px 10px var(--color-shadow-dark),
+        -5px -5px 10px var(--color-shadow-light);
+    transition: all 0.3s ease;
+}
+
+.btn-login:hover {
+    background-color: var(--color-primario-rojo-hover);
+    transform: translateY(-2px);
+    box-shadow: 
+        7px 7px 15px var(--color-shadow-dark),
+        -7px -7px 15px var(--color-shadow-light);
+}
+
+.btn-login:active {
+    transform: translateY(1px);
+    box-shadow: 
+        inset 5px 5px 10px var(--color-shadow-dark),
+        inset -5px -5px 10px var(--color-shadow-light);
+}
+
+/* 3. ESTILOS DEL DASHBOARD (admin/dashboard.html) */
+
+.dashboard-container {
+    display: grid;
+    /* Menú lateral de 250px, el resto es contenido */
+    grid-template-columns: 250px 1fr;
+    min-height: 100vh;
+}
+
+/* --- 3.1 Barra Lateral (Sidebar) --- */
+.sidebar {
+    background-color: var(--color-bg-dark);
+    padding: 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    position: fixed; /* Fijo en la pantalla */
+    height: 100%;
+    width: 250px;
+    transition: transform 0.3s ease;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--color-bg-light);
+}
+
+.admin-logo-sidebar {
+    width: 40px;
+}
+
+.sidebar-header span {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.sidebar-nav {
+    flex-grow: 1; /* Ocupa todo el espacio disponible */
+    margin-top: 2rem;
+}
+
+.nav-link, .nav-link-logout {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 10px;
+    color: var(--color-texto-secundario);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    background-color: var(--color-bg);
+    color: var(--color-texto-principal);
+}
+
+.nav-link.active {
+    background-color: var(--color-primario-rojo);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(183, 28, 28, 0.4);
+}
+
+.nav-link i, .nav-link-logout i {
+    font-size: 1.4rem;
+}
+
+.sidebar-footer {
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-bg-light);
+}
+
+.nav-link-logout:hover {
+    color: var(--color-primario-rojo-hover);
+}
+
+/* --- 3.2 Contenido Principal (Main) --- */
+.main-content {
+    grid-column: 2 / 3; /* Ocupa la 2da columna */
+    padding: 2rem;
+    background-color: var(--color-bg);
+}
+
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.main-header h1 {
+    font-size: 2rem;
+}
+
+/* Oculta el botón de menú en desktop */
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--color-texto-principal);
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+/* Tarjetas del Dashboard */
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.dash-card {
+    background: linear-gradient(145deg, var(--color-bg-light), var(--color-bg-dark));
+    padding: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 
+        8px 8px 16px var(--color-shadow-dark),
+        -8px -8px 16px var(--color-shadow-light);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dash-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 
+        12px 12px 24px var(--color-shadow-dark),
+        -12px -12px 24px var(--color-shadow-light);
+}
+
+.dash-card i {
+    font-size: 2.5rem;
+    color: var(--color-primario-rojo);
+    margin-bottom: 1rem;
+}
+
+.dash-card h3 {
+    margin-bottom: 0.5rem;
+    font-size: 1.3rem;
+    color: var(--color-texto-principal);
+}
+
+.dash-card p {
+    color: var(--color-texto-secundario);
+    font-size: 0.9rem;
+}
+
+/* Lógica de Secciones y Pestañas (Tabs) */
+.content-section {
+    display: none; /* Oculto por defecto */
+}
+.content-section.active {
+    display: block; /* Visible */
+}
+
+.tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 2px solid var(--color-bg-light);
+    margin-bottom: 2rem;
+}
+
+.tab-link {
+    padding: 0.8rem 1.5rem;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: var(--color-texto-secundario);
+    font-size: 1rem;
+    font-weight: 600;
+    border-bottom: 3px solid transparent;
+    transform: translateY(2px);
+}
+
+.tab-link.active {
+    color: var(--color-texto-principal);
+    border-bottom-color: var(--color-primario-rojo);
+}
+
+.tab-content {
+    display: none; /* Oculto por defecto */
+}
+.tab-content.active {
+    display: block; /* Visible */
+}
+
+/* --- ADMIN.CSS - FASE 2: Estilos del Formulario de Alta --- */
+
+.form-alta-evento {
+    margin-top: 1.5rem;
+    background-color: var(--color-bg-dark);
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 
+        inset 10px 10px 20px var(--color-shadow-dark),
+        inset -10px -10px 20px var(--color-shadow-light);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.form-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-bg-light);
+}
+
+.form-section h4 {
+    margin-bottom: 1.5rem;
+    font-size: 1.2rem;
+    color: var(--color-primario-rojo);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--color-texto-secundario);
+}
+
+.form-group label:after {
+    /* Marca de campo obligatorio */
+    content: " *";
+    color: var(--color-primario-rojo);
+}
+/* Oculta la marca si no es obligatoria */
+.form-group label[for="evento-live"]::after,
+.form-group label[for="evento-concierto"]::after,
+.form-group label[for="evento-imagen-upload"]::after {
+    content: "";
+}
+
+.form-input, 
+.form-input-file,
+.form-group select {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: 10px;
+    background-color: var(--color-bg-light);
+    color: var(--color-texto-principal);
+    font-size: 1rem;
+    font-family: inherit;
+    box-shadow: 
+        inset 5px 5px 10px var(--color-shadow-dark),
+        inset -5px -5px 10px var(--color-shadow-light);
+}
+
+.form-group select {
+    /* Quita la flecha fea del select */
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23E0E0E0' class='bi bi-chevron-down' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1em;
+    padding-right: 2.5rem;
+}
+
+.form-input-file {
+    font-size: 0.9rem;
+    padding: 0.8rem;
+}
+/* Estilo del botón de "Seleccionar archivo" */
+.form-input-file::file-selector-button {
+    margin-right: 1rem;
+    border: none;
+    background: var(--color-primario-rojo);
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.form-input-file::file-selector-button:hover {
+    background: var(--color-primario-rojo-hover);
+}
+
+.form-group-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+.form-group-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-primario-rojo);
+}
+.form-group-checkbox label {
+    margin: 0;
+    font-weight: 500;
+}
+.form-group-checkbox label::after {
+    content: ""; /* No es obligatorio */
+}
+
+/* Fieldset para agrupar */
+fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+    transition: opacity 0.3s ease;
+}
+/* Lógica de deshabilitado por Checkbox */
+fieldset:disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+fieldset:disabled .form-group label::after {
+    content: ""; /* Ya no es obligatorio */
+}
+
+
+/* --- Estilos para los botones (Primario / Secundario) --- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 
+        5px 5px 10px var(--color-shadow-dark),
+        -5px -5px 10px var(--color-shadow-light);
+    transition: all 0.3s ease;
+}
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        7px 7px 15px var(--color-shadow-dark),
+        -7px -7px 15px var(--color-shadow-light);
+}
+.btn:active {
+    transform: translateY(1px);
+    box-shadow: 
+        inset 5px 5px 10px var(--color-shadow-dark),
+        inset -5px -5px 10px var(--color-shadow-light);
+}
+
+/* Botón Rojo (Principal) */
+.btn-primary {
+    background-color: var(--color-primario-rojo);
+    color: #fff;
+}
+.btn-primary:hover {
+    background-color: var(--color-primario-rojo-hover);
+}
+
+/* Botón Gris (Secundario) */
+.btn-secondary {
+    background-color: var(--color-bg-light);
+    color: var(--color-texto-principal);
+}
+.btn-secondary:hover {
+    background-color: var(--color-bg);
+}
+
+.form-actions {
+    margin-top: 2rem;
+    text-align: right;
+    margin-bottom: 1.5rem;
+}
+
+
+/* --- Estilos para el Input de Tags (Opción A) --- */
+.tag-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    /* Reusa el estilo del input para la "caja" */
+    width: 100%;
+    min-height: 60px; /* Altura de input */
+    padding: 0.75rem;
+    border-radius: 10px;
+    background-color: var(--color-bg-light);
+    box-shadow: 
+        inset 5px 5px 10px var(--color-shadow-dark),
+        inset -5px -5px 10px var(--color-shadow-light);
+}
+.tag-container input {
+    flex-grow: 1;
+    border: none;
+    background: transparent;
+    color: var(--color-texto-principal);
+    font-size: 1rem;
+    padding: 0.25rem;
+}
+.tag-container input:focus {
+    outline: none;
+}
+
+.tag-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background-color: var(--color-primario-rojo);
+    color: #fff;
+    padding: 0.3rem 0.7rem;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+.tag-item .remove-tag-btn {
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.tag-item .remove-tag-btn:hover {
+    transform: scale(1.2);
+}
+
+/* --- Responsive del Formulario --- */
+@media (max-width: 900px) {
+    .form-grid {
+        grid-template-columns: 1fr; /* 1 columna en móvil */
+        gap: 0;
+    }
+    
+    .form-alta-evento {
+        padding: 1.5rem 1rem;
+    }
+    #visibility-mode-container {
+    display: flex;
+    flex-direction: column; /* Apila los botones */
+    gap: 0.5rem; /* Añade espacio entre ellos */
+    align-items: stretch; /* Estira los botones al 100% */
+}
+
+#visibility-mode-container .btn {
+    width: 100%;
+}
+}
+
+/* 4. RESPONSIVE (Móvil) */
+
+@media (max-width: 900px) {
+    .dashboard-container {
+        /* El layout ahora es 1 sola columna */
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        /* Oculto fuera de la pantalla */
+        transform: translateX(-100%);
+        z-index: 1000;
+        /* Efecto de superposición */
+        box-shadow: 10px 0 20px rgba(0,0,0,0.3);
+    }
+    
+    .sidebar.open {
+        /* Se muestra al hacer clic en el botón */
+        transform: translateX(0);
+    }
+
+    .main-content {
+        /* Ocupa la única columna */
+        grid-column: 1 / 2;
+    }
+    
+    .mobile-menu-btn {
+        display: block; /* Muestra el botón de hamburguesa */
+    }
+}
+
+/* --- ADMIN.CSS - FASE 3: Estilos de Búsqueda y Resultados --- */
+
+.form-busqueda {
+    /* Reutiliza el estilo del form de alta */
+    background-color: var(--color-bg-dark);
+    padding: 1rem 2rem 0.5rem; /* Menos padding que el de alta */
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    box-shadow: 
+        inset 10px 10px 20px var(--color-shadow-dark),
+        inset -10px -10px 20px var(--color-shadow-light);
+}
+
+/* Oculta las etiquetas obligatorias en la búsqueda */
+.form-busqueda .form-group label::after {
+    content: "";
+}
+
+.resultados-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.card-resultado {
+    background: linear-gradient(145deg, var(--color-bg-light), var(--color-bg-dark));
+    border-radius: 15px;
+    box-shadow: 
+        8px 8px 16px var(--color-shadow-dark),
+        -8px -8px 16px var(--color-shadow-light);
+    display: flex;
+    flex-direction: column;
+}
+
+.card-resultado-header {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem 1.5rem 1rem;
+}
+
+.card-resultado-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid var(--color-bg);
+}
+
+.card-resultado-info {
+    overflow: hidden;
+}
+.card-resultado-info h4 {
+    font-size: 1.2rem;
+    color: var(--color-texto-principal);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.card-resultado-info p {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-texto-secundario);
+}
+.card-resultado-info .tipo-regular { color: #4CAF50; }
+.card-resultado-info .tipo-privado { color: #FFC107; }
+.card-resultado-info .tipo-cerrado { color: #F44336; }
+
+.card-resultado-body {
+    padding: 0 1.5rem 1.5rem;
+    font-size: 0.85rem;
+    color: var(--color-texto-secundario);
+    flex-grow: 1;
+}
+
+.card-resultado-body .data-pair {
+    display: flex;
+    margin-bottom: 0.5rem;
+}
+.card-resultado-body .data-pair strong {
+    color: var(--color-texto-principal);
+    width: 50px; /* Ancho fijo para "Live:" "Tags:" */
+    flex-shrink: 0;
+}
+.card-resultado-body .data-pair span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-resultado-footer {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    margin: 1rem;
+    border-top: 1px solid var(--color-bg-light);
+}
+
+/* Botones en las tarjetas de resultado */
+.btn-card {
+    flex-grow: 1; /* Ocupan el espacio */
+    padding: 0.8rem 0.5rem;
+    font-size: 0.9rem;
+    border-radius: 8px;
+    box-shadow: none; /* Sombra más sutil */
+    background: var(--color-bg);
+}
+
+.btn-card:hover {
+    box-shadow: 
+        3px 3px 6px var(--color-shadow-dark),
+        -3px -3px 6px var(--color-shadow-light);
+}
+
+.btn-card-modificar {
+    color: #448AFF; /* Azul */
+}
+.btn-card-eliminar {
+    color: #F44336; /* Rojo */
+}
+
+/* Estilo para el formulario en "Modo Edición" */
+#form-alta-evento.modo-edicion h3 {
+    color: #FFC107; /* Amarillo */
+}
+
+/* Contenedor para la info de la imagen actual en modo edición */
+.info-imagen-actual {
+    background-color: var(--color-bg);
+    padding: 1rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: var(--color-texto-secundario);
+    border: 1px solid #FFC107;
+}
+.info-imagen-actual strong {
+    color: #FFC107;
+}
+
+/* --- ADMIN.CSS - FASE 4: Estilos del Formulario de Carta --- */
+
+.smart-form-container {
+    /* Contenedor para los campos dinámicos */
+    padding-top: 1rem;
+}
+
+/* Oculta todos los "grupos de campos" por defecto.
+  JS se encargará de mostrar el correcto.
+*/
+.form-fields-group {
+    display: none;
+}
+
+/*
+  Cuando JS le añada la clase "visible", se mostrará 
+  con una suave animación de entrada.
+*/
+.form-fields-group.visible {
+    display: block;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Estilo para los checkboxes (como "Destacado")
+  reutilizando el estilo que ya teníamos.
+*/
+.form-group-checkbox-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    background-color: var(--color-bg);
+    border-radius: 10px;
+}
+.form-group-checkbox-inline input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-primario-rojo);
+}
+.form-group-checkbox-inline label {
+    margin: 0;
+    font-weight: 600;
+    color: var(--color-primario-rojo);
+}
+
+/* --- ADMIN.CSS - FASE 5: Estilos de Visibilidad de Productos --- */
+
+/* Estilo para el "Modo Visibilidad" */
+.resultados-container.visibility-mode .btn-card-modificar {
+    display: none; /* Oculta el botón [Modificar] */
+}
+
+.resultados-container:not(.visibility-mode) .visibility-switch {
+    display: none; /* Oculta el switch por defecto */
+}
+
+/* Estilo para la card "deshabilitada" */
+.card-resultado.deshabilitado {
+    opacity: 0.5;
+    background: var(--color-bg-dark);
+    position: relative;
+    isolation: isolate;
+}
+
+.card-resultado.deshabilitado::after {
+    content: 'DESHABILITADO';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(183, 28, 28, 0.2); /* Rojo Altxerri semi-transparente */
+    z-index: 1; /* Por encima del contenido de la card */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 900;
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 2px;
+}
+
+.card-resultado.deshabilitado .card-resultado-img {
+    filter: grayscale(100%);
+}
+
+.card-resultado.deshabilitado .card-resultado-img {
+    filter: grayscale(100%);
+}
+
+/* Estilo para el Switch (Toggle On/Off) */
+.visibility-switch {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-texto-secundario);
+    font-size: 0.9rem;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+}
+
+.switch input { 
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--color-bg);
+    transition: .4s;
+    z-index: 2;
+    border-radius: 28px;
+    box-shadow: inset 2px 2px 4px var(--color-shadow-dark),
+                inset -2px -2px 4px var(--color-shadow-light);
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: var(--color-texto-secundario);
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--color-primario-rojo);
+    box-shadow: 0 0 5px var(--color-primario-rojo);
+}
+
+input:checked + .slider:before {
+    transform: translateX(22px);
+    background-color: #fff;
+}

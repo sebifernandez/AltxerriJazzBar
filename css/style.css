@@ -525,6 +525,8 @@ body {
     font-weight: bold;
     border-radius: 4px;
     text-align: center;
+    z-index: 3;
+    position: relative;
     transition: all 0.3s ease;
     display: block; /* Ocupa todo el ancho disponible */
 }
@@ -706,6 +708,8 @@ body {
     text-decoration: none;
     font-weight: bold;
     margin: 0 5px;
+    z-index: 3;
+    position: relative;
 }
 
 .special-links a:hover {

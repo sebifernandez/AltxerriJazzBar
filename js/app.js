@@ -18,6 +18,14 @@ async function cargarDatos(lang) {
     }
 }
 
+function formatarPrecio(precio) {
+    // Verifica si el precio es nulo, undefined, string vacío, o 0
+    if (!precio || precio === 0) {
+        return '–'; // Devuelve un guion largo
+    }
+    return `${precio}€`;
+}
+
 /**
  * Genera el HTML del navbar y lo inserta en el DOM.
  * @param {object} textosUI - El objeto 'textosUI' del JSON.
@@ -307,113 +315,26 @@ function renderizarListado(productos, subtitulo, etiquetas, tipoPlantilla) {
 }
 
 /**
- * Función REUTILIZABLE para CADA item de un listado.
- */
-// function renderizarItemLista(item, etiquetas, tipoPlantilla) {
-//     const { etiquetasVino } = etiquetas;
-//     let preciosHtml = '';
-//     let descripcionHtml = '';
-
-//     // 1. Generar el HTML de los precios
-//     switch (tipoPlantilla) {
-//         case 'dosPrecios':
-//             preciosHtml = `
-//                 <div class="listado-item-precios precios-dos">
-//                     <span>${item.precioCana}€</span>
-//                     <span>${item.precioPinta}€</span>
-//                 </div>
-//             `;
-//             break;
-//         case 'vino':
-//             preciosHtml = `
-//                 <div class="listado-item-precios precios-dos">
-//                     <span>${item.precioCopa}€</span>
-//                     <span>${item.precioBotella}€</span>
-//                 </div>
-//             `;
-//             break;
-//         case 'destilado':
-//             preciosHtml = `
-//                 <div class="listado-item-precios precios-dos">
-//                     <span>${item.precioCopa}€</span>
-//                     <span>${item.precioBotella}€</span>
-//                 </div>
-//             `;
-//             break;
-//         case 'unPrecio':
-//             preciosHtml = `
-//                 <div class="listado-item-precios precios-uno">
-//                     <span>${item.precioBotella}€</span>
-//                 </div>
-//             `;
-//             break;
-//     }
-    
-//     // 2. Generar el HTML de la descripción (con lógica especial para Vinos)
-//     if (tipoPlantilla === 'vino') {
-//         // Construimos la línea de datos del vino, omitiendo campos nulos
-//         const datosVino = [
-//             item.productor ? `<strong>${etiquetasVino.bodega}:</strong> ${item.productor}` : '',
-//             item.varietal ? `<strong>${etiquetasVino.varietal}:</strong> ${item.varietal}` : '',
-//             item.ano ? `<strong>${etiquetasVino.ano}:</strong> ${item.ano}` : '',
-//             item.crianza ? `<strong>${etiquetasVino.crianza}:</strong> ${item.crianza}` : ''
-//         ].filter(Boolean).join(' – '); // 'filter(Boolean)' elimina strings vacíos
-
-//         descripcionHtml = `
-//             <div class="listado-item-descripcion-vino">
-//                 <p class="vino-datos">${datosVino}</p>
-//                 <p class="vino-descripcion"><em>${item.descripcion}</em></p>
-//             </div>
-//         `;
-//     } else {
-//         // Para cervezas, destilados, etc. (solo mostramos info si existe)
-//         const datosGenerales = [item.region, item.pais, item.abv ? `${item.abv}% ABV` : '', item.ibu ? `${item.ibu} IBU` : '']
-//             .filter(Boolean).join(' | ');
-            
-//         descripcionHtml = `
-//             <div class="listado-item-descripcion-general">
-//                 ${datosGenerales ? `<p class="datos-generales">${datosGenerales}</p>` : ''}
-//                 <p class="descripcion-general">${item.descripcion}</p>
-//             </div>
-//         `;
-//     }
-
-//     // 3. Ensamblar el item completo
-//     const regionPais = (item.region || item.pais) 
-//         ? `(${[item.region, item.pais].filter(Boolean).join(' – ')})` 
-//         : '';
-
-//     return `
-//         <div class="listado-item">
-//             <div class="listado-item-textos">
-//                 <h4 class="listado-item-titulo">${item.titulo} <span class="titulo-region">${regionPais}</span></h4>
-//                 ${descripcionHtml}
-//             </div>
-//             ${preciosHtml}
-//         </div>
-//     `;
-// }
-
 /**
  * Función REUTILIZABLE para CADA item de un listado.
- * (Versión actualizada para MÓVIL)
+ * (Versión actualizada con formatarPrecio() para arreglar 'null€')
  */
 function renderizarItemLista(item, etiquetas, tipoPlantilla) {
     const { etiquetasPrecio, etiquetasVino } = etiquetas;
     let preciosHtml = '';
     let descripcionHtml = '';
 
-    // 1. Generar el HTML de los precios
+    // 1. Generar el HTML de los precios (¡USANDO LA NUEVA FUNCIÓN!)
     switch (tipoPlantilla) {
         case 'dosPrecios': // Cerveza Barril
             preciosHtml = `
                 <div class="listado-item-precios precios-dos">
                     <span class="precio-item">
-                        ${item.precioCana}€ 
+                        ${formatarPrecio(item.precioCana)} 
                         <span class="precio-etiqueta">(${etiquetasPrecio.cana})</span>
                     </span>
                     <span class="precio-item">
-                        ${item.precioPinta}€ 
+                        ${formatarPrecio(item.precioPinta)} 
                         <span class="precio-etiqueta">(${etiquetasPrecio.pinta})</span>
                     </span>
                 </div>
@@ -423,11 +344,11 @@ function renderizarItemLista(item, etiquetas, tipoPlantilla) {
             preciosHtml = `
                 <div class="listado-item-precios precios-dos">
                     <span class="precio-item">
-                        ${item.precioCopa}€ 
+                        ${formatarPrecio(item.precioCopa)} 
                         <span class="precio-etiqueta">(${etiquetasPrecio.copa})</span>
                     </span>
                     <span class="precio-item">
-                        ${item.precioBotella}€ 
+                        ${formatarPrecio(item.precioBotella)} 
                         <span class="precio-etiqueta">(${etiquetasPrecio.botella})</span>
                     </span>
                 </div>
@@ -437,11 +358,11 @@ function renderizarItemLista(item, etiquetas, tipoPlantilla) {
             preciosHtml = `
                 <div class="listado-item-precios precios-dos">
                     <span class="precio-item">
-                        ${item.precioCopa}€ 
+                        ${formatarPrecio(item.precioCopa)} 
                         <span class="precio-etiqueta">(${etiquetasPrecio.vaso})</span>
                     </span>
                     <span class="precio-item">
-                        ${item.precioBotella}€ 
+                        ${formatarPrecio(item.precioBotella)} 
                         <span class="precio-etiqueta">(${etiquetasPrecio.botella})</span>
                     </span>
                 </div>
@@ -450,12 +371,12 @@ function renderizarItemLista(item, etiquetas, tipoPlantilla) {
         case 'unPrecio':
             preciosHtml = `
                 <div class="listado-item-precios precios-uno">
-                    <span class="precio-item">${item.precioBotella}€</span>
+                    <span class="precio-item">${formatarPrecio(item.precioBotella)}</span>
                 </div>
             `;
             break;
     }
-    
+
     // 2. Generar el HTML de la descripción (sin cambios)
     if (tipoPlantilla === 'vino') {
         const datosVino = [
@@ -474,7 +395,7 @@ function renderizarItemLista(item, etiquetas, tipoPlantilla) {
     } else {
         const datosGenerales = [item.region, item.pais, item.abv ? `${item.abv}% ABV` : '', item.ibu ? `${item.ibu} IBU` : '']
             .filter(Boolean).join(' | ');
-            
+
         descripcionHtml = `
             <div class="listado-item-descripcion-general">
                 ${datosGenerales ? `<p class="datos-generales">${datosGenerales}</p>` : ''}

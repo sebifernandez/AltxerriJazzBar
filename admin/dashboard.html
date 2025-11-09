@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Altxerri CMS</title>
+    <link rel="stylesheet" href="admin.css">
+    <link href='https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css' rel='stylesheet'>
+    <link href='https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/litepicker/dist/css/litepicker.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="../img/altxerrilogo.png" alt="Altxerri Logo" class="admin-logo-sidebar">
+                <span>Altxerri CMS</span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-link active" data-target="dashboard-home">
+                    <i class='bx bxs-dashboard'></i> <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-link" data-target="gestion-eventos">
+                    <i class='bx bxs-calendar-event'></i> <span>Eventos</span>
+                </a>
+                <a href="#" class="nav-link" data-target="gestion-carta">
+                    <i class='bx bxs-drink'></i> <span>Carta</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <a href="index.html" class="nav-link-logout">
+                    <i class='bx bx-log-out'></i> <span>Salir</span>
+                </a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <button id="mobile-menu-btn" class="mobile-menu-btn"><i class='bx bx-menu'></i></button>
+                <h1>Bienvenido</h1>
+            </header>
+            
+            <section id="dashboard-home" class="content-section active">
+                <h2>Dashboard</h2>
+                <p>Selecciona una opción del menú para comenzar a gestionar el contenido.</p>
+                <div class="dashboard-cards">
+                    <div class="dash-card" data-target="gestion-eventos">
+                        <i class='bx bxs-calendar-event'></i>
+                        <h3>Gestionar Eventos</h3>
+                        <p>Crear, modificar o eliminar eventos del carrusel.</p>
+                    </div>
+                    <div class="dash-card" data-target="gestion-carta">
+                        <i class='bx bxs-drink'></i>
+                        <h3>Gestionar Carta</h3>
+                        <p>Editar categorías, productos y precios del menú.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="gestion-eventos" class="content-section">
+                <h2>Gestión de Eventos</h2>
+                <div class="tabs">
+                    <button class="tab-link active" data-tab="alta-evento">Alta</button>
+                    <button class="tab-link" data-tab="mod-evento">Modificación</button>
+                    <button class="tab-link" data-tab="baja-evento">Baja</button>
+                </div>
+                
+<div id="alta-evento" class="tab-content active">
+                    <h3>Crear Nuevo Evento</h3>
+                    
+                    <form id="form-alta-evento" class="form-alta-evento">
+                        
+                        <div class="form-grid">
+
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="evento-fecha">Fecha del Evento *</label>
+                                    <input type="text" id="evento-fecha" class="form-input" placeholder="Haz clic para elegir una fecha..." readonly>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="evento-tipo">Tipo de Evento *</label>
+                                    <select id="evento-tipo" class="form-input">
+                                        <option value="Regular">Evento Regular</option>
+                                        <option value="Privado">Evento Privado</option>
+                                        <option value="Cerrado">Bar Cerrado</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="evento-titulo">Título del Evento *</label>
+                                    <input type="text" id="evento-titulo" class="form-input" placeholder="Ej: Noche de Jazz Clásico">
+                                </div>
+                            </div>
+
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="evento-live">Link "Ver en Vivo" (YouTube)</label>
+                                    <input type="text" id="evento-live" class="form-input" placeholder="Ej: https://youtube.com/live/...">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="evento-concierto">Link "Reviví el Concierto" (Archivo)</label>
+                                    <input type="text" id="evento-concierto" class="form-input" placeholder="Ej: https://youtube.com/watch/...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4>Gestión de Imagen</h4>
+                            
+                            <div class="form-group-checkbox">
+                                <input type="checkbox" id="evento-img-generica">
+                                <label for="evento-img-generica">Usar imagen genérica (imgBandaGenerica.jpg)</label>
+                            </div>
+                            
+                            <fieldset id="fieldset-imagen" class="form-grid">
+                                
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="evento-imagen-upload">Subir Nueva Imagen</label>
+                                        <input type="file" id="evento-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp">
+                                    </div>
+                                    <div class="form-group">
+                                        <button type="button" id="btn-elegir-img" class="btn btn-secondary">
+                                            <i class='bx bx-images'></i> Elegir Imagen Preexistente
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="evento-tags">Referencias de Imagen (Tags) *</label>
+                                        <div class="tag-container" id="tag-container">
+                                            <input type="text" id="evento-tags" placeholder="Escribe y presiona Enter (Ej: Pedro Asnar)...">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                            </fieldset>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary"><i class='bx bxs-save'></i> Guardar Evento</button>
+                        </div>
+
+                    </form>
+                </div>
+                
+                <div id="mod-evento" class="tab-content">
+                    <h3>Modificar un Evento</h3>
+                    
+                    <form class="form-busqueda" id="form-busqueda-mod">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="mod-search-fecha">Buscar por Fecha</label>
+                                <input type="text" id="mod-search-fecha" class="form-input search-input-fecha" placeholder="Clic para elegir fecha...">
+                            </div>
+                            <div class="form-group">
+                                <label for="mod-search-tipo">Buscar por Tipo</label>
+                                <select id="mod-search-tipo" class="form-input">
+                                    <option value="">Todos</option>
+                                    <option value="Regular">Evento Regular</option>
+                                    <option value="Privado">Evento Privado</option>
+                                    <option value="Cerrado">Bar Cerrado</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="mod-search-titulo">Buscar por Título</label>
+                                <input type="text" id="mod-search-titulo" class="form-input" placeholder="Ej: Pedro Asnar...">
+                            </div>
+                            <div class="form-group">
+                                <label for="mod-search-tags">Buscar por Tag (Ref. Imagen)</label>
+                                <input type="text" id="mod-search-tags" class="form-input" placeholder="Ej: Pedrito...">
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <div class="resultados-container" id="mod-resultados-container">
+                        </div>
+                </div>
+                
+                <div id="baja-evento" class="tab-content">
+                    <h3>Eliminar un Evento</h3>
+                    
+                    <form class="form-busqueda" id="form-busqueda-baja">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="baja-search-fecha">Buscar por Fecha</label>
+                                <input type="text" id="baja-search-fecha" class="form-input search-input-fecha" placeholder="Clic para elegir fecha...">
+                            </div>
+                            <div class="form-group">
+                                <label for="baja-search-tipo">Buscar por Tipo</label>
+                                <select id="baja-search-tipo" class="form-input">
+                                    <option value="">Todos</option>
+                                    <option value="Regular">Evento Regular</option>
+                                    <option value="Privado">Evento Privado</option>
+                                    <option value="Cerrado">Bar Cerrado</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="baja-search-titulo">Buscar por Título</label>
+                                <input type="text" id="baja-search-titulo" class="form-input" placeholder="Ej: Pedro Asnar...">
+                            </div>
+                            <div class="form-group">
+                                <label for="baja-search-tags">Buscar por Tag (Ref. Imagen)</label>
+                                <input type="text" id="baja-search-tags" class="form-input" placeholder="Ej: Pedrito...">
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <div class="resultados-container" id="baja-resultados-container">
+                        </div>
+                </div>
+            </section>
+
+<section id="gestion-carta" class="content-section">
+                <h2>Gestión de Carta</h2>
+                <div class="tabs">
+                    <button class="tab-link active" data-tab="alta-producto">Alta de Producto</button>
+                    <button class="tab-link" data-tab="mod-producto">Modificación y Visibilidad</button>
+                </div>
+                
+                <div id="alta-producto" class="tab-content active">
+                    <h3>Crear Nuevo Producto</h3>
+                    
+                    <form id="form-alta-producto" class="form-alta-evento" novalidate> <div class="form-section">
+                            <div class="form-group">
+                                <label for="producto-tipo">1. ¿Qué tipo de producto quieres crear? *</label>
+                                <select id="producto-tipo" class="form-input">
+                                    <option value="">Selecciona un tipo...</option>
+                                    <option value="coctel">Coctel</option>
+                                    <option value="cervezaBarril">Cerveza de Barril</option>
+                                    <option value="cervezaEnvasada">Cerveza Envasada</option>
+                                    <option value="vinoTinto">Vino Tinto</option>
+                                    <option value="vinoBlanco">Vino Blanco</option>
+                                    <option value="vinoOtro">Vino (Otro: Rosado, Espumante, etc.)</option>
+                                    <option value="destilado">Destilado</option>
+                                    <option value="sinAlcohol">Sin Alcohol</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="smart-form-container" class="smart-form-container">
+                            </div>
+
+                        <div id="form-actions-producto" class="form-actions" style="display: none;">
+                            <button type="submit" class="btn btn-primary"><i class='bx bxs-save'></i> Guardar Producto</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div id="mod-producto" class="tab-content">
+                    <h3>Modificar Visibilidad o Producto</h3>
+                    
+                    <form class="form-busqueda" id="form-busqueda-producto">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="prod-search-titulo">Buscar por Título</label>
+                                <input type="text" id="prod-search-titulo" class="form-input" placeholder="Ej: Catena Zapata...">
+                            </div>
+                            <div class="form-group">
+                                <label for="prod-search-tipo">Filtrar por Tipo</label>
+                                <select id="prod-search-tipo" class="form-input">
+                                    <option value="">Todos los Tipos</option>
+                                    <option value="coctel">Coctel</option>
+                                    <option value="cervezaBarril">Cerveza de Barril</option>
+                                    <option value="cervezaEnvasada">Cerveza Envasada</option>
+                                    <option value="vinoTinto">Vino Tinto</option>
+                                    <option value="vinoBlanco">Vino Blanco</option>
+                                    <option value="vinoOtro">Vino (Otro)</option>
+                                    <option value="destilado">Destilado</option>
+                                    <option value="sinAlcohol">Sin Alcohol</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <div class="form-actions" id="visibility-mode-container">
+                        <button type="button" id="btn-toggle-visibility" class="btn btn-secondary">
+                            <i class='bx bx-toggle-left'></i> Activar Modo Visibilidad
+                        </button>
+                        <button type="button" id="btn-confirm-visibility" class="btn btn-primary" style="display: none;">
+                            <i class='bx bxs-save'></i> Confirmar Cambios de Visibilidad
+                        </button>
+                    </div>
+
+                    <div class="resultados-container" id="prod-resultados-container">
+                    </div>
+                </div>
+                
+            </section>
+            
+        </main>
+    </div>
+    
+    <script src="admin.js"></script>
+</body>
+</html>
