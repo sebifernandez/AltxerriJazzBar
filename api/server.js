@@ -2,13 +2,13 @@
 
 // 1. Importar las "piezas"
 const express = require('express');
-const serverless = require('serverless-http'); // El "traductor" para Netlify
-const fs = require('fs'); // ¡NUEVO! Es el "brazo" del robot, le permite LEER archivos.
-const path = require('path'); // ¡NUEVO! Es el "GPS" del robot, para encontrar archivos.
+const serverless = require('serverless-http'); 
+const fs = require('fs'); 
+const path = require('path'); 
 
 // 2. Inicializar el motor
 const app = express();
-app.use(express.json()); // El "Decodificador"
+app.use(express.json()); 
 
 // 3. El "Libro de Recetas" (Router)
 const router = express.Router();
@@ -33,16 +33,13 @@ router.post('/login', (req, res) => {
     }
 });
 
-// --- "RECETA" 2: OBTENER EVENTOS (¡NUEVO!) ---
+// --- "RECETA" 2: OBTENER EVENTOS (¡CON GPS CORREGIDO!) ---
 router.get('/eventos', (req, res) => {
     try {
-        // 1. El "GPS" (path) busca la ruta correcta al "almacén" (data)
-        const filePath = path.join(process.cwd(), 'data', 'eventos.json');
+        // ¡ARREGLO AQUÍ! Usamos "__dirname" para encontrar la ruta
+        const filePath = path.join(__dirname, '..', 'data', 'eventos.json');
         
-        // 2. El "brazo" (fs) lee el archivo
         const data = fs.readFileSync(filePath, 'utf8');
-        
-        // 3. Devolvemos los datos (en formato JSON) al "mozo" (admin.js)
         res.json(JSON.parse(data));
         
     } catch (error) {
@@ -51,17 +48,16 @@ router.get('/eventos', (req, res) => {
     }
 });
 
-// --- "RECETA" 3: OBTENER PRODUCTOS DE LA CARTA (¡NUEVO!) ---
+// --- "RECETA" 3: OBTENER PRODUCTOS (¡CON GPS CORREGIDO!) ---
 router.get('/productos', async (req, res) => {
     try {
-        // Hacemos lo mismo, pero para AMBOS archivos de carta
-        const filePathES = path.join(process.cwd(), 'data', 'carta_es.json');
-        const filePathEN = path.join(process.cwd(), 'data', 'carta_en.json');
+        // ¡ARREGLO AQUÍ! Usamos "__dirname" para encontrar la ruta
+        const filePathES = path.join(__dirname, '..', 'data', 'carta_es.json');
+        const filePathEN = path.join(__dirname, '..', 'data', 'carta_en.json');
 
         const dataES = fs.readFileSync(filePathES, 'utf8');
         const dataEN = fs.readFileSync(filePathEN, 'utf8');
 
-        // Devolvemos un objeto que contiene AMBOS
         res.json({
             es: JSON.parse(dataES),
             en: JSON.parse(dataEN)
@@ -73,11 +69,8 @@ router.get('/productos', async (req, res) => {
     }
 });
 
-// (Aquí pondremos las recetas de "Guardar", "Eliminar", etc.)
-
 
 // 4. Conectamos el libro de recetas a la app
-// (Esta es la línea clave que arreglamos antes)
 app.use('/api', router);
 
 // 5. Exportamos el "enchufe" final
