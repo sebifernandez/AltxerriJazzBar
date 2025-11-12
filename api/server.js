@@ -29,12 +29,11 @@ router.post('/login', (req, res) => {
     }
 });
 
-// --- "RECETA" 2: OBTENER EVENTOS (¡CON RUTA CORREGIDA USANDO __dirname!) ---
+// --- "RECETA" 2: OBTENER EVENTOS (¡NUEVO INTENTO DE RUTA!) ---
 router.get('/eventos', (req, res) => {
     try {
-        // ¡ARREGLO! Usamos "__dirname" que apunta a /api/, 
-        // subimos un nivel ('..'), y entramos a /data/
-        const filePath = path.join(__dirname, '..', 'data', 'eventos.json');
+        // CAMBIO: Asumimos que "data" está empaquetado AL LADO de server.js
+        const filePath = path.join(__dirname, 'data', 'eventos.json');
         
         const data = fs.readFileSync(filePath, 'utf8');
         res.json(JSON.parse(data));
@@ -45,12 +44,12 @@ router.get('/eventos', (req, res) => {
     }
 });
 
-// --- "RECETA" 3: OBTENER PRODUCTOS (¡CON RUTA CORREGIDA USANDO __dirname!) ---
+// --- "RECETA" 3: OBTENER PRODUCTOS (¡NUEVO INTENTO DE RUTA!) ---
 router.get('/productos', async (req, res) => {
     try {
-        // ¡ARREGLO! Usamos "__dirname"
-        const filePathES = path.join(__dirname, '..', 'data', 'carta_es.json');
-        const filePathEN = path.join(__dirname, '..', 'data', 'carta_en.json');
+        // CAMBIO: Asumimos que "data" está empaquetado AL LADO de server.js
+        const filePathES = path.join(__dirname, 'data', 'carta_es.json');
+        const filePathEN = path.join(__dirname, 'data', 'carta_en.json');
 
         const dataES = fs.readFileSync(filePathES, 'utf8');
         const dataEN = fs.readFileSync(filePathEN, 'utf8');

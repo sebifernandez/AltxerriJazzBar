@@ -1,15 +1,15 @@
 /* --- ADMIN.JS - CMS Altxerri --- */
-/* --- VERSIÓN FINAL (CON LÓGICA DE LOGIN INCLUIDA) --- */
+/* --- VERSIÓN FINAL (CON LÓGICA DE LOGIN Y "BOUNCER" DE SEGURIDAD) --- */
 
 // --- Variables Globales ---
-const { DateTime } = luxon; // Usamos Luxon (cargado en el head)
-let adminEventos = []; // Almacén para los eventos cargados desde eventos.json
-let modoEdicion = false; // Flag para saber si el form de Alta está en modo Edición
-let idEventoEdicion = null; // Guarda el ID (fecha/id) del item que estamos editando
+const { DateTime } = luxon; 
+let adminEventos = []; 
+let modoEdicion = false; 
+let idEventoEdicion = null; 
 
-let adminProductos = []; // Almacén para CARTA_ES.JSON
-let adminProductos_EN = []; // Almacén para CARTA_EN.JSON (para modificar)
-let modoVisibilidad = false; // Flag para el modo On/Off de productos
+let adminProductos = []; 
+let adminProductos_EN = []; 
+let modoVisibilidad = false; 
 
 /**
  * Helper para formatear precios.
@@ -34,35 +34,37 @@ function sugerirTraduccion(texto) {
 // --- Inicializador Principal ---
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- ¡ARREGLO! LÓGICA DE LOGIN (Paso 2.2) AÑADIDA ---
+    // --- ¡NUEVO! "PORTERO" (BOUNCER) DE SEGURIDAD ---
+    // Esta lógica decide si estamos en el LOGIN o en el DASHBOARD
     const loginForm = document.querySelector('.login-form');
-    if (loginForm) {
-        const errorMessage = document.getElementById('login-error');
+    const dashboardContainer = document.querySelector('.dashboard-container');
 
+    if (loginForm) {
+        // --- ESTAMOS EN LA PÁGINA DE LOGIN (index.html) ---
+        
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault(); 
 
+            const errorMessage = document.getElementById('login-error');
             errorMessage.textContent = 'Verificando...';
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
             try {
-                // ¡El "PASE"! El mozo llama a la cocina (/api/login)
                 const response = await fetch('/api/login', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username, password }) // La "orden"
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }) 
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    // ¡Éxito! La cocina dijo "OK". Vamos al dashboard.
+                    // ¡ÉXITO! Creamos el "ticket" de sesión en el navegador
+                    localStorage.setItem('altxerri_auth', 'true');
+                    // Redirigimos al dashboard
                     window.location.href = 'dashboard.html';
                 } else {
-                    // ¡Fallo! La cocina dijo "Error".
                     errorMessage.textContent = data.message;
                 }
             } catch (error) {
@@ -70,25 +72,44 @@ document.addEventListener('DOMContentLoaded', () => {
                 errorMessage.textContent = 'Error de conexión. Intenta de nuevo.';
             }
         });
-    }
-    // --- FIN DEL ARREGLO DE LOGIN ---
+    } 
+    else if (dashboardContainer) {
+        // --- ESTAMOS EN LA PÁGINA DE DASHBOARD (dashboard.html) ---
 
+        // 1. Revisar el "ticket"
+        if (localStorage.getItem('altxerri_auth') !== 'true') {
+            // ¡No hay ticket! Lo echamos al login.
+            alert("Acceso denegado. Por favor, inicia sesión.");
+            window.location.href = 'index.html';
+            return; // Detiene la ejecución de todo lo demás
+        }
 
-    // --- Lógica FASE 1: Navegación Base ---
-    const sidebar = document.getElementById('sidebar');
-    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-    const navLinks = document.querySelectorAll('.nav-link');
-    const contentSections = document.querySelectorAll('.content-section');
-    const tabLinks = document.querySelectorAll('.tab-link');
-    const dashCards = document.querySelectorAll('.dash-card');
+        // 2. Lógica del botón "Salir"
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Destruye el "ticket"
+                localStorage.removeItem('altxerri_auth');
+                // Lo manda al login
+                window.location.href = 'index.html';
+            });
+        }
 
-    if (mobileMenuBtn) {
-        mobileMenuBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-        });
-    }
+        // --- Lógica FASE 1: Navegación Base ---
+        const sidebar = document.getElementById('sidebar');
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const contentSections = document.querySelectorAll('.content-section');
+        const tabLinks = document.querySelectorAll('.tab-link');
+        const dashCards = document.querySelectorAll('.dash-card');
 
-    if(navLinks.length > 0) { // Solo ejecutar si estamos en el dashboard
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+            });
+        }
+
         navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -110,18 +131,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
-    }
-    
-    if(dashCards.length > 0) { // Solo ejecutar si estamos en el dashboard
+        
         dashCards.forEach(card => {
             card.addEventListener('click', () => {
                 const targetId = card.getAttribute('data-target');
                 document.querySelector(`.nav-link[data-target="${targetId}"]`).click();
             });
         });
-    }
 
-    if(tabLinks.length > 0) { // Solo ejecutar si estamos en el dashboard
         tabLinks.forEach(link => {
             link.addEventListener('click', () => {
                 const targetId = link.getAttribute('data-tab');
@@ -145,30 +162,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
-    }
-    
-    // --- Lógica FASE 2: Formulario de Alta Eventos ---
-    const formAlta = document.getElementById('form-alta-evento');
-    if (formAlta) {
-        inicializarFormularioAlta();
-    }
-    
-    // --- Lógica FASE 3: Búsqueda Eventos ---
-    // (Solo cargamos datos si estamos en el dashboard)
-    if (document.getElementById('form-busqueda-mod')) {
+        
+        // --- Lógica FASE 2: Formulario de Alta Eventos ---
+        const formAlta = document.getElementById('form-alta-evento');
+        if (formAlta) {
+            inicializarFormularioAlta();
+        }
+        
+        // --- Lógica FASE 3: Búsqueda Eventos ---
         fetchEventosData();
         inicializarPanelesBusquedaEventos();
-    }
-    
-    // --- Lógica FASE 4/5/6: Formulario de Alta Carta ---
-    const formAltaProducto = document.getElementById('form-alta-producto');
-    if (formAltaProducto) {
-        inicializarFormularioCarta();
-    }
+        
+        // --- Lógica FASE 4/5/6: Formulario de Alta Carta ---
+        const formAltaProducto = document.getElementById('form-alta-producto');
+        if (formAltaProducto) {
+            inicializarFormularioCarta();
+        }
 
-    // --- Lógica FASE 5/6: Búsqueda Carta ---
-    // (Solo cargamos datos si estamos en el dashboard)
-    if (document.getElementById('form-busqueda-producto')) {
+        // --- Lógica FASE 5/6: Búsqueda Carta ---
         fetchProductosData();
         inicializarPanelesBusquedaProductos();
     }
@@ -332,6 +343,7 @@ function esURLValida(string) {
 
 function resetearFormularioAlta() {
     const form = document.getElementById('form-alta-evento');
+    if (!form) return;
     form.reset();
     tags = [];
     renderizarTags();
@@ -359,15 +371,12 @@ function resetearFormularioAlta() {
 
 async function fetchEventosData() {
     try {
-        // ¡CAMBIO! Ahora llamamos a nuestra API (el Backend)
         const response = await fetch('/api/eventos');
         if (!response.ok) {
             throw new Error('No se pudo cargar eventos.json desde la API');
         }
-        // ¡CAMBIO! La API ya nos da el JSON directamente
         adminEventos = await response.json(); 
-
-        adminEventos.forEach((ev, index) => ev.id = ev.id || ev.fecha || `evt_${index}`);
+        adminEventos.forEach((ev, index) => ev.id = ev.id || ev.fecha || `evt_${index}`); 
         renderizarResultadosEventos();
     } catch (error) {
         console.error(error);
@@ -410,7 +419,6 @@ function inicializarPanelesBusquedaEventos() {
 }
 
 function renderizarResultadosEventos() {
-    // Si no estamos en el dashboard, no hacer nada
     const contenedorMod = document.getElementById('mod-resultados-container');
     const contenedorBaja = document.getElementById('baja-resultados-container');
     if (!contenedorMod || !contenedorBaja) return;
@@ -583,9 +591,7 @@ function prellenarFormularioModEvento(evento) {
 // --- FASE 4/5/6: LÓGICA COMPLETA DE "CARTA" (BILINGÜE v2.0) ---
 // -----------------------------------------------------------------
 
-// --- Plantillas HTML para el "Smart Form" Bilingüe (v2.0) ---
 const plantillasBloques = {
-    // --- Bloques de DATOS ÚNICOS (No se traducen) ---
     unicos_titulo_marca: `
         <div class="form-group">
             <label for="producto-titulo">Título / Nombre (Marca) *</label>
@@ -707,7 +713,6 @@ const plantillasBloques = {
             <label for="producto-destacado">Marcar como "Vino Destacado de la Semana"</label>
         </div>`,
 
-    // --- Bloques de DATOS TRADUCIBLES (ES) ---
     trad_es_titulo: `
         <div class="form-group">
             <label for="producto-titulo-es">Título (ES) *</label>
@@ -750,7 +755,6 @@ const plantillasBloques = {
         </div>`,
 
     
-    // --- Bloques de DATOS TRADUCIBLES (EN) ---
     trad_en_titulo: `
         <div class="form-group">
             <label for="producto-titulo-en">Título (EN) *</label>
@@ -792,7 +796,6 @@ const plantillasBloques = {
             <input type="text" id="producto-crianza-en" class="form-input" placeholder="Ej: In new barrels...">
         </div>`,
     
-    // --- Bloque Contenedor Bilingüe ---
     bilingue_wrapper: (html_es, html_en) => `
         <div class="form-section-bilingue">
             <div class="lang-tabs">
@@ -813,9 +816,7 @@ const plantillasBloques = {
         </div>`
 };
 
-// --- AHORA CONSTRUIMOS LAS PLANTILLAS USANDO LOS BLOQUES ---
 const plantillasFormCarta = {
-    // --- Títulos Traducibles (Genéricos) ---
     coctel: `
         <div class="form-section">
             <h4>Datos Únicos (No se traducen)</h4>
@@ -838,7 +839,6 @@ const plantillasFormCarta = {
         )}
     `,
     
-    // --- Títulos Únicos (De Marca) ---
     cervezaBarril: `
         <div class="form-section">
             <h4>Datos Únicos (No se traducen)</h4>
@@ -873,7 +873,6 @@ const plantillasFormCarta = {
             ${plantillasBloques.unicos_imagen_vino}
         </div>
         ${plantillasBloques.bilingue_wrapper(
-            // (Mod #1) 'crianza' movido a traducibles
             plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_varietal_vino + plantillasBloques.trad_es_crianza_vino + plantillasBloques.trad_es_descripcion,
             plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_varietal_vino + plantillasBloques.trad_en_crianza_vino + plantillasBloques.trad_en_descripcion
         )}
@@ -886,7 +885,6 @@ const plantillasFormCarta = {
             ${plantillasBloques.unicos_destilado_datos}
         </div>
         ${plantillasBloques.bilingue_wrapper(
-            // (Mod #1) 'crianza' movido a traducibles
             plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_crianza_destilado + plantillasBloques.trad_es_descripcion,
             plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_crianza_destilado + plantillasBloques.trad_en_descripcion
         )}
@@ -1047,12 +1045,11 @@ function activarLogicaBilingue(visibleGroup) {
             const langGroupEN = visibleGroup.querySelector('.lang-content[data-lang-content="en"]');
 
             // --- ¡ARREGLO 2! (Añadimos 'pais') ---
-            // Lista de todos los campos a traducir
             const campos = ['titulo', 'descripcion', 'region', 'pais', 'varietal', 'crianza'];
             
             campos.forEach(campo => {
-                const inputES = langGroupES.querySelector(`[id$="-${campo}-es"]`); // Busca ej: producto-titulo-es
-                const inputEN = langGroupEN.querySelector(`[id$="-${campo}-en"]`); // Busca ej: producto-titulo-en
+                const inputES = langGroupES.querySelector(`[id$="-${campo}-es"]`); 
+                const inputEN = langGroupEN.querySelector(`[id$="-${campo}-en"]`); 
                 
                 if (inputES && inputEN && inputES.value) {
                     // Solo traduce si el campo EN está vacío
@@ -1067,6 +1064,7 @@ function activarLogicaBilingue(visibleGroup) {
 
 function resetearFormularioCarta() {
     const form = document.getElementById('form-alta-producto');
+    if (!form) return;
     form.reset();
     
     document.getElementById('smart-form-container').querySelectorAll('.form-fields-group').forEach(group => {
@@ -1098,20 +1096,17 @@ function resetearFormularioCarta() {
 
 async function fetchProductosData() {
     try {
-        // ¡CAMBIO! Llamamos a la nueva API de productos
         const response = await fetch('/api/productos');
-
+        
         if (!response.ok) {
             throw new Error('No se pudo cargar los archivos de carta desde la API.');
         }
-
-        // ¡CAMBIO! La API nos devuelve un objeto { es: ..., en: ... }
+        
         const data = await response.json(); 
-
+        
         adminProductos = data.es.productos; 
-        adminProductos_EN = data.en.productos;
-
-        // Asignamos IDs únicos
+        adminProductos_EN = data.en.productos; 
+        
         adminProductos.forEach((prod, index) => {
             const id = prod.id || `prod_${prod.titulo.replace(/\s/g, '_')}_${index}`;
             prod.id = id;
@@ -1119,9 +1114,9 @@ async function fetchProductosData() {
                 adminProductos_EN[index].id = id;
             }
         });
-
+        
         renderizarResultadosProductos();
-
+        
     } catch (error) {
         console.error(error);
         alert("Error fatal: No se pudieron cargar los datos de la carta.");
@@ -1135,7 +1130,6 @@ function inicializarPanelesBusquedaProductos() {
         input.addEventListener(eventType, renderizarResultadosProductos);
     });
 
-    // Lógica del "Modo Visibilidad"
     const btnToggle = document.getElementById('btn-toggle-visibility');
     const btnConfirm = document.getElementById('btn-confirm-visibility');
     const container = document.getElementById('prod-resultados-container');
@@ -1200,6 +1194,10 @@ function inicializarPanelesBusquedaProductos() {
 }
 
 function renderizarResultadosProductos() {
+    // Si no estamos en el dashboard, no hacer nada
+    const contenedor = document.getElementById('prod-resultados-container');
+    if (!contenedor) return;
+
     const filtros = {
         titulo: document.getElementById('prod-search-titulo').value.toLowerCase(),
         tipo: document.getElementById('prod-search-tipo').value,
@@ -1211,7 +1209,6 @@ function renderizarResultadosProductos() {
         return checkTitulo && checkTipo;
     });
 
-    const contenedor = document.getElementById('prod-resultados-container');
     contenedor.innerHTML = eventosFiltrados.map(prod => crearTarjetaResultadoProducto(prod)).join('');
 }
 
