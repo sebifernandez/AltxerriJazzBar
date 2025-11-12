@@ -1,10 +1,7 @@
 [build]
-  # Esto le dice a Netlify dónde están nuestras "funciones" de backend
   functions = "api/"
 
 [[redirects]]
-  # Esto es la magia.
-  # Redirige cualquier llamada a "/api/..." a nuestro "motor" (el backend).
   from = "/api/*"
-  to = "/.netlify/functions/server/:splat"
+  to = "/.netlify/functions/server"
   status = 200
