@@ -359,16 +359,19 @@ function resetearFormularioAlta() {
 
 async function fetchEventosData() {
     try {
-        const response = await fetch('../data/eventos.json');
+        // ¡CAMBIO! Ahora llamamos a nuestra API (el Backend)
+        const response = await fetch('/api/eventos');
         if (!response.ok) {
-            throw new Error('No se pudo cargar eventos.json');
+            throw new Error('No se pudo cargar eventos.json desde la API');
         }
-        adminEventos = await response.json();
-        adminEventos.forEach((ev, index) => ev.id = ev.id || ev.fecha || `evt_${index}`); 
+        // ¡CAMBIO! La API ya nos da el JSON directamente
+        adminEventos = await response.json(); 
+
+        adminEventos.forEach((ev, index) => ev.id = ev.id || ev.fecha || `evt_${index}`);
         renderizarResultadosEventos();
     } catch (error) {
         console.error(error);
-        // alert("Error fatal: No se pudieron cargar los datos de los eventos.");
+        alert("Error fatal: No se pudieron cargar los datos de los eventos.");
     }
 }
 
@@ -1095,19 +1098,19 @@ function resetearFormularioCarta() {
 
 async function fetchProductosData() {
     try {
-        const resES = await fetch('../data/carta_es.json');
-        const resEN = await fetch('../data/carta_en.json');
-        
-        if (!resES.ok || !resEN.ok) {
-            throw new Error('No se pudo cargar uno o ambos archivos de carta.');
+        // ¡CAMBIO! Llamamos a la nueva API de productos
+        const response = await fetch('/api/productos');
+
+        if (!response.ok) {
+            throw new Error('No se pudo cargar los archivos de carta desde la API.');
         }
-        
-        const dataES = await resES.json();
-        const dataEN = await resEN.json(); 
-        
-        adminProductos = dataES.productos; 
-        adminProductos_EN = dataEN.productos; // Guardamos los datos en inglés
-        
+
+        // ¡CAMBIO! La API nos devuelve un objeto { es: ..., en: ... }
+        const data = await response.json(); 
+
+        adminProductos = data.es.productos; 
+        adminProductos_EN = data.en.productos;
+
         // Asignamos IDs únicos
         adminProductos.forEach((prod, index) => {
             const id = prod.id || `prod_${prod.titulo.replace(/\s/g, '_')}_${index}`;
@@ -1116,9 +1119,9 @@ async function fetchProductosData() {
                 adminProductos_EN[index].id = id;
             }
         });
-        
+
         renderizarResultadosProductos();
-        
+
     } catch (error) {
         console.error(error);
         alert("Error fatal: No se pudieron cargar los datos de la carta.");

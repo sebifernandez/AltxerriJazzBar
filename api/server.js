@@ -3,57 +3,82 @@
 // 1. Importar las "piezas"
 const express = require('express');
 const serverless = require('serverless-http'); // El "traductor" para Netlify
+const fs = require('fs'); // ¡NUEVO! Es el "brazo" del robot, le permite LEER archivos.
+const path = require('path'); // ¡NUEVO! Es el "GPS" del robot, para encontrar archivos.
 
 // 2. Inicializar el motor
 const app = express();
+app.use(express.json()); // El "Decodificador"
 
-// 3. ¡MUY IMPORTANTE! El "Decodificador"
-// Esto le dice a Express que entienda los "pedidos" (requests) 
-// que le enviamos en formato JSON desde el admin.
-app.use(express.json());
-
-// 4. El "Libro de Recetas" (Router)
-// Es una buena práctica poner todas nuestras rutas de API aquí.
+// 3. El "Libro de Recetas" (Router)
 const router = express.Router();
 
-// 5. NUESTRA PRIMERA RUTA: El Login
-// Cuando el "mozo" (admin.js) llame a "/api/login" con un POST...
+// --- "RECETA" 1: LOGIN (La que ya teníamos) ---
 router.post('/login', (req, res) => {
     try {
-        // A. Recibimos el "pedido" (el usuario y pass que mandó el admin)
         const { username, password } = req.body;
-
-        // B. Buscamos en la "Caja Fuerte" (Variables de Entorno)
-        // process.env es la "caja fuerte" secreta de Netlify.
         const adminUser = process.env.CMS_USER;
         const adminPass = process.env.CMS_PASSWORD;
 
-        // C. Comparamos
         if (username === adminUser && password === adminPass) {
-            // ¡Éxito! Coinciden.
             console.log("Login exitoso para:", username);
-            // Le respondemos al "mozo" (admin.js) con un OK.
             res.json({ success: true, message: 'Login correcto' });
         } else {
-            // ¡Fallo! No coinciden.
             console.log("Login fallido para:", username);
-            // Le respondemos al "mozo" con un error.
             res.status(401).json({ success: false, message: 'Usuario o contraseña incorrectos' });
         }
     } catch (error) {
-        // Si algo explota (ej. no están definidas las variables)
         console.error("Error en /login:", error);
         res.status(500).json({ success: false, message: 'Error interno del servidor' });
     }
 });
 
-// (Aquí, en el futuro, agregaremos más "recetas": /crear-evento, /eliminar-producto, etc.)
+// --- "RECETA" 2: OBTENER EVENTOS (¡NUEVO!) ---
+router.get('/eventos', (req, res) => {
+    try {
+        // 1. El "GPS" (path) busca la ruta correcta al "almacén" (data)
+        const filePath = path.join(process.cwd(), 'data', 'eventos.json');
+        
+        // 2. El "brazo" (fs) lee el archivo
+        const data = fs.readFileSync(filePath, 'utf8');
+        
+        // 3. Devolvemos los datos (en formato JSON) al "mozo" (admin.js)
+        res.json(JSON.parse(data));
+        
+    } catch (error) {
+        console.error("Error en GET /eventos:", error);
+        res.status(500).json({ success: false, message: 'Error al leer eventos.json' });
+    }
+});
 
-// 6. Conectamos el libro de recetas a la app
-// Le decimos a Express que todas nuestras rutas empiezan con "/api"
-// (Esto es por el redirect de netlify.toml)
+// --- "RECETA" 3: OBTENER PRODUCTOS DE LA CARTA (¡NUEVO!) ---
+router.get('/productos', async (req, res) => {
+    try {
+        // Hacemos lo mismo, pero para AMBOS archivos de carta
+        const filePathES = path.join(process.cwd(), 'data', 'carta_es.json');
+        const filePathEN = path.join(process.cwd(), 'data', 'carta_en.json');
+
+        const dataES = fs.readFileSync(filePathES, 'utf8');
+        const dataEN = fs.readFileSync(filePathEN, 'utf8');
+
+        // Devolvemos un objeto que contiene AMBOS
+        res.json({
+            es: JSON.parse(dataES),
+            en: JSON.parse(dataEN)
+        });
+
+    } catch (error) {
+        console.error("Error en GET /productos:", error);
+        res.status(500).json({ success: false, message: 'Error al leer carta_es.json o carta_en.json' });
+    }
+});
+
+// (Aquí pondremos las recetas de "Guardar", "Eliminar", etc.)
+
+
+// 4. Conectamos el libro de recetas a la app
+// (Esta es la línea clave que arreglamos antes)
 app.use('/api', router);
 
-// 7. Exportamos el "enchufe" final
-// "Traducimos" nuestra app Express para que Netlify la entienda.
+// 5. Exportamos el "enchufe" final
 module.exports.handler = serverless(app);
