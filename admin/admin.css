@@ -901,3 +901,123 @@ input:checked + .slider:before {
     transform: translateX(22px);
     background-color: #fff;
 }
+
+/* --- ADMIN.CSS - FASE 6: Estilos del Formulario Bilingüe --- */
+
+.form-section-bilingue {
+    /* Contenedor para los datos traducibles */
+    margin-top: 1.5rem;
+}
+
+.lang-tabs {
+    display: flex;
+    margin-bottom: 1.5rem;
+    background-color: var(--color-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    padding: 0.25rem;
+    max-width: 300px;
+    box-shadow: 
+        inset 5px 5px 10px var(--color-shadow-dark),
+        inset -5px -5px 10px var(--color-shadow-light);
+}
+
+.lang-tab-btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--color-texto-secundario);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+}
+
+.lang-tab-btn.active {
+    background-color: var(--color-bg-light);
+    color: var(--color-texto-principal);
+    box-shadow: 
+        5px 5px 10px var(--color-shadow-dark),
+        -5px -5px 10px var(--color-shadow-light);
+}
+
+.lang-content {
+    display: none; /* Oculto por defecto */
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.lang-content.active {
+    display: block; /* Visible */
+}
+
+/* El botón de "Sugerir Traducción" */
+.btn-translate {
+    background: none;
+    border: 1px solid var(--color-primario-rojo);
+    color: var(--color-primario-rojo);
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: -0.5rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+.btn-translate:hover {
+    opacity: 1;
+    background: var(--color-primario-rojo);
+    color: #fff;
+}
+
+
+/* En Desktop, usamos 2 columnas para el formulario bilingüe */
+@media (min-width: 901px) {
+    .form-bilingue-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    
+    /* Ocultamos las pestañas ES/EN en desktop */
+    .lang-tabs {
+        display: none;
+    }
+    
+    /* Mostramos AMBOS contenidos (ES y EN) uno al lado del otro */
+    .lang-content {
+        display: block;
+        opacity: 1;
+        animation: none;
+    }
+    
+    /* Añadimos títulos a las columnas */
+    .lang-col-es::before {
+        content: 'Español';
+        display: block;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--color-texto-principal);
+        margin-bottom: 1.5rem;
+    }
+    .lang-col-en::before {
+        content: 'Inglés';
+        display: block;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--color-texto-principal);
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* --- ADMIN.CSS - FASE FINAL (Bilingüe v2) --- */
+
+/* En móvil, oculta el botón de traducir si no es la pestaña de EN */
+@media (max-width: 900px) {
+    .lang-content[data-lang-content="es"] .btn-translate {
+        display: none;
+    }
+}

@@ -1,23 +1,42 @@
 /* --- ADMIN.JS - CMS Altxerri --- */
-/* --- FASES 1, 2, 3, 4 y 5 INTEGRADAS --- */
+/* --- VERSIÓN FINAL (CON CORRECCIÓN BUGS "undefined" y "pais") --- */
 
 // --- Variables Globales ---
 const { DateTime } = luxon; // Usamos Luxon (cargado en el head)
 let adminEventos = []; // Almacén para los eventos cargados desde eventos.json
 let modoEdicion = false; // Flag para saber si el form de Alta está en modo Edición
-let idEventoEdicion = null; // Guarda el ID (fecha) del evento que estamos editando
+let idEventoEdicion = null; // Guarda el ID (fecha/id) del item que estamos editando
 
-// --- NUEVO FASE 5 ---
-let adminProductos = []; // Almacén para los productos de carta.json
+let adminProductos = []; // Almacén para CARTA_ES.JSON
+let adminProductos_EN = []; // Almacén para CARTA_EN.JSON (para modificar)
 let modoVisibilidad = false; // Flag para el modo On/Off de productos
 
+/**
+ * Helper para formatear precios.
+ * Si el precio es nulo, vacío o 0, devuelve un guion.
+ * Si no, le añade el símbolo "€".
+ */
 function formatarPrecio(precio) {
-    // Verifica si el precio es nulo, undefined, string vacío, o 0
     if (!precio || precio === 0) {
         return '–'; // Devuelve un guion largo
     }
     return `${precio}€`;
 }
+
+/**
+ * Helper de Traducción (Simulación Gratuita)
+ * Copia el texto de ES a EN.
+ */
+function sugerirTraduccion(texto) {
+    if (!texto) return "";
+    console.log("Simulando traducción... (en el futuro, esto llamará a una API)");
+    
+    // --- ¡ARREGLO 1! ---
+    // Devuelve el texto original como placeholder.
+    // (Faltaba esta línea, por eso devolvía 'undefined')
+    return texto; 
+}
+
 
 // --- Inicializador Principal ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -28,7 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.nav-link');
     const contentSections = document.querySelectorAll('.content-section');
     const tabLinks = document.querySelectorAll('.tab-link');
-    const tabContents = document.querySelectorAll('.tab-content');
     const dashCards = document.querySelectorAll('.dash-card');
 
     if (mobileMenuBtn) {
@@ -81,11 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             
-            // (dentro del bucle tabLinks.forEach)
             if (targetId === 'alta-evento' && !modoEdicion) {
                 resetearFormularioAlta();
             }
-            // --- NUEVO FASE 5 (CON ARREGLO) ---
             if (targetId === 'alta-producto' && !modoEdicion) {
                 resetearFormularioCarta();
             }
@@ -102,13 +118,13 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchEventosData();
     inicializarPanelesBusquedaEventos();
     
-    // --- Lógica FASE 4: Formulario de Alta Carta ---
+    // --- Lógica FASE 4/5/6: Formulario de Alta Carta ---
     const formAltaProducto = document.getElementById('form-alta-producto');
     if (formAltaProducto) {
         inicializarFormularioCarta();
     }
 
-    // --- Lógica FASE 5: Búsqueda Carta ---
+    // --- Lógica FASE 5/6: Búsqueda Carta ---
     fetchProductosData();
     inicializarPanelesBusquedaProductos();
 });
@@ -116,10 +132,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // -----------------------------------------------------------------
 // --- FASE 2: LÓGICA DEL FORMULARIO DE ALTA (EVENTOS) ---
+// (Esta sección no se toca, ya funciona)
 // -----------------------------------------------------------------
 
-let tags = []; // Almacén temporal para los tags
-let picker; // Hacemos el picker global para poder acceder a él
+let tags = []; 
+let picker; 
 
 function inicializarFormularioAlta() {
     
@@ -130,7 +147,6 @@ function inicializarFormularioAlta() {
     const inputTag = document.getElementById('evento-tags');
     const tagContainer = document.getElementById('tag-container');
     
-    // --- 2. Lógica del Calendario (Litepicker) ---
     picker = new Litepicker({
         element: inputFecha,
         format: 'YYYY-MM-DD',
@@ -153,7 +169,6 @@ function inicializarFormularioAlta() {
         }
     });
 
-    // --- 3. Lógica del Checkbox "Imagen Genérica" ---
     checkGenerica.addEventListener('change', () => {
         fieldsetImagen.disabled = checkGenerica.checked;
         if (checkGenerica.checked) {
@@ -163,7 +178,6 @@ function inicializarFormularioAlta() {
         }
     });
 
-    // --- 4. Lógica del Input de Tags (Opción A) ---
     inputTag.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ',') {
             e.preventDefault(); 
@@ -184,11 +198,9 @@ function inicializarFormularioAlta() {
         }
     });
     
-    // --- 5. Lógica de Envío del Formulario (Submit) ---
     form.addEventListener('submit', (e) => {
         e.preventDefault(); 
         
-        // --- A. Recopilación de Datos ---
         const eventoData = {
             fecha: document.getElementById('evento-fecha').value,
             tipoEvento: document.getElementById('evento-tipo').value,
@@ -200,7 +212,6 @@ function inicializarFormularioAlta() {
             imgReferencia: tags
         };
 
-        // --- B. Validación de Campos ---
         if (!eventoData.fecha || !eventoData.tipoEvento || !eventoData.titulo) {
             alert("Error: 'Fecha', 'Tipo de Evento' y 'Título' son campos obligatorios.");
             return;
@@ -221,14 +232,13 @@ function inicializarFormularioAlta() {
                     return;
                 }
             } else if (modoEdicion) {
-                const eventoOriginal = adminEventos.find(ev => ev.fecha === idEventoEdicion);
+                const eventoOriginal = adminEventos.find(ev => ev.id === idEventoEdicion);
                 imagenNombre = eventoOriginal.imagen || "imgBandaGenerica.jpg";
             }
         }
         
-        // --- C. Construcción del Objeto JSON Final ---
         const eventoFinal = {
-            id: modoEdicion ? idEventoEdicion : `evt_${Date.now()}`, // Usamos ID único
+            id: modoEdicion ? idEventoEdicion : `evt_${Date.now()}`,
             fecha: eventoData.fecha,
             tipoEvento: eventoData.tipoEvento,
             imagen: imagenNombre,
@@ -238,7 +248,6 @@ function inicializarFormularioAlta() {
             concierto: eventoData.concierto
         };
 
-        // --- D. Simulación de Guardado (Alta o Modificación) ---
         if (modoEdicion) {
             console.log("MODIFICANDO EVENTO (ID Original: " + idEventoEdicion + ")", JSON.stringify(eventoFinal, null, 2));
             alert("¡Evento Modificado con Éxito! (Simulación)");
@@ -252,17 +261,13 @@ function inicializarFormularioAlta() {
             alert("¡Evento Creado con Éxito! (Simulación)");
         }
         
-        fetchEventosData(); // Actualizar la data local y recargar las listas
+        fetchEventosData(); 
         resetearFormularioAlta();
     });
 }
 
-// --- Funciones Helper de Formulario (Fase 2) ---
-
 function renderizarTags() {
     const tagContainer = document.getElementById('tag-container');
-    const inputTag = document.getElementById('evento-tags');
-    
     tagContainer.querySelectorAll('.tag-item').forEach(tagEl => tagEl.remove());
     tags.slice().reverse().forEach(tagTexto => {
         const tagEl = document.createElement('span');
@@ -292,26 +297,31 @@ function resetearFormularioAlta() {
     modoEdicion = false;
     idEventoEdicion = null;
     form.classList.remove('modo-edicion');
-    form.querySelector('h3').textContent = "Crear Nuevo Evento";
+    
+    const tabContent = form.closest('.tab-content');
+    if (tabContent) { 
+        tabContent.querySelector('h3').textContent = "Crear Nuevo Evento";
+    }
+    
     form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
     
     const infoImg = document.getElementById('info-img-actual');
     if (infoImg) infoImg.remove();
 }
 
-
 // -----------------------------------------------------------------
 // --- FASE 3: LÓGICA DE BÚSQUEDA Y RESULTADOS (EVENTOS) ---
+// (Esta sección no se toca, ya funciona)
 // -----------------------------------------------------------------
 
 async function fetchEventosData() {
     try {
-        // Usamos ../ para subir un nivel desde la carpeta /admin/
         const response = await fetch('../data/eventos.json');
         if (!response.ok) {
             throw new Error('No se pudo cargar eventos.json');
         }
         adminEventos = await response.json();
+        adminEventos.forEach((ev, index) => ev.id = ev.id || ev.fecha || `evt_${index}`); // Asegura IDs
         renderizarResultadosEventos();
     } catch (error) {
         console.error(error);
@@ -391,8 +401,8 @@ function filtrarEventos(filtros) {
 function crearTarjetaResultadoEvento(evento, tipoAccion) {
     const esModificar = tipoAccion === 'modificar';
     const botonHtml = esModificar
-        ? `<button class="btn btn-card btn-card-modificar" data-id="${evento.fecha}"><i class='bx bxs-pencil'></i> Modificar</button>`
-        : `<button class="btn btn-card btn-card-eliminar" data-id="${evento.fecha}"><i class='bx bxs-trash'></i> Eliminar</button>`;
+        ? `<button class="btn btn-card btn-card-modificar" data-id="${evento.id}"><i class='bx bxs-pencil'></i> Modificar</button>`
+        : `<button class="btn btn-card btn-card-eliminar" data-id="${evento.id}"><i class='bx bxs-trash'></i> Eliminar</button>`;
 
     const tipoClase = `tipo-${evento.tipoEvento.toLowerCase()}`;
     const imgRuta = (evento.imagen && evento.imagen !== "imgBandaGenerica.jpg") 
@@ -400,7 +410,7 @@ function crearTarjetaResultadoEvento(evento, tipoAccion) {
         : `../img/imgBandaGenerica.jpg`; 
 
     return `
-    <div class="card-resultado" id="evento-card-${evento.fecha}">
+    <div class="card-resultado" id="evento-card-${evento.id}">
         <div class="card-resultado-header">
             <img src="${imgRuta}" alt="${evento.titulo}" class="card-resultado-img">
             <div class="card-resultado-info">
@@ -432,7 +442,7 @@ function manejarClickTarjetaEvento(e, accion) {
     if (!boton) return; 
     
     const idEvento = boton.getAttribute('data-id');
-    const evento = adminEventos.find(ev => ev.fecha === idEvento);
+    const evento = adminEventos.find(ev => ev.id === idEvento);
     if (!evento) {
         alert("Error: No se encontró el evento.");
         return;
@@ -459,22 +469,19 @@ function eliminarEvento(evento) {
     console.log("SIMULACIÓN: Enviando a eventosEliminados.json", JSON.stringify(eventoEliminado, null, 2));
     alert(`Evento "${evento.titulo}" eliminado (Simulación).`);
     
-    adminEventos = adminEventos.filter(ev => ev.fecha !== evento.fecha);
+    adminEventos = adminEventos.filter(ev => ev.id !== evento.id);
     renderizarResultadosEventos();
 }
 
 function prellenarFormularioModEvento(evento) {
     modoEdicion = true;
-    idEventoEdicion = evento.fecha; 
+    idEventoEdicion = evento.id; 
     
     const form = document.getElementById('form-alta-evento');
     form.classList.add('modo-edicion');
     
-    // --- ¡ARREGLO AQUÍ! ---
-    // Buscamos el contenedor padre (la pestaña) y luego el H3 dentro de él.
     const tabContent = form.closest('.tab-content');
     tabContent.querySelector('h3').textContent = `Modificando: ${evento.titulo}`;
-    // --- FIN DEL ARREGLO ---
     
     form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
 
@@ -525,158 +532,88 @@ function prellenarFormularioModEvento(evento) {
 
 
 // -----------------------------------------------------------------
-// --- FASE 4: LÓGICA DEL FORMULARIO DE ALTA (CARTA) ---
+// --- FASE 4/5/6: LÓGICA COMPLETA DE "CARTA" (BILINGÜE v2.0) ---
 // -----------------------------------------------------------------
 
-// --- Plantillas HTML para el "Smart Form" ---
-const plantillasFormCarta = {
-    // (Estas plantillas se copian de tu respuesta anterior)
-    coctel: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-titulo">Título / Nombre *</label>
-                    <input type="text" id="producto-titulo" class="form-input" placeholder="Ej: Gin Tonic" required>
-                </div>
-                <div class="form-group">
-                    <label for="producto-precio-copa">Precio (Copa) *</label>
-                    <input type="number" id="producto-precio-copa" class="form-input" placeholder="Ej: 8" required>
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-descripcion">Descripción / Ingredientes *</label>
-                    <textarea id="producto-descripcion" class="form-input" style="min-height: 130px;" placeholder="Ej: Gin Bombay Sapphire combinado con..."></textarea>
-                </div>
-            </div>
-        </div>
-        <div class="form-section">
-            <h4>Imagen de la Card (¡Obligatoria para Cocteles!)</h4>
-            <div class="form-group">
-                <label for="producto-imagen-upload">Subir Imagen *</label>
-                <input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required>
-            </div>
-        </div>
-    `,
-    cervezaBarril: `
+// --- Plantillas HTML para el "Smart Form" Bilingüe (v2.0) ---
+const plantillasBloques = {
+    // --- Bloques de DATOS ÚNICOS (No se traducen) ---
+    unicos_titulo_marca: `
         <div class="form-group">
-            <label for="producto-titulo">Título / Nombre *</label>
-            <input type="text" id="producto-titulo" class="form-input" placeholder="Ej: Franziskaner" required>
-        </div>
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-cana">Precio (Caña) *</label>
-                    <input type="number" id="producto-precio-cana" class="form-input" placeholder="Ej: 4" required>
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-pinta">Precio (Pinta) *</label>
-                    <input type="number" id="producto-precio-pinta" class="form-input" placeholder="Ej: 7" required>
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-region">Región</label>
-                    <input type="text" id="producto-region" class="form-input" placeholder="Ej: Munich">
-                </div>
-            </div>
-            <div class="form-col">
-                <label for="producto-pais">País</label>
-                <input type="text" id="producto-pais" class="form-input" placeholder="Ej: Alemania">
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-abv">ABV (%)</label>
-                    <input type="number" id="producto-abv" class="form-input" placeholder="Ej: 5.0">
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-ibu">IBU</label>
-                    <input type="number" id="producto-ibu" class="form-input" placeholder="Ej: 12">
-                </div>
-            </div>
-        </div>
-        <div class="form-group">
-            <label for="producto-descripcion">Descripción *</label>
-            <textarea id="producto-descripcion" class="form-input" style="min-height: 100px;" placeholder="Ej: Cerveza de trigo alemana..."></textarea>
-        </div>
-    `,
-    cervezaEnvasada: `
-        <div class="form-group">
-            <label for="producto-titulo">Título / Nombre *</label>
-            <input type="text" id="producto-titulo" class="form-input" placeholder="Ej: Paulaner Envasada" required>
-        </div>
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-botella">Precio (Unidad) *</label>
-                    <input type="number" id="producto-precio-botella" class="form-input" placeholder="Ej: 7" required>
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-region">Región</label>
-                    <input type="text" id="producto-region" class="form-input" placeholder="Ej: Munich">
-                </div>
-            </div>
-            <div class="form-col">
-                <label for="producto-pais">País</label>
-                <input type="text" id="producto-pais" class="form-input" placeholder="Ej: Alemania">
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-abv">ABV (%)</label>
-                    <input type="number" id="producto-abv" class="form-input" placeholder="Ej: 5.5">
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-ibu">IBU</label>
-                    <input type="number" id="producto-ibu" class="form-input" placeholder="Ej: 12">
-                </div>
-            </div>
-        </div>
-        <div class="form-group">
-            <label for="producto-descripcion">Descripción *</label>
-            <textarea id="producto-descripcion" class="form-input" style="min-height: 100px;" placeholder="Ej: Weissbier alemana dorada..."></textarea>
-        </div>
-    `,
-    vino: `
-        <div class="form-group-checkbox-inline">
-            <input type="checkbox" id="producto-destacado">
-            <label for="producto-destacado">Marcar como "Vino Destacado de la Semana"</label>
-        </div>
-        <div class="form-group">
-            <label for="producto-titulo">Título / Nombre *</label>
-            <input type="text" id="producto-titulo" class="form-input" placeholder="Ej: Luca – Beso de Dante" required>
-        </div>
+            <label for="producto-titulo">Título / Nombre (Marca) *</label>
+            <input type="text" id="producto-titulo" class="form-input" placeholder="Ej: Jack Daniel's" required>
+        </div>`,
+    unicos_precios_copa_botella: `
         <div class="form-grid">
             <div class="form-col">
                 <div class="form-group">
                     <label for="producto-precio-copa">Precio (Copa)</label>
-                    <input type="number" id="producto-precio-copa" class="form-input" placeholder="Ej: 10">
+                    <input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 10">
                 </div>
             </div>
             <div class="form-col">
                 <div class="form-group">
                     <label for="producto-precio-botella">Precio (Botella)</label>
-                    <input type="number" id="producto-precio-botella" class="form-input" placeholder="Ej: 40">
+                    <input type="number" step="0.01" id="producto-precio-botella" class="form-input" placeholder="Ej: 40">
+                </div>
+            </div>
+        </div>`,
+    unicos_precios_cana_pinta: `
+        <div class="form-grid">
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-precio-cana">Precio (Caña) *</label>
+                    <input type="number" step="0.01" id="producto-precio-cana" class="form-input" placeholder="Ej: 4" required>
                 </div>
             </div>
             <div class="form-col">
                 <div class="form-group">
-                    <label for="producto-region">Región</label>
-                    <input type="text" id="producto-region" class="form-input" placeholder="Ej: Valle de Uco, Mendoza">
+                    <label for="producto-precio-pinta">Precio (Pinta) *</label>
+                    <input type="number" step="0.01" id="producto-precio-pinta" class="form-input" placeholder="Ej: 7" required>
+                </div>
+            </div>
+        </div>`,
+    unicos_precios_botella_solo: `
+        <div class="form-group">
+            <label for="producto-precio-botella">Precio (Unidad) *</label>
+            <input type="number" step="0.01" id="producto-precio-botella" class="form-input" placeholder="Ej: 7" required>
+        </div>`,
+    unicos_precios_copa_solo: `
+        <div class="form-group">
+            <label for="producto-precio-copa">Precio (Copa) *</label>
+            <input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 8" required>
+        </div>`,
+    unicos_precios_copa_botella_destilado: `
+        <div class="form-grid">
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-precio-copa">Precio (Vaso) *</label>
+                    <input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 8" required>
                 </div>
             </div>
             <div class="form-col">
-                <label for="producto-pais">País</label>
-                <input type="text" id="producto-pais" class="form-input" placeholder="Ej: Argentina">
+                <div class="form-group">
+                    <label for="producto-precio-botella">Precio (Botella)</label>
+                    <input type="number" step="0.01" id="producto-precio-botella" class="form-input" placeholder="Ej: 65">
+                </div>
             </div>
-        </div>
+        </div>`,
+    unicos_cerveza_datos: `
+        <div class="form-grid">
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-abv">ABV (%)</label>
+                    <input type="number" step="0.1" id="producto-abv" class="form-input" placeholder="Ej: 5.0">
+                </div>
+            </div>
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-ibu">IBU</label>
+                    <input type="number" id="producto-ibu" class="form-input" placeholder="Ej: 12">
+                </div>
+            </div>
+        </div>`,
+    unicos_vino_datos: `
         <div class="form-grid">
             <div class="form-col">
                 <div class="form-group">
@@ -686,64 +623,12 @@ const plantillasFormCarta = {
             </div>
             <div class="form-col">
                 <div class="form-group">
-                    <label for="producto-varietal">Varietal</label>
-                    <input type="text" id="producto-varietal" class="form-input" placeholder="Ej: Blend (Malbec, Cabernet)">
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
                     <label for="producto-ano">Año</label>
                     <input type="text" id="producto-ano" class="form-input" placeholder="Ej: 2021">
                 </div>
             </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-crianza">Crianza</label>
-                    <input type="text" id="producto-crianza" class="form-input" placeholder="Ej: 14 meses en barricas">
-                </div>
-            </div>
-        </div>
-        <div class="form-group">
-            <label for="producto-descripcion">Descripción / Notas de Cata *</label>
-            <textarea id="producto-descripcion" class="form-input" style="min-height: 100px;" placeholder="Ej: Blend de Cabernet Sauvignon y Malbec..."></textarea>
-        </div>
-        <div class="form-section">
-            <h4>Imagen del Producto</h4>
-            <div class="form-group">
-                <label for="producto-imagen-upload">Subir Imagen *</label>
-                <input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required>
-            </div>
-        </div>
-    `,
-    destilado: `
-        <div class="form-group">
-            <label for="producto-titulo">Título / Nombre *</label>
-            <input type="text" id="producto-titulo" class="form-input" placeholder="Ej: Jack Daniel's" required>
-        </div>
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-copa">Precio (Vaso) *</label>
-                    <input type="number" id="producto-precio-copa" class="form-input" placeholder="Ej: 8" required>
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-botella">Precio (Botella)</label>
-                    <input type="number" id="producto-precio-botella" class="form-input" placeholder="Ej: 65">
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-region">Región</label>
-                    <input type="text" id="producto-region" class="form-input" placeholder="Ej: Tennessee">
-                </div>
-            </div>
-            <div class="form-col">
-                <label for="producto-pais">País</label>
-                <input type="text" id="producto-pais" class="form-input" placeholder="Ej: Estados Unidos">
-            </div>
-        </div>
+        </div>`,
+    unicos_destilado_datos: `
         <div class="form-grid">
             <div class="form-col">
                 <div class="form-group">
@@ -751,39 +636,216 @@ const plantillasFormCarta = {
                     <input type="text" id="producto-productor" class="form-input" placeholder="Ej: Jack Daniel Distillery">
                 </div>
             </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-crianza">Crianza</label>
-                    <input type="text" id="producto-crianza" class="form-input" placeholder="Ej: En barricas nuevas...">
-                </div>
+        </div>`,
+    unicos_imagen_coctel: `
+        <div class="form-section">
+            <h4>Imagen de la Card (¡Obligatoria para Cocteles!)</h4>
+            <div class="form-group">
+                <label for="producto-imagen-upload">Subir Imagen *</label>
+                <input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required>
             </div>
-        </div>
+        </div>`,
+    unicos_imagen_vino: `
+        <div class="form-section">
+            <h4>Imagen del Producto (¡Obligatoria para Vinos!)</h4>
+            <div class="form-group">
+                <label for="producto-imagen-upload">Subir Imagen *</label>
+                <input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required>
+            </div>
+        </div>`,
+    unicos_vino_destacado: `
+        <div class="form-group-checkbox-inline">
+            <input type="checkbox" id="producto-destacado">
+            <label for="producto-destacado">Marcar como "Vino Destacado de la Semana"</label>
+        </div>`,
+
+    // --- Bloques de DATOS TRADUCIBLES (ES) ---
+    trad_es_titulo: `
         <div class="form-group">
-            <label for="producto-descripcion">Descripción *</label>
-            <textarea id="producto-descripcion" class="form-input" style="min-height: 100px;" placeholder="Ej: Whiskey suave con notas..."></textarea>
-        </div>
-    `,
-    sinAlcohol: `
+            <label for="producto-titulo-es">Título (ES) *</label>
+            <input type="text" id="producto-titulo-es" class="form-input" required>
+        </div>`,
+    trad_es_descripcion: `
         <div class="form-group">
-            <label for="producto-titulo">Título / Nombre *</label>
-            <input type="text" id="producto-titulo" class="form-input" placeholder="Ej: Limonada de la casa" required>
-        </div>
+            <label for="producto-descripcion-es">Descripción (ES) *</label>
+            <textarea id="producto-descripcion-es" class="form-input" style="min-height: 100px;" required></textarea>
+        </div>`,
+    trad_es_region_pais: `
         <div class="form-grid">
             <div class="form-col">
                 <div class="form-group">
-                    <label for="producto-precio-botella">Precio (Unidad) *</label>
-                    <input type="number" id="producto-precio-botella" class="form-input" placeholder="Ej: 6" required>
+                    <label for="producto-region-es">Región (ES)</label>
+                    <input type="text" id="producto-region-es" class="form-input">
                 </div>
             </div>
-        </div>
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-pais-es">País (ES)</label>
+                    <input type="text" id="producto-pais-es" class="form-input">
+                </div>
+            </div>
+        </div>`,
+    trad_es_varietal_vino: `
         <div class="form-group">
-            <label for="producto-descripcion">Descripción *</label>
-            <textarea id="producto-descripcion" class="form-input" style="min-height: 100px;" placeholder="Ej: Limonada fresca con limón..."></textarea>
+            <label for="producto-varietal-es">Varietal (ES)</label>
+            <input type="text" id="producto-varietal-es" class="form-input">
+        </div>`,
+    trad_es_crianza_vino: `
+        <div class="form-group">
+            <label for="producto-crianza-es">Crianza (ES)</label>
+            <input type="text" id="producto-crianza-es" class="form-input" placeholder="Ej: 14 meses en barricas">
+        </div>`,
+    trad_es_crianza_destilado: `
+        <div class="form-group">
+            <label for="producto-crianza-es">Crianza (ES)</label>
+            <input type="text" id="producto-crianza-es" class="form-input" placeholder="Ej: En barricas nuevas...">
+        </div>`,
+
+    
+    // --- Bloques de DATOS TRADUCIBLES (EN) ---
+    trad_en_titulo: `
+        <div class="form-group">
+            <label for="producto-titulo-en">Título (EN) *</label>
+            <input type="text" id="producto-titulo-en" class="form-input" required>
+        </div>`,
+    trad_en_descripcion: `
+        <div class="form-group">
+            <label for="producto-descripcion-en">Descripción (EN) *</label>
+            <textarea id="producto-descripcion-en" class="form-input" style="min-height: 100px;" required></textarea>
+        </div>`,
+    trad_en_region_pais: `
+        <div class="form-grid">
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-region-en">Región (EN)</label>
+                    <input type="text" id="producto-region-en" class="form-input">
+                </div>
+            </div>
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-pais-en">País (EN)</label>
+                    <input type="text" id="producto-pais-en" class="form-input">
+                </div>
+            </div>
+        </div>`,
+    trad_en_varietal_vino: `
+        <div class="form-group">
+            <label for="producto-varietal-en">Varietal (EN)</label>
+            <input type="text" id="producto-varietal-en" class="form-input">
+        </div>`,
+    trad_en_crianza_vino: `
+        <div class="form-group">
+            <label for="producto-crianza-en">Crianza (EN)</label>
+            <input type="text" id="producto-crianza-en" class="form-input" placeholder="Ej: 14 months in barrels">
+        </div>`,
+    trad_en_crianza_destilado: `
+        <div class="form-group">
+            <label for="producto-crianza-en">Crianza (EN)</label>
+            <input type="text" id="producto-crianza-en" class="form-input" placeholder="Ej: In new barrels...">
+        </div>`,
+    
+    // --- Bloque Contenedor Bilingüe ---
+    bilingue_wrapper: (html_es, html_en) => `
+        <div class="form-section-bilingue">
+            <div class="lang-tabs">
+                <button type="button" class="lang-tab-btn active" data-lang="es">Español</button>
+                <button type="button" class="lang-tab-btn" data-lang="en">Inglés</button>
+            </div>
+            <div class="form-bilingue-grid">
+                <div class="lang-content lang-col-es active" data-lang-content="es">
+                    ${html_es}
+                </div>
+                <div class="lang-content lang-col-en" data-lang-content="en">
+                    <button type="button" class="btn-translate" data-lang-group="en">
+                        <i class='bx bxs-magic-wand'></i> Sugerir traducción para todos los campos
+                    </button>
+                    ${html_en}
+                </div>
+            </div>
+        </div>`
+};
+
+// --- AHORA CONSTRUIMOS LAS PLANTILLAS USANDO LOS BLOQUES ---
+const plantillasFormCarta = {
+    // --- Títulos Traducibles (Genéricos) ---
+    coctel: `
+        <div class="form-section">
+            <h4>Datos Únicos (No se traducen)</h4>
+            ${plantillasBloques.unicos_precios_copa_solo}
+            ${plantillasBloques.unicos_imagen_coctel}
         </div>
+        ${plantillasBloques.bilingue_wrapper(
+            plantillasBloques.trad_es_titulo + plantillasBloques.trad_es_descripcion,
+            plantillasBloques.trad_en_titulo + plantillasBloques.trad_en_descripcion
+        )}
+    `,
+    sinAlcohol: `
+        <div class="form-section">
+            <h4>Datos Únicos (No se traducen)</h4>
+            ${plantillasBloques.unicos_precios_botella_solo}
+        </div>
+        ${plantillasBloques.bilingue_wrapper(
+            plantillasBloques.trad_es_titulo + plantillasBloques.trad_es_descripcion,
+            plantillasBloques.trad_en_titulo + plantillasBloques.trad_en_descripcion
+        )}
+    `,
+    
+    // --- Títulos Únicos (De Marca) ---
+    cervezaBarril: `
+        <div class="form-section">
+            <h4>Datos Únicos (No se traducen)</h4>
+            ${plantillasBloques.unicos_titulo_marca}
+            ${plantillasBloques.unicos_precios_cana_pinta}
+            ${plantillasBloques.unicos_cerveza_datos}
+        </div>
+        ${plantillasBloques.bilingue_wrapper(
+            plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_descripcion,
+            plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_descripcion
+        )}
+    `,
+    cervezaEnvasada: `
+        <div class="form-section">
+            <h4>Datos Únicos (No se traducen)</h4>
+            ${plantillasBloques.unicos_titulo_marca}
+            ${plantillasBloques.unicos_precios_botella_solo}
+            ${plantillasBloques.unicos_cerveza_datos}
+        </div>
+        ${plantillasBloques.bilingue_wrapper(
+            plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_descripcion,
+            plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_descripcion
+        )}
+    `,
+    vino: `
+        ${plantillasBloques.unicos_vino_destacado}
+        <div class="form-section">
+            <h4>Datos Únicos (No se traducen)</h4>
+            ${plantillasBloques.unicos_titulo_marca}
+            ${plantillasBloques.unicos_vino_datos}
+            ${plantillasBloques.unicos_precios_copa_botella}
+            ${plantillasBloques.unicos_imagen_vino}
+        </div>
+        ${plantillasBloques.bilingue_wrapper(
+            // (Mod #1) 'crianza' movido a traducibles
+            plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_varietal_vino + plantillasBloques.trad_es_crianza_vino + plantillasBloques.trad_es_descripcion,
+            plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_varietal_vino + plantillasBloques.trad_en_crianza_vino + plantillasBloques.trad_en_descripcion
+        )}
+    `,
+    destilado: `
+        <div class="form-section">
+            <h4>Datos Únicos (No se traducen)</h4>
+            ${plantillasBloques.unicos_titulo_marca}
+            ${plantillasBloques.unicos_precios_copa_botella_destilado}
+            ${plantillasBloques.unicos_destilado_datos}
+        </div>
+        ${plantillasBloques.bilingue_wrapper(
+            // (Mod #1) 'crianza' movido a traducibles
+            plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_crianza_destilado + plantillasBloques.trad_es_descripcion,
+            plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_crianza_destilado + plantillasBloques.trad_en_descripcion
+        )}
     `
 };
 
-// --- Función Principal de la Fase 4 ---
+// --- Función Principal de la Fase 4/6 ---
 function inicializarFormularioCarta() {
     const selectorTipo = document.getElementById('producto-tipo');
     const container = document.getElementById('smart-form-container');
@@ -817,6 +879,7 @@ function inicializarFormularioCarta() {
             const grupoAMostrar = document.getElementById(`fields-${tipoPlantilla}`);
             if (grupoAMostrar) {
                 grupoAMostrar.classList.add('visible');
+                activarLogicaBilingue(grupoAMostrar);
             }
             actions.style.display = 'block'; 
         } else {
@@ -824,12 +887,11 @@ function inicializarFormularioCarta() {
         }
     });
 
-    // 3. Lógica de Submit (¡CORREGIDA!)
+    // 3. Lógica de Submit Bilingüe
     form.addEventListener('submit', (e) => {
         e.preventDefault();
         
         const tipo = selectorTipo.value;
-        
         if (!tipo) {
             alert("Error: Debes seleccionar un tipo de producto.");
             return;
@@ -842,65 +904,138 @@ function inicializarFormularioCarta() {
             alert("Error interno: No se encontró el grupo de formulario.");
             return;
         }
-
-        const tituloInput = visibleGroup.querySelector('[id^="producto-titulo"]'); 
         
-        if (!tituloInput || !tituloInput.value.trim()) {
+        // --- A. Recolección de Datos ---
+        const producto_es = { id: modoEdicion ? idEventoEdicion : `prod_${Date.now()}`, tipo: tipo };
+        const producto_en = { id: producto_es.id, tipo: tipo };
+
+        // --- B. Campos Únicos (se copian a ambos) ---
+        const camposUnicos = {
+            visualizacion: true,
+            destacado: (visibleGroup.querySelector('#producto-destacado') || {}).checked || false,
+            imagen: (visibleGroup.querySelector('#producto-imagen-upload') || {}).files[0]?.name || (modoEdicion ? adminProductos.find(p => p.id === idEventoEdicion).imagen : 'bebidaSinFoto.jpg'),
+            precioCopa: (visibleGroup.querySelector('#producto-precio-copa') || {}).value || null,
+            precioBotella: (visibleGroup.querySelector('#producto-precio-botella') || {}).value || null,
+            precioCana: (visibleGroup.querySelector('#producto-precio-cana') || {}).value || null,
+            precioPinta: (visibleGroup.querySelector('#producto-precio-pinta') || {}).value || null,
+            productor: (visibleGroup.querySelector('#producto-productor') || {}).value || null,
+            ano: (visibleGroup.querySelector('#producto-ano') || {}).value || null,
+            abv: (visibleGroup.querySelector('#producto-abv') || {}).value || null,
+            ibu: (visibleGroup.querySelector('#producto-ibu') || {}).value || null,
+            // (Mod #2) Título de Marca
+            titulo: (visibleGroup.querySelector('#producto-titulo') || {}).value || null 
+        };
+        Object.assign(producto_es, camposUnicos);
+        Object.assign(producto_en, camposUnicos);
+
+        // --- C. Campos Traducibles (ES) ---
+        producto_es.titulo = producto_es.titulo || (visibleGroup.querySelector('#producto-titulo-es') || {}).value; // Título genérico
+        producto_es.descripcion = (visibleGroup.querySelector('#producto-descripcion-es') || {}).value;
+        producto_es.region = (visibleGroup.querySelector('#producto-region-es') || {}).value;
+        producto_es.varietal = (visibleGroup.querySelector('#producto-varietal-es') || {}).value;
+        producto_es.crianza = (visibleGroup.querySelector('#producto-crianza-es') || {}).value; // (Mod #1)
+        
+        // --- D. Campos Traducibles (EN) ---
+        producto_en.titulo = producto_en.titulo || (visibleGroup.querySelector('#producto-titulo-en') || {}).value; // Título genérico
+        producto_en.descripcion = (visibleGroup.querySelector('#producto-descripcion-en') || {}).value;
+        producto_en.region = (visibleGroup.querySelector('#producto-region-en') || {}).value;
+        producto_en.varietal = (visibleGroup.querySelector('#producto-varietal-en') || {}).value;
+        producto_en.crianza = (visibleGroup.querySelector('#producto-crianza-en') || {}).value; // (Mod #1)
+
+        // --- E. Validación ---
+        if (!producto_es.titulo || !producto_en.titulo) {
             alert("Error: El campo Título es obligatorio.");
-            tituloInput.focus(); 
+            return;
+        }
+         if (!producto_es.descripcion || !producto_en.descripcion) {
+            alert("Error: El campo Descripción es obligatorio.");
             return;
         }
         
-        const titulo = tituloInput.value.trim();
-        
-        // (Aquí iría la validación completa y recolección de TODOS los campos)
-        const nuevoProducto = {
-            id: modoEdicion ? idEventoEdicion : `prod_${Date.now()}`, // idEventoEdicion se reutiliza para productos
-            tipo: tipo,
-            titulo: titulo,
-            // ... (recolectar todos los demás campos del visibleGroup)
-        };
-        
+        // --- F. Simulación de Guardado ---
         if (modoEdicion) {
-            console.log("MODIFICANDO PRODUCTO", JSON.stringify(nuevoProducto, null, 2));
-            alert(`¡Producto "${titulo}" modificado con éxito! (Simulación)`);
+            console.log("MODIFICANDO PRODUCTO (ES)", JSON.stringify(producto_es, null, 2));
+            console.log("MODIFICANDO PRODUCTO (EN)", JSON.stringify(producto_en, null, 2));
+            alert(`¡Producto "${producto_es.titulo}" modificado con éxito! (Simulación)`);
         } else {
-            console.log("CREANDO PRODUCTO", JSON.stringify(nuevoProducto, null, 2));
-            alert(`¡Producto "${titulo}" creado con éxito! (Simulación)`);
+            console.log("CREANDO PRODUCTO (ES)", JSON.stringify(producto_es, null, 2));
+            console.log("CREANDO PRODUCTO (EN)", JSON.stringify(producto_en, null, 2));
+            alert(`¡Producto "${producto_es.titulo}" creado con éxito! (Simulación)`);
         }
         
-        // Simular recarga de datos
         fetchProductosData();
-        
-        // Resetear
         resetearFormularioCarta();
     });
+}
+
+/**
+ * Añade la lógica a las pestañas de idioma,
+ * botones de traducción y auto-completado.
+ */
+function activarLogicaBilingue(visibleGroup) {
+    // 1. Pestañas de Idioma (para Móvil)
+    const langTabs = visibleGroup.querySelectorAll('.lang-tab-btn');
+    const langContents = visibleGroup.querySelectorAll('.lang-content');
+
+    langTabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            e.preventDefault(); 
+            const lang = tab.dataset.lang;
+            langTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            langContents.forEach(c => {
+                c.classList.toggle('active', c.dataset.langContent === lang);
+            });
+        });
+    });
+
+    // 2. Botón "Sugerir Traducción" (Mod #3)
+    const translateBtn = visibleGroup.querySelector('.btn-translate[data-lang-group="en"]');
+    if (translateBtn) {
+        translateBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const langGroupES = visibleGroup.querySelector('.lang-content[data-lang-content="es"]');
+            const langGroupEN = visibleGroup.querySelector('.lang-content[data-lang-content="en"]');
+
+            // --- ¡ARREGLO 2! ---
+            // Lista de todos los campos a traducir
+            const campos = ['titulo', 'descripcion', 'region', 'pais', 'varietal', 'crianza'];
+            
+            campos.forEach(campo => {
+                const inputES = langGroupES.querySelector(`[id$="-${campo}-es"]`); // Busca ej: producto-titulo-es
+                const inputEN = langGroupEN.querySelector(`[id$="-${campo}-en"]`); // Busca ej: producto-titulo-en
+                
+                if (inputES && inputEN && inputES.value) {
+                    // Solo traduce si el campo EN está vacío
+                    if (inputEN.value.trim() === '') {
+                        inputEN.value = sugerirTraduccion(inputES.value);
+                    }
+                }
+            });
+        });
+    }
 }
 
 function resetearFormularioCarta() {
     const form = document.getElementById('form-alta-producto');
     form.reset();
-
+    
     document.getElementById('smart-form-container').querySelectorAll('.form-fields-group').forEach(group => {
         group.classList.remove('visible');
     });
-
+    
     document.getElementById('form-actions-producto').style.display = 'none';
     document.getElementById('producto-tipo').value = "";
-
+    
     modoEdicion = false;
-    idEventoEdicion = null; // Reutilizamos esta variable global
-
+    idEventoEdicion = null; 
+    
     form.classList.remove('modo-edicion');
-
-    // --- ¡AQUÍ ESTÁ EL ARREGLO DE LA CONSOLA! ---
-    const tabContent = form.closest('.tab-content');
-    if (tabContent) { // Verificamos que lo encontramos
+    
+    const tabContent = document.getElementById('alta-producto');
+    if (tabContent) {
         tabContent.querySelector('h3').textContent = "Crear Nuevo Producto";
     }
-    // --- FIN DEL ARREGLO ---
-
-    form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Producto";
 
     const infoImg = document.getElementById('info-img-actual-prod');
     if (infoImg) infoImg.remove();
@@ -909,12 +1044,11 @@ function resetearFormularioCarta() {
 
 // -----------------------------------------------------------------
 // --- FASE 5: LÓGICA DE BÚSQUEDA Y VISIBILIDAD (CARTA) ---
+// (Actualizada para funcionar con datos ES y EN)
 // -----------------------------------------------------------------
 
 async function fetchProductosData() {
     try {
-        // Asumimos que la ESTRUCTURA de carta_es.json es { "textosUI": {}, "productos": [] }
-        // Cargamos ambas cartas para simular la actualización de 'visualizacion'
         const resES = await fetch('../data/carta_es.json');
         const resEN = await fetch('../data/carta_en.json');
         
@@ -923,14 +1057,18 @@ async function fetchProductosData() {
         }
         
         const dataES = await resES.json();
-        // const dataEN = await resEN.json(); // Lo necesitaríamos en el backend
+        const dataEN = await resEN.json(); 
         
-        // Usamos adminProductos para guardar la lista
         adminProductos = dataES.productos; 
+        adminProductos_EN = dataEN.productos; // Guardamos los datos en inglés
         
-        // Damos un ID único a cada producto (basado en su título) para poder modificarlo
-        adminProductos.forEach(prod => {
-            prod.id = prod.id || `prod_${prod.titulo.replace(/\s/g, '_')}`;
+        // Asignamos IDs únicos
+        adminProductos.forEach((prod, index) => {
+            const id = prod.id || `prod_${prod.titulo.replace(/\s/g, '_')}_${index}`;
+            prod.id = id;
+            if (adminProductos_EN[index]) {
+                adminProductos_EN[index].id = id;
+            }
         });
         
         renderizarResultadosProductos();
@@ -969,14 +1107,14 @@ function inicializarPanelesBusquedaProductos() {
     });
     
     btnConfirm.addEventListener('click', () => {
-        // 1. Recolectar todos los cambios
         const cambios = [];
         container.querySelectorAll('.visibility-switch input').forEach(toggle => {
             const id = toggle.dataset.id;
             const producto = adminProductos.find(p => p.id === id);
             
-            // Si el estado del switch (checked) es DIFERENTE al estado del JSON
-            if (producto && toggle.checked !== producto.visualizacion) {
+            const estadoActual = (producto.visualizacion !== undefined) ? producto.visualizacion : true;
+            
+            if (producto && toggle.checked !== estadoActual) {
                 cambios.push({ id: id, nuevoEstado: toggle.checked });
             }
         });
@@ -986,24 +1124,20 @@ function inicializarPanelesBusquedaProductos() {
             return;
         }
 
-        // 2. Simular guardado
         console.log("SIMULACIÓN: Guardando cambios de visibilidad...", cambios);
         alert(`Se han actualizado ${cambios.length} productos. (Simulación)`);
         
-        // 3. Actualizar el estado local (adminProductos)
         cambios.forEach(cambio => {
-            const producto = adminProductos.find(p => p.id === cambio.id);
-            if (producto) {
-                producto.visualizacion = cambio.nuevoEstado;
-            }
+            const productoES = adminProductos.find(p => p.id === cambio.id);
+            const productoEN = adminProductos_EN.find(p => p.id === cambio.id);
+            if (productoES) productoES.visualizacion = cambio.nuevoEstado;
+            if (productoEN) productoEN.visualizacion = cambio.nuevoEstado;
         });
         
-        // 4. Salir del modo visibilidad y re-renderizar
-        btnToggle.click(); // Simula clic para salir del modo
+        btnToggle.click(); 
         renderizarResultadosProductos();
     });
 
-    // Delegación de eventos para los botones de las tarjetas
     container.addEventListener('click', (e) => {
         const botonMod = e.target.closest('.btn-card-modificar');
         if (botonMod) {
@@ -1022,7 +1156,7 @@ function renderizarResultadosProductos() {
         tipo: document.getElementById('prod-search-tipo').value,
     };
     
-    const eventosFiltrados = adminProductos.filter(prod => {
+    const eventosFiltrados = adminProductos.filter(prod => { // Filtramos por ES
         const checkTitulo = !filtros.titulo || prod.titulo.toLowerCase().includes(filtros.titulo);
         const checkTipo = !filtros.tipo || prod.tipo === filtros.tipo;
         return checkTitulo && checkTipo;
@@ -1033,13 +1167,10 @@ function renderizarResultadosProductos() {
 }
 
 function crearTarjetaResultadoProducto(prod) {
-
     const imgRuta = (prod.imagen) ? `../img/${prod.imagen}` : `../img/bebidaSinFoto.jpg`;
-        
     const precio = formatarPrecio(prod.precioCopa || prod.precioBotella || prod.precioPinta);
     
-    // Para el switch On/Off
-    const estaHabilitado = (prod.visualizacion === undefined) ? true : prod.visualizacion; // Asumir 'true' si no existe
+    const estaHabilitado = (prod.visualizacion === undefined) ? true : prod.visualizacion; 
     const deshabilitadoClass = estaHabilitado ? '' : 'deshabilitado';
     const switchChecked = estaHabilitado ? 'checked' : '';
 
@@ -1071,56 +1202,68 @@ function crearTarjetaResultadoProducto(prod) {
 }
 
 function prellenarFormularioCarta(prod) {
-    // 1. Marcar el formulario como "Modo Edición"
     modoEdicion = true;
-    idEventoEdicion = prod.id; // Reutilizamos la variable global
+    idEventoEdicion = prod.id;
     
     const form = document.getElementById('form-alta-producto');
     form.classList.add('modo-edicion');
     
-    // --- ¡ARREGLO AQUÍ! ---
-    // Buscamos el contenedor padre (la pestaña) y luego el H3 dentro de él.
-    const tabContent = form.closest('.tab-content');
-    tabContent.querySelector('h3').textContent = `Modificando: ${prod.titulo}`;
-    // --- FIN DEL ARREGLO ---
+    const tabContent = document.getElementById('alta-producto');
+    if (tabContent) { 
+        tabContent.querySelector('h3').textContent = `Modificando: ${prod.titulo}`;
+    }
     
     form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
 
-    // 2. Simulación de Backup
     console.log("SIMULACIÓN: Guardando copia de seguridad de producto...", prod);
 
-    // 3. Seleccionar el Tipo y mostrar el formulario correcto
     const selectorTipo = document.getElementById('producto-tipo');
     selectorTipo.value = prod.tipo;
-    // Disparamos el evento 'change' para que se muestre el formulario correcto
     selectorTipo.dispatchEvent(new Event('change'));
     
-    // 4. Pre-llenar todos los campos (del formulario ahora visible)
     const tipoPlantilla = prod.tipo.startsWith('vino') ? 'vino' : prod.tipo;
     const visibleGroup = document.getElementById(`fields-${tipoPlantilla}`);
     
-    // Llenamos TODOS los campos posibles. Si no existen en el form, no da error.
-    (visibleGroup.querySelector('[id^="producto-titulo"]') || {}).value = prod.titulo || '';
-    (visibleGroup.querySelector('[id^="producto-descripcion"]') || {}).value = prod.descripcion || '';
-    (visibleGroup.querySelector('[id^="producto-precio-copa"]') || {}).value = prod.precioCopa || '';
-    (visibleGroup.querySelector('[id^="producto-precio-botella"]') || {}).value = prod.precioBotella || '';
-    (visibleGroup.querySelector('[id^="producto-precio-cana"]') || {}).value = prod.precioCana || '';
-    (visibleGroup.querySelector('[id^="producto-precio-pinta"]') || {}).value = prod.precioPinta || '';
-    (visibleGroup.querySelector('[id^="producto-region"]') || {}).value = prod.region || '';
-    (visibleGroup.querySelector('[id^="producto-pais"]') || {}).value = prod.pais || '';
-    (visibleGroup.querySelector('[id^="producto-abv"]') || {}).value = prod.abv || '';
-    (visibleGroup.querySelector('[id^="producto-ibu"]') || {}).value = prod.ibu || '';
-    (visibleGroup.querySelector('[id^="producto-productor"]') || {}).value = prod.productor || '';
-    (visibleGroup.querySelector('[id^="producto-varietal"]') || {}).value = prod.varietal || '';
-    (visibleGroup.querySelector('[id^="producto-ano"]') || {}).value = prod.ano || '';
-    (visibleGroup.querySelector('[id^="producto-crianza"]') || {}).value = prod.crianza || '';
-    (visibleGroup.querySelector('[id^="producto-destacado"]') || {}).checked = prod.destacado || false;
+    // --- LÓGICA DE PRE-LLENADO BILINGÜE ---
+    const prod_es = adminProductos.find(p => p.id === prod.id);
+    const prod_en = adminProductos_EN.find(p => p.id === prod.id);
+    
+    if (!prod_es || !prod_en) {
+        alert("Error: No se pudo encontrar el producto en ambos idiomas.");
+        return;
+    }
 
-    // 5. Mostrar info de imagen actual
+    // Llenamos campos ÚNICOS (desde prod_es)
+    (visibleGroup.querySelector('#producto-titulo') || {}).value = prod_es.titulo || ''; // Para Títulos de Marca
+    (visibleGroup.querySelector('#producto-precio-copa') || {}).value = prod_es.precioCopa || '';
+    (visibleGroup.querySelector('#producto-precio-botella') || {}).value = prod_es.precioBotella || '';
+    (visibleGroup.querySelector('#producto-precio-cana') || {}).value = prod_es.precioCana || '';
+    (visibleGroup.querySelector('#producto-precio-pinta') || {}).value = prod_es.precioPinta || '';
+    (visibleGroup.querySelector('#producto-productor') || {}).value = prod_es.productor || '';
+    (visibleGroup.querySelector('#producto-ano') || {}).value = prod_es.ano || '';
+    (visibleGroup.querySelector('#producto-abv') || {}).value = prod_es.abv || '';
+    (visibleGroup.querySelector('#producto-ibu') || {}).value = prod_es.ibu || '';
+    (visibleGroup.querySelector('#producto-destacado') || {}).checked = prod_es.destacado || false;
+
+    // Llenamos campos ES
+    (visibleGroup.querySelector('#producto-titulo-es') || {}).value = prod_es.titulo || ''; // Para Títulos Genéricos
+    (visibleGroup.querySelector('#producto-descripcion-es') || {}).value = prod_es.descripcion || '';
+    (visibleGroup.querySelector('#producto-region-es') || {}).value = prod_es.region || '';
+    (visibleGroup.querySelector('#producto-varietal-es') || {}).value = prod_es.varietal || '';
+    (visibleGroup.querySelector('#producto-crianza-es') || {}).value = prod_es.crianza || '';
+    
+    // Llenamos campos EN (¡Ahora desde prod_en!)
+    (visibleGroup.querySelector('#producto-titulo-en') || {}).value = prod_en.titulo || ''; // Para Títulos Genéricos
+    (visibleGroup.querySelector('#producto-descripcion-en') || {}).value = prod_en.descripcion || '';
+    (visibleGroup.querySelector('#producto-region-en') || {}).value = prod_en.region || '';
+    (visibleGroup.querySelector('#producto-varietal-en') || {}).value = prod_en.varietal || '';
+    (visibleGroup.querySelector('#producto-crianza-en') || {}).value = prod_en.crianza || '';
+    
+    // Info de Imagen
     const infoImg = document.getElementById('info-img-actual-prod');
     if (infoImg) infoImg.remove();
     
-    if (prod.imagen && prod.imagen !== 'imgBandaGenerica.jpg') {
+    if (prod.imagen && prod.imagen !== 'bebidaSinFoto.jpg') {
         const infoHtml = `
             <div id="info-img-actual-prod" class="info-imagen-actual">
                 <strong>Imagen Actual:</strong> ${prod.imagen}
@@ -1128,14 +1271,12 @@ function prellenarFormularioCarta(prod) {
                 <small>Sube un archivo nuevo para reemplazarla, o déjalo vacío para conservarla.</small>
             </div>
         `;
-        // Usamos querySelector para encontrar el form-section DENTRO del grupo visible
         const formSection = visibleGroup.querySelector('.form-section');
         if (formSection) {
             formSection.insertAdjacentHTML('afterbegin', infoHtml);
         }
     }
     
-    // 6. Cambiar a la pestaña "Alta"
     document.querySelector('.tab-link[data-tab="alta-producto"]').click();
     form.scrollIntoView({ behavior: 'smooth' });
 }
