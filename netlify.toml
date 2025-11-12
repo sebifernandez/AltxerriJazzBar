@@ -1,5 +1,6 @@
 [build]
   functions = "api/"
+  included_files = ["data/**"]
 
 [[redirects]]
   from = "/api/*"

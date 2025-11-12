@@ -1,19 +1,15 @@
 // --- API/SERVER.JS (El "Cerebro" del Backend) ---
 
-// 1. Importar las "piezas"
 const express = require('express');
 const serverless = require('serverless-http'); 
 const fs = require('fs'); 
 const path = require('path'); 
 
-// 2. Inicializar el motor
 const app = express();
 app.use(express.json()); 
-
-// 3. El "Libro de Recetas" (Router)
 const router = express.Router();
 
-// --- "RECETA" 1: LOGIN (La que ya teníamos) ---
+// --- "RECETA" 1: LOGIN (Funciona) ---
 router.post('/login', (req, res) => {
     try {
         const { username, password } = req.body;
@@ -33,11 +29,11 @@ router.post('/login', (req, res) => {
     }
 });
 
-// --- "RECETA" 2: OBTENER EVENTOS (¡CON GPS CORREGIDO!) ---
+// --- "RECETA" 2: OBTENER EVENTOS (¡CON RUTA CORREGIDA!) ---
 router.get('/eventos', (req, res) => {
     try {
-        // ¡ARREGLO AQUÍ! Usamos "__dirname" para encontrar la ruta
-        const filePath = path.join(__dirname, '..', 'data', 'eventos.json');
+        // ¡ARREGLO! Usamos "process.cwd()" que es la raíz del deploy en Netlify
+        const filePath = path.join(process.cwd(), 'data', 'eventos.json');
         
         const data = fs.readFileSync(filePath, 'utf8');
         res.json(JSON.parse(data));
@@ -48,12 +44,12 @@ router.get('/eventos', (req, res) => {
     }
 });
 
-// --- "RECETA" 3: OBTENER PRODUCTOS (¡CON GPS CORREGIDO!) ---
+// --- "RECETA" 3: OBTENER PRODUCTOS (¡CON RUTA CORREGIDA!) ---
 router.get('/productos', async (req, res) => {
     try {
-        // ¡ARREGLO AQUÍ! Usamos "__dirname" para encontrar la ruta
-        const filePathES = path.join(__dirname, '..', 'data', 'carta_es.json');
-        const filePathEN = path.join(__dirname, '..', 'data', 'carta_en.json');
+        // ¡ARREGLO! Usamos "process.cwd()"
+        const filePathES = path.join(process.cwd(), 'data', 'carta_es.json');
+        const filePathEN = path.join(process.cwd(), 'data', 'carta_en.json');
 
         const dataES = fs.readFileSync(filePathES, 'utf8');
         const dataEN = fs.readFileSync(filePathEN, 'utf8');
@@ -68,7 +64,6 @@ router.get('/productos', async (req, res) => {
         res.status(500).json({ success: false, message: 'Error al leer carta_es.json o carta_en.json' });
     }
 });
-
 
 // 4. Conectamos el libro de recetas a la app
 app.use('/api', router);
