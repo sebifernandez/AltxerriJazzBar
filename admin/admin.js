@@ -41,6 +41,44 @@ function sugerirTraduccion(texto) {
 // --- Inicializador Principal ---
 document.addEventListener('DOMContentLoaded', () => {
 
+// --- LÓGICA DE LOGIN (Paso 2.2) ---
+const loginForm = document.querySelector('.login-form');
+if (loginForm) {
+    const errorMessage = document.getElementById('login-error');
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault(); // Evita que la página se recargue
+
+        errorMessage.textContent = 'Verificando...';
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        try {
+            // ¡EL "PASE"! El mozo llama a la cocina (/api/login)
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password }) // La "orden"
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // ¡Éxito! La cocina dijo "OK". Vamos al dashboard.
+                window.location.href = 'dashboard.html';
+            } else {
+                // ¡Fallo! La cocina dijo "Error".
+                errorMessage.textContent = data.message;
+            }
+        } catch (error) {
+            console.error('Error de red al intentar login:', error);
+            errorMessage.textContent = 'Error de conexión. Intenta de nuevo.';
+        }
+    });
+}
+
     // --- Lógica FASE 1: Navegación Base ---
     const sidebar = document.getElementById('sidebar');
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
