@@ -1,5 +1,5 @@
 /* --- ADMIN.JS - CMS Altxerri --- */
-/* --- VERSIÓN FINAL (CON CORRECCIÓN BUGS "undefined" y "pais") --- */
+/* --- VERSIÓN FINAL (CON LÓGICA DE LOGIN INCLUIDA) --- */
 
 // --- Variables Globales ---
 const { DateTime } = luxon; // Usamos Luxon (cargado en el head)
@@ -13,27 +13,20 @@ let modoVisibilidad = false; // Flag para el modo On/Off de productos
 
 /**
  * Helper para formatear precios.
- * Si el precio es nulo, vacío o 0, devuelve un guion.
- * Si no, le añade el símbolo "€".
  */
 function formatarPrecio(precio) {
     if (!precio || precio === 0) {
-        return '–'; // Devuelve un guion largo
+        return '–'; 
     }
     return `${precio}€`;
 }
 
 /**
  * Helper de Traducción (Simulación Gratuita)
- * Copia el texto de ES a EN.
  */
 function sugerirTraduccion(texto) {
     if (!texto) return "";
-    console.log("Simulando traducción... (en el futuro, esto llamará a una API)");
-    
-    // --- ¡ARREGLO 1! ---
-    // Devuelve el texto original como placeholder.
-    // (Faltaba esta línea, por eso devolvía 'undefined')
+    console.log("Simulando traducción...");
     return texto; 
 }
 
@@ -41,43 +34,45 @@ function sugerirTraduccion(texto) {
 // --- Inicializador Principal ---
 document.addEventListener('DOMContentLoaded', () => {
 
-// --- LÓGICA DE LOGIN (Paso 2.2) ---
-const loginForm = document.querySelector('.login-form');
-if (loginForm) {
-    const errorMessage = document.getElementById('login-error');
+    // --- ¡ARREGLO! LÓGICA DE LOGIN (Paso 2.2) AÑADIDA ---
+    const loginForm = document.querySelector('.login-form');
+    if (loginForm) {
+        const errorMessage = document.getElementById('login-error');
 
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); // Evita que la página se recargue
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); 
 
-        errorMessage.textContent = 'Verificando...';
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
+            errorMessage.textContent = 'Verificando...';
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
 
-        try {
-            // ¡EL "PASE"! El mozo llama a la cocina (/api/login)
-            const response = await fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username, password }) // La "orden"
-            });
+            try {
+                // ¡El "PASE"! El mozo llama a la cocina (/api/login)
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password }) // La "orden"
+                });
 
-            const data = await response.json();
+                const data = await response.json();
 
-            if (data.success) {
-                // ¡Éxito! La cocina dijo "OK". Vamos al dashboard.
-                window.location.href = 'dashboard.html';
-            } else {
-                // ¡Fallo! La cocina dijo "Error".
-                errorMessage.textContent = data.message;
+                if (data.success) {
+                    // ¡Éxito! La cocina dijo "OK". Vamos al dashboard.
+                    window.location.href = 'dashboard.html';
+                } else {
+                    // ¡Fallo! La cocina dijo "Error".
+                    errorMessage.textContent = data.message;
+                }
+            } catch (error) {
+                console.error('Error de red al intentar login:', error);
+                errorMessage.textContent = 'Error de conexión. Intenta de nuevo.';
             }
-        } catch (error) {
-            console.error('Error de red al intentar login:', error);
-            errorMessage.textContent = 'Error de conexión. Intenta de nuevo.';
-        }
-    });
-}
+        });
+    }
+    // --- FIN DEL ARREGLO DE LOGIN ---
+
 
     // --- Lógica FASE 1: Navegación Base ---
     const sidebar = document.getElementById('sidebar');
@@ -93,58 +88,64 @@ if (loginForm) {
         });
     }
 
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const targetId = link.getAttribute('data-target');
-            if (!targetId) return;
-            
-            navLinks.forEach(l => l.classList.remove('active'));
-            link.classList.add('active');
+    if(navLinks.length > 0) { // Solo ejecutar si estamos en el dashboard
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('data-target');
+                if (!targetId) return;
+                
+                navLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
 
-            contentSections.forEach(section => {
-                section.classList.remove('active');
-                if (section.id === targetId) {
-                    section.classList.add('active');
+                contentSections.forEach(section => {
+                    section.classList.remove('active');
+                    if (section.id === targetId) {
+                        section.classList.add('active');
+                    }
+                });
+
+                if (sidebar.classList.contains('open')) {
+                    sidebar.classList.remove('open');
                 }
             });
-
-            if (sidebar.classList.contains('open')) {
-                sidebar.classList.remove('open');
-            }
         });
-    });
+    }
     
-    dashCards.forEach(card => {
-        card.addEventListener('click', () => {
-            const targetId = card.getAttribute('data-target');
-            document.querySelector(`.nav-link[data-target="${targetId}"]`).click();
+    if(dashCards.length > 0) { // Solo ejecutar si estamos en el dashboard
+        dashCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const targetId = card.getAttribute('data-target');
+                document.querySelector(`.nav-link[data-target="${targetId}"]`).click();
+            });
         });
-    });
+    }
 
-    tabLinks.forEach(link => {
-        link.addEventListener('click', () => {
-            const targetId = link.getAttribute('data-tab');
-            const parentSection = link.closest('.content-section');
+    if(tabLinks.length > 0) { // Solo ejecutar si estamos en el dashboard
+        tabLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                const targetId = link.getAttribute('data-tab');
+                const parentSection = link.closest('.content-section');
 
-            parentSection.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
-            link.classList.add('active');
+                parentSection.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
 
-            parentSection.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-                if (content.id === targetId) {
-                    content.classList.add('active');
+                parentSection.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === targetId) {
+                        content.classList.add('active');
+                    }
+                });
+                
+                if (targetId === 'alta-evento' && !modoEdicion) {
+                    resetearFormularioAlta();
+                }
+                if (targetId === 'alta-producto' && !modoEdicion) {
+                    resetearFormularioCarta();
                 }
             });
-            
-            if (targetId === 'alta-evento' && !modoEdicion) {
-                resetearFormularioAlta();
-            }
-            if (targetId === 'alta-producto' && !modoEdicion) {
-                resetearFormularioCarta();
-            }
         });
-    });
+    }
     
     // --- Lógica FASE 2: Formulario de Alta Eventos ---
     const formAlta = document.getElementById('form-alta-evento');
@@ -153,8 +154,11 @@ if (loginForm) {
     }
     
     // --- Lógica FASE 3: Búsqueda Eventos ---
-    fetchEventosData();
-    inicializarPanelesBusquedaEventos();
+    // (Solo cargamos datos si estamos en el dashboard)
+    if (document.getElementById('form-busqueda-mod')) {
+        fetchEventosData();
+        inicializarPanelesBusquedaEventos();
+    }
     
     // --- Lógica FASE 4/5/6: Formulario de Alta Carta ---
     const formAltaProducto = document.getElementById('form-alta-producto');
@@ -163,14 +167,16 @@ if (loginForm) {
     }
 
     // --- Lógica FASE 5/6: Búsqueda Carta ---
-    fetchProductosData();
-    inicializarPanelesBusquedaProductos();
+    // (Solo cargamos datos si estamos en el dashboard)
+    if (document.getElementById('form-busqueda-producto')) {
+        fetchProductosData();
+        inicializarPanelesBusquedaProductos();
+    }
 });
 
 
 // -----------------------------------------------------------------
 // --- FASE 2: LÓGICA DEL FORMULARIO DE ALTA (EVENTOS) ---
-// (Esta sección no se toca, ya funciona)
 // -----------------------------------------------------------------
 
 let tags = []; 
@@ -349,7 +355,6 @@ function resetearFormularioAlta() {
 
 // -----------------------------------------------------------------
 // --- FASE 3: LÓGICA DE BÚSQUEDA Y RESULTADOS (EVENTOS) ---
-// (Esta sección no se toca, ya funciona)
 // -----------------------------------------------------------------
 
 async function fetchEventosData() {
@@ -359,11 +364,11 @@ async function fetchEventosData() {
             throw new Error('No se pudo cargar eventos.json');
         }
         adminEventos = await response.json();
-        adminEventos.forEach((ev, index) => ev.id = ev.id || ev.fecha || `evt_${index}`); // Asegura IDs
+        adminEventos.forEach((ev, index) => ev.id = ev.id || ev.fecha || `evt_${index}`); 
         renderizarResultadosEventos();
     } catch (error) {
         console.error(error);
-        alert("Error fatal: No se pudieron cargar los datos de los eventos.");
+        // alert("Error fatal: No se pudieron cargar los datos de los eventos.");
     }
 }
 
@@ -397,11 +402,16 @@ function inicializarPanelesBusquedaEventos() {
     const modContainer = document.getElementById('mod-resultados-container');
     const bajaContainer = document.getElementById('baja-resultados-container');
     
-    modContainer.addEventListener('click', (e) => manejarClickTarjetaEvento(e, 'modificar'));
-    bajaContainer.addEventListener('click', (e) => manejarClickTarjetaEvento(e, 'eliminar'));
+    if (modContainer) modContainer.addEventListener('click', (e) => manejarClickTarjetaEvento(e, 'modificar'));
+    if (bajaContainer) bajaContainer.addEventListener('click', (e) => manejarClickTarjetaEvento(e, 'eliminar'));
 }
 
 function renderizarResultadosEventos() {
+    // Si no estamos en el dashboard, no hacer nada
+    const contenedorMod = document.getElementById('mod-resultados-container');
+    const contenedorBaja = document.getElementById('baja-resultados-container');
+    if (!contenedorMod || !contenedorBaja) return;
+
     const filtrosMod = {
         fecha: document.getElementById('mod-search-fecha').value,
         tipo: document.getElementById('mod-search-tipo').value,
@@ -418,9 +428,6 @@ function renderizarResultadosEventos() {
     const eventosFiltradosMod = filtrarEventos(filtrosMod).reverse();
     const eventosFiltradosBaja = filtrarEventos(filtrosBaja).reverse();
 
-    const contenedorMod = document.getElementById('mod-resultados-container');
-    const contenedorBaja = document.getElementById('baja-resultados-container');
-    
     contenedorMod.innerHTML = eventosFiltradosMod.map(evento => crearTarjetaResultadoEvento(evento, 'modificar')).join('');
     contenedorBaja.innerHTML = eventosFiltradosBaja.map(evento => crearTarjetaResultadoEvento(evento, 'eliminar')).join('');
 }
@@ -960,7 +967,6 @@ function inicializarFormularioCarta() {
             ano: (visibleGroup.querySelector('#producto-ano') || {}).value || null,
             abv: (visibleGroup.querySelector('#producto-abv') || {}).value || null,
             ibu: (visibleGroup.querySelector('#producto-ibu') || {}).value || null,
-            // (Mod #2) Título de Marca
             titulo: (visibleGroup.querySelector('#producto-titulo') || {}).value || null 
         };
         Object.assign(producto_es, camposUnicos);
@@ -970,15 +976,17 @@ function inicializarFormularioCarta() {
         producto_es.titulo = producto_es.titulo || (visibleGroup.querySelector('#producto-titulo-es') || {}).value; // Título genérico
         producto_es.descripcion = (visibleGroup.querySelector('#producto-descripcion-es') || {}).value;
         producto_es.region = (visibleGroup.querySelector('#producto-region-es') || {}).value;
+        producto_es.pais = (visibleGroup.querySelector('#producto-pais-es') || {}).value;
         producto_es.varietal = (visibleGroup.querySelector('#producto-varietal-es') || {}).value;
-        producto_es.crianza = (visibleGroup.querySelector('#producto-crianza-es') || {}).value; // (Mod #1)
+        producto_es.crianza = (visibleGroup.querySelector('#producto-crianza-es') || {}).value;
         
         // --- D. Campos Traducibles (EN) ---
         producto_en.titulo = producto_en.titulo || (visibleGroup.querySelector('#producto-titulo-en') || {}).value; // Título genérico
         producto_en.descripcion = (visibleGroup.querySelector('#producto-descripcion-en') || {}).value;
         producto_en.region = (visibleGroup.querySelector('#producto-region-en') || {}).value;
+        producto_en.pais = (visibleGroup.querySelector('#producto-pais-en') || {}).value;
         producto_en.varietal = (visibleGroup.querySelector('#producto-varietal-en') || {}).value;
-        producto_en.crianza = (visibleGroup.querySelector('#producto-crianza-en') || {}).value; // (Mod #1)
+        producto_en.crianza = (visibleGroup.querySelector('#producto-crianza-en') || {}).value;
 
         // --- E. Validación ---
         if (!producto_es.titulo || !producto_en.titulo) {
@@ -1035,7 +1043,7 @@ function activarLogicaBilingue(visibleGroup) {
             const langGroupES = visibleGroup.querySelector('.lang-content[data-lang-content="es"]');
             const langGroupEN = visibleGroup.querySelector('.lang-content[data-lang-content="en"]');
 
-            // --- ¡ARREGLO 2! ---
+            // --- ¡ARREGLO 2! (Añadimos 'pais') ---
             // Lista de todos los campos a traducir
             const campos = ['titulo', 'descripcion', 'region', 'pais', 'varietal', 'crianza'];
             
@@ -1287,6 +1295,7 @@ function prellenarFormularioCarta(prod) {
     (visibleGroup.querySelector('#producto-titulo-es') || {}).value = prod_es.titulo || ''; // Para Títulos Genéricos
     (visibleGroup.querySelector('#producto-descripcion-es') || {}).value = prod_es.descripcion || '';
     (visibleGroup.querySelector('#producto-region-es') || {}).value = prod_es.region || '';
+    (visibleGroup.querySelector('#producto-pais-es') || {}).value = prod_es.pais || '';
     (visibleGroup.querySelector('#producto-varietal-es') || {}).value = prod_es.varietal || '';
     (visibleGroup.querySelector('#producto-crianza-es') || {}).value = prod_es.crianza || '';
     
@@ -1294,6 +1303,7 @@ function prellenarFormularioCarta(prod) {
     (visibleGroup.querySelector('#producto-titulo-en') || {}).value = prod_en.titulo || ''; // Para Títulos Genéricos
     (visibleGroup.querySelector('#producto-descripcion-en') || {}).value = prod_en.descripcion || '';
     (visibleGroup.querySelector('#producto-region-en') || {}).value = prod_en.region || '';
+    (visibleGroup.querySelector('#producto-pais-en') || {}).value = prod_en.pais || '';
     (visibleGroup.querySelector('#producto-varietal-en') || {}).value = prod_en.varietal || '';
     (visibleGroup.querySelector('#producto-crianza-en') || {}).value = prod_en.crianza || '';
     
