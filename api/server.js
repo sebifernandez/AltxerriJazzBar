@@ -29,11 +29,12 @@ router.post('/login', (req, res) => {
     }
 });
 
-// --- "RECETA" 2: OBTENER EVENTOS (¡CON RUTA CORREGIDA!) ---
+// --- "RECETA" 2: OBTENER EVENTOS (¡CON RUTA CORREGIDA USANDO __dirname!) ---
 router.get('/eventos', (req, res) => {
     try {
-        // ¡ARREGLO! Usamos "process.cwd()" que es la raíz del deploy en Netlify
-        const filePath = path.join(process.cwd(), 'data', 'eventos.json');
+        // ¡ARREGLO! Usamos "__dirname" que apunta a /api/, 
+        // subimos un nivel ('..'), y entramos a /data/
+        const filePath = path.join(__dirname, '..', 'data', 'eventos.json');
         
         const data = fs.readFileSync(filePath, 'utf8');
         res.json(JSON.parse(data));
@@ -44,12 +45,12 @@ router.get('/eventos', (req, res) => {
     }
 });
 
-// --- "RECETA" 3: OBTENER PRODUCTOS (¡CON RUTA CORREGIDA!) ---
+// --- "RECETA" 3: OBTENER PRODUCTOS (¡CON RUTA CORREGIDA USANDO __dirname!) ---
 router.get('/productos', async (req, res) => {
     try {
-        // ¡ARREGLO! Usamos "process.cwd()"
-        const filePathES = path.join(process.cwd(), 'data', 'carta_es.json');
-        const filePathEN = path.join(process.cwd(), 'data', 'carta_en.json');
+        // ¡ARREGLO! Usamos "__dirname"
+        const filePathES = path.join(__dirname, '..', 'data', 'carta_es.json');
+        const filePathEN = path.join(__dirname, '..', 'data', 'carta_en.json');
 
         const dataES = fs.readFileSync(filePathES, 'utf8');
         const dataEN = fs.readFileSync(filePathEN, 'utf8');
