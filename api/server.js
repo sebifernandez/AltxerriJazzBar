@@ -52,7 +52,7 @@ router.post('/login', (req, res) => {
 // 6. Conectamos el libro de recetas a la app
 // Le decimos a Express que todas nuestras rutas empiezan con "/api"
 // (Esto es por el redirect de netlify.toml)
-app.use('/', router);
+app.use('/api', router);
 
 // 7. Exportamos el "enchufe" final
 // "Traducimos" nuestra app Express para que Netlify la entienda.
