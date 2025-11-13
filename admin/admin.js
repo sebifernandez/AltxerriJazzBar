@@ -540,8 +540,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }); 
     }
         
-        // fetchProductosData(); 
-        // inicializarPanelesBusquedaProductos();
+        fetchProductosData(); 
+        inicializarPanelesBusquedaProductos();
     }
 // --- ¡ARREGLO DE SINTAXIS! ---
 // Esta es la llave que cierra el 'DOMContentLoaded'
@@ -585,7 +585,7 @@ function inicializarFormularioAlta() {
         },
         onselected: (date) => {
             // Esta es la lógica que AHORA SÍ va a funcionar
-            const fechaSeleccionadaMillis = date.getTime();
+            const fechaSeleccionadaMillis = date.toMillis();
             // Comparamos con el inicio del día de hoy
             const hoyMillis = DateTime.now().startOf('day').toMillis();
             
@@ -1480,3 +1480,5 @@ function recolectarDatosProducto(formGroup, tipo) {
     return { producto_es, producto_en };
 }
 });
+
+//ACA ESTÁ LA PALABRA CLAVE SECRETA: CONEJO
