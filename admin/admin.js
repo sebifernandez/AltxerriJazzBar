@@ -540,8 +540,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }); 
     }
         
-        fetchProductosData(); 
-        inicializarPanelesBusquedaProductos();
+        // fetchProductosData(); 
+        // inicializarPanelesBusquedaProductos();
     }
 // --- ¡ARREGLO DE SINTAXIS! ---
 // Esta es la llave que cierra el 'DOMContentLoaded'
