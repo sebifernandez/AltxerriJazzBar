@@ -1,4 +1,4 @@
-// --- API/SERVER.JS (Versión CORREGIDA) ---
+// --- API/SERVER.JS (Versión CORREGIDA v2) ---
 
 const express = require('express');
 const serverless = require('serverless-http'); 
@@ -29,28 +29,30 @@ router.post('/login', (req, res) => {
     }
 });
 
-// --- "RECETA" 2: OBTENER EVENTOS (¡RUTA CORREGIDA!) ---
+// --- "RECETA" 2: OBTENER EVENTOS (¡NUEVA RUTA!) ---
 router.get('/eventos', (req, res) => {
+    // CAMBIO: Usamos process.cwd() en lugar de __dirname
+    const filePath = path.join(process.cwd(), 'data', 'eventos.json');
+    
     try {
-        // CAMBIO: Subimos un nivel ('..') para salir de /api/ y entrar a /data/
-        const filePath = path.join(__dirname, '..', 'data', 'eventos.json');
-        
         const data = fs.readFileSync(filePath, 'utf8');
         res.json(JSON.parse(data));
         
     } catch (error) {
-        console.error("Error en GET /eventos:", error);
+        // CAMBIO: Mejoramos el log de error
+        console.error(`Error en GET /eventos. Ruta intentada: ${filePath}`);
+        console.error(error.message); // Imprime el error específico (ej. "ENOENT: no such file...")
         res.status(500).json({ success: false, message: 'Error al leer eventos.json' });
     }
 });
 
-// --- "RECETA" 3: OBTENER PRODUCTOS (¡RUTA CORREGIDA!) ---
+// --- "RECETA" 3: OBTENER PRODUCTOS (¡NUEVA RUTA!) ---
 router.get('/productos', async (req, res) => {
-    try {
-        // CAMBIO: Subimos un nivel ('..') para salir de /api/ y entrar a /data/
-        const filePathES = path.join(__dirname, '..', 'data', 'carta_es.json');
-        const filePathEN = path.join(__dirname, '..', 'data', 'carta_en.json');
+    // CAMBIO: Usamos process.cwd() en lugar de __dirname
+    const filePathES = path.join(process.cwd(), 'data', 'carta_es.json');
+    const filePathEN = path.join(process.cwd(), 'data', 'carta_en.json');
 
+    try {
         const dataES = fs.readFileSync(filePathES, 'utf8');
         const dataEN = fs.readFileSync(filePathEN, 'utf8');
 
@@ -60,7 +62,9 @@ router.get('/productos', async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Error en GET /productos:", error);
+        // CAMBIO: Mejoramos el log de error
+        console.error(`Error en GET /productos. Rutas intentadas: ${filePathES} y ${filePathEN}`);
+        console.error(error.message);
         res.status(500).json({ success: false, message: 'Error al leer carta_es.json o carta_en.json' });
     }
 });
