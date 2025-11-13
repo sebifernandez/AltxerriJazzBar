@@ -1,4 +1,4 @@
-/* --- ADMIN.JS (Versión 4.6 - Arreglo de Bugs de Fecha, Carta y Sintaxis) --- */
+/* --- ADMIN.JS (Versión 4.7 - Arreglo Global de Bugs) --- */
 
 // --- Variables Globales ---
 const { DateTime } = luxon; 
@@ -10,10 +10,310 @@ let adminProductos = [];
 let adminProductos_EN = []; 
 let modoVisibilidad = false; 
 
-// --- ¡ARREGLO PARA BUG 2! ---
-// Movemos 'picker' aquí, al ámbito global
+// --- ¡ARREGLO! Movido al ámbito global
 let tags = []; 
 let picker; 
+
+// --- ¡ARREGLO! Movido al ámbito global ---
+const plantillasBloques = {
+    unicos_titulo_marca: `
+        <div class="form-group">
+            <label for="producto-titulo">Título / Nombre (Marca) *</label>
+            <input type="text" id="producto-titulo" class="form-input" placeholder="Ej: Jack Daniel's" required>
+        </div>`,
+    unicos_precios_copa_botella: `
+        <div class="form-grid">
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-precio-copa">Precio (Copa)</label>
+                    <input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 10">
+                </div>
+            </div>
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-precio-botella">Precio (Botella)</label>
+                    <input type="number" step="0.01" id="producto-precio-botella" class="form-input" placeholder="Ej: 40">
+                </div>
+            </div>
+        </div>`,
+    unicos_precios_cana_pinta: `
+        <div class="form-grid">
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-precio-cana">Precio (Caña) *</label>
+                    <input type="number" step="0.01" id="producto-precio-cana" class="form-input" placeholder="Ej: 4" required>
+                </div>
+            </div>
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-precio-pinta">Precio (Pinta) *</label>
+                    <input type="number" step="0.01" id="producto-precio-pinta" class="form-input" placeholder="Ej: 7" required>
+                </div>
+            </div>
+        </div>`,
+    unicos_precios_botella_solo: `
+        <div class="form-group">
+            <label for="producto-precio-botella">Precio (Unidad) *</label>
+            <input type="number" step="0.01" id="producto-precio-botella" class="form-input" placeholder="Ej: 7" required>
+        </div>`,
+    unicos_precios_copa_solo: `
+        <div class="form-group">
+            <label for="producto-precio-copa">Precio (Copa) *</label>
+            <input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 8" required>
+        </div>`,
+    unicos_precios_copa_botella_destilado: `
+        <div class="form-grid">
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-precio-copa">Precio (Vaso) *</label>
+                    <input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 8" required>
+                </div>
+            </div>
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-precio-botella">Precio (Botella)</label>
+                    <input type="number" step="0.01" id="producto-precio-botella" class="form-input" placeholder="Ej: 65">
+                </div>
+            </div>
+        </div>`,
+    unicos_cerveza_datos: `
+        <div class="form-grid">
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-abv">ABV (%)</label>
+                    <input type="number" step="0.1" id="producto-abv" class="form-input" placeholder="Ej: 5.0">
+                </div>
+            </div>
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-ibu">IBU</label>
+                    <input type="number" id="producto-ibu" class="form-input" placeholder="Ej: 12">
+                </div>
+            </div>
+        </div>`,
+    unicos_vino_datos: `
+        <div class="form-grid">
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-productor">Bodega (Productor)</label>
+                    <input type="text" id="producto-productor" class="form-input" placeholder="Ej: Luca Wines">
+                </div>
+            </div>
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-ano">Año</label>
+                    <input type="text" id="producto-ano" class="form-input" placeholder="Ej: 2021">
+                </div>
+            </div>
+        </div>`,
+    unicos_destilado_datos: `
+        <div class="form-grid">
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-productor">Productor</label>
+                    <input type="text" id="producto-productor" class="form-input" placeholder="Ej: Jack Daniel Distillery">
+                </div>
+            </div>
+        </div>`,
+    unicos_imagen_coctel: `
+        <div class="form-section">
+            <h4>Imagen de la Card (¡Obligatoria para Cocteles!)</h4>
+            <div class="form-group">
+                <label for="producto-imagen-upload">Subir Imagen *</label>
+                <input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required>
+            </div>
+        </div>`,
+    unicos_imagen_vino: `
+        <div class="form-section">
+            <h4>Imagen del Producto (¡Obligatoria para Vinos!)</h4>
+            <div class="form-group">
+                <label for="producto-imagen-upload">Subir Imagen *</label>
+                <input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required>
+            </div>
+        </div>`,
+    unicos_vino_destacado: `
+        <div class="form-group-checkbox-inline">
+            <input type="checkbox" id="producto-destacado">
+            <label for="producto-destacado">Marcar como "Vino Destacado de la Semana"</label>
+        </div>`,
+
+    trad_es_titulo: `
+        <div class="form-group">
+            <label for="producto-titulo-es">Título (ES) *</label>
+            <input type="text" id="producto-titulo-es" class="form-input" required>
+        </div>`,
+    trad_es_descripcion: `
+        <div class="form-group">
+            <label for="producto-descripcion-es">Descripción (ES) *</label>
+            <textarea id="producto-descripcion-es" class="form-input" style="min-height: 100px;" required></textarea>
+        </div>`,
+    trad_es_region_pais: `
+        <div class="form-grid">
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-region-es">Región (ES)</label>
+                    <input type="text" id="producto-region-es" class="form-input">
+                </div>
+            </div>
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-pais-es">País (ES)</label>
+                    <input type="text" id="producto-pais-es" class="form-input">
+                </div>
+            </div>
+        </div>`,
+    trad_es_varietal_vino: `
+        <div class="form-group">
+            <label for="producto-varietal-es">Varietal (ES)</label>
+            <input type="text" id="producto-varietal-es" class="form-input">
+        </div>`,
+    trad_es_crianza_vino: `
+        <div class="form-group">
+            <label for="producto-crianza-es">Crianza (ES)</label>
+            <input type="text" id="producto-crianza-es" class="form-input" placeholder="Ej: 14 meses en barricas">
+        </div>`,
+    trad_es_crianza_destilado: `
+        <div class="form-group">
+            <label for="producto-crianza-es">Crianza (ES)</label>
+            <input type="text" id="producto-crianza-es" class="form-input" placeholder="Ej: En barricas nuevas...">
+        </div>`,
+
+    
+    trad_en_titulo: `
+        <div class="form-group">
+            <label for="producto-titulo-en">Título (EN) *</label>
+            <input type="text" id="producto-titulo-en" class="form-input" required>
+        </div>`,
+    trad_en_descripcion: `
+        <div class="form-group">
+            <label for="producto-descripcion-en">Descripción (EN) *</label>
+            <textarea id="producto-descripcion-en" class="form-input" style="min-height: 100px;" required></textarea>
+        </div>`,
+    trad_en_region_pais: `
+        <div class="form-grid">
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-region-en">Región (EN)</label>
+                    <input type="text" id="producto-region-en" class="form-input">
+                </div>
+            </div>
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="producto-pais-en">País (EN)</label>
+                    <input type="text" id="producto-pais-en" class="form-input">
+                </div>
+            </div>
+        </div>`,
+    trad_en_varietal_vino: `
+        <div class="form-group">
+            <label for="producto-varietal-en">Varietal (EN)</label>
+            <input type="text" id="producto-varietal-en" class="form-input">
+        </div>`,
+    trad_en_crianza_vino: `
+        <div class="form-group">
+            <label for="producto-crianza-en">Crianza (EN)</label>
+            <input type="text" id="producto-crianza-en" class="form-input" placeholder="Ej: 14 months in barrels">
+        </div>`,
+    trad_en_crianza_destilado: `
+        <div class="form-group">
+            <label for="producto-crianza-en">Crianza (EN)</label>
+            <input type="text" id="producto-crianza-en" class="form-input" placeholder="Ej: In new barrels...">
+        </div>`,
+    
+    bilingue_wrapper: (html_es, html_en) => `
+        <div class="form-section-bilingue">
+            <div class="lang-tabs">
+                <button type="button" class="lang-tab-btn active" data-lang="es">Español</button>
+                <button type="button" class="lang-tab-btn" data-lang="en">Inglés</button>
+            </div>
+            <div class="form-bilingue-grid">
+                <div class="lang-content lang-col-es active" data-lang-content="es">
+                    ${html_es}
+                </div>
+                <div class="lang-content lang-col-en" data-lang-content="en">
+                    <button type="button" class="btn-translate" data-lang-group="en">
+                        <i class='bx bxs-magic-wand'></i> Sugerir traducción para todos los campos
+                    </button>
+                    ${html_en}
+                </div>
+            </div>
+        </div>`
+};
+
+const plantillasFormCarta = {
+    coctel: `
+        <div class="form-section">
+            <h4>Datos Únicos (No se traducen)</h4>
+            ${plantillasBloques.unicos_precios_copa_solo}
+            ${plantillasBloques.unicos_imagen_coctel}
+        </div>
+        ${plantillasBloques.bilingue_wrapper(
+            plantillasBloques.trad_es_titulo + plantillasBloques.trad_es_descripcion,
+            plantillasBloques.trad_en_titulo + plantillasBloques.trad_en_descripcion
+        )}
+    `,
+    sinAlcohol: `
+        <div class="form-section">
+            <h4>Datos Únicos (No se traducen)</h4>
+            ${plantillasBloques.unicos_precios_botella_solo}
+        </div>
+        ${plantillasBloques.bilingue_wrapper(
+            plantillasBloques.trad_es_titulo + plantillasBloques.trad_es_descripcion,
+            plantillasBloques.trad_en_titulo + plantillasBloques.trad_en_descripcion
+        )}
+    `,
+    
+    cervezaBarril: `
+        <div class="form-section">
+            <h4>Datos Únicos (No se traducen)</h4>
+            ${plantillasBloques.unicos_titulo_marca}
+            ${plantillasBloques.unicos_precios_cana_pinta}
+            ${plantillasBloques.unicos_cerveza_datos}
+        </div>
+        ${plantillasBloques.bilingue_wrapper(
+            plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_descripcion,
+            plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_descripcion
+        )}
+    `,
+    cervezaEnvasada: `
+        <div class="form-section">
+            <h4>Datos Únicos (No se traducen)</h4>
+            ${plantillasBloques.unicos_titulo_marca}
+            ${plantillasBloques.unicos_precios_botella_solo}
+            ${plantillasBloques.unicos_cerveza_datos}
+        </div>
+        ${plantillasBloques.bilingue_wrapper(
+            plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_descripcion,
+            plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_descripcion
+        )}
+    `,
+    vino: `
+        ${plantillasBloques.unicos_vino_destacado}
+        <div class="form-section">
+            <h4>Datos Únicos (No se traducen)</h4>
+            ${plantillasBloques.unicos_titulo_marca}
+            ${plantillasBloques.unicos_vino_datos}
+            ${plantillasBloques.unicos_precios_copa_botella}
+            ${plantillasBloques.unicos_imagen_vino}
+        </div>
+        ${plantillasBloques.bilingue_wrapper(
+            plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_varietal_vino + plantillasBloques.trad_es_crianza_vino + plantillasBloques.trad_es_descripcion,
+            plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_varietal_vino + plantillasBloques.trad_en_crianza_vino + plantillasBloques.trad_en_descripcion
+        )}
+    `,
+    destilado: `
+        <div class="form-section">
+            <h4>Datos Únicos (No se traducen)</h4>
+            ${plantillasBloques.unicos_titulo_marca}
+            ${plantillasBloques.unicos_precios_copa_botella_destilado}
+            ${plantillasBloques.unicos_destilado_datos}
+        </div>
+        ${plantillasBloques.bilingue_wrapper(
+            plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_crianza_destilado + plantillasBloques.trad_es_descripcion,
+            plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_crianza_destilado + plantillasBloques.trad_en_descripcion
+        )}
+    `
+};
 
 // (formatarPrecio y sugerirTraduccion no cambian)
 function formatarPrecio(precio) {
@@ -32,7 +332,10 @@ function getAuthToken() {
 }
 
 
-// --- Inicializador Principal ---
+// --- FIN DE LAS VARIABLES GLOBALES ---
+
+
+// --- INICIO DEL DOMCONTENTLOADED ---
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.querySelector('.login-form');
     const dashboardContainer = document.querySelector('.dashboard-container');
@@ -134,8 +437,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 
-                if (targetId === 'alta-producto' && !modoEdicion) { 
-                    resetearFormularioCarta(); 
+                if (targetId === 'alta-producto') {
+                    if (!modoEdicion) {
+                        // ¡ARREGLO! Llamamos a inicializar, no a resetear
+                        inicializarFormularioCarta(); 
+                    }
                 }
             });
         });
@@ -147,13 +453,14 @@ document.addEventListener('DOMContentLoaded', () => {
         inicializarPanelesBusquedaEventos();
         
         const formAltaProducto = document.getElementById('form-alta-producto');
-        if (formAltaProducto) { inicializarFormularioCarta(); }
+        if (formAltaProducto) { inicializarFormularioCarta(); } // Se llama una vez al cargar
         fetchProductosData(); 
         inicializarPanelesBusquedaProductos();
     }
 // --- ¡ARREGLO DE SINTAXIS! ---
-// La llave de cierre de 'DOMContentLoaded'
-// se ha movido al FINAL del archivo.
+// Esta es la llave que cierra el 'DOMContentLoaded'
+// que se abrió en la línea 23
+
 
 
 // -----------------------------------------------------------------
@@ -716,320 +1023,24 @@ function prellenarFormularioModEvento(evento) {
 // (Esta sección no tiene cambios, sigue en simulación)
 // -----------------------------------------------------------------
 
-const plantillasBloques = {
-    unicos_titulo_marca: `
-        <div class="form-group">
-            <label for="producto-titulo">Título / Nombre (Marca) *</label>
-            <input type="text" id="producto-titulo" class="form-input" placeholder="Ej: Jack Daniel's" required>
-        </div>`,
-    unicos_precios_copa_botella: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-copa">Precio (Copa)</label>
-                    <input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 10">
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-botella">Precio (Botella)</label>
-                    <input type="number" step="0.01" id="producto-precio-botella" class="form-input" placeholder="Ej: 40">
-                </div>
-            </div>
-        </div>`,
-    unicos_precios_cana_pinta: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-cana">Precio (Caña) *</label>
-                    <input type="number" step="0.01" id="producto-precio-cana" class="form-input" placeholder="Ej: 4" required>
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-pinta">Precio (Pinta) *</label>
-                    <input type="number" step="0.01" id="producto-precio-pinta" class="form-input" placeholder="Ej: 7" required>
-                </div>
-            </div>
-        </div>`,
-    unicos_precios_botella_solo: `
-        <div class="form-group">
-            <label for="producto-precio-botella">Precio (Unidad) *</label>
-            <input type="number" step="0.01" id="producto-precio-botella" class="form-input" placeholder="Ej: 7" required>
-        </div>`,
-    unicos_precios_copa_solo: `
-        <div class="form-group">
-            <label for="producto-precio-copa">Precio (Copa) *</label>
-            <input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 8" required>
-        </div>`,
-    unicos_precios_copa_botella_destilado: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-copa">Precio (Vaso) *</label>
-                    <input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 8" required>
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-botella">Precio (Botella)</label>
-                    <input type="number" step="0.01" id="producto-precio-botella" class="form-input" placeholder="Ej: 65">
-                </div>
-            </div>
-        </div>`,
-    unicos_cerveza_datos: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-abv">ABV (%)</label>
-                    <input type="number" step="0.1" id="producto-abv" class="form-input" placeholder="Ej: 5.0">
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-ibu">IBU</label>
-                    <input type="number" id="producto-ibu" class="form-input" placeholder="Ej: 12">
-                </div>
-            </div>
-        </div>`,
-    unicos_vino_datos: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-productor">Bodega (Productor)</label>
-                    <input type="text" id="producto-productor" class="form-input" placeholder="Ej: Luca Wines">
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-ano">Año</label>
-                    <input type="text" id="producto-ano" class="form-input" placeholder="Ej: 2021">
-                </div>
-            </div>
-        </div>`,
-    unicos_destilado_datos: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-productor">Productor</label>
-                    <input type="text" id="producto-productor" class="form-input" placeholder="Ej: Jack Daniel Distillery">
-                </div>
-            </div>
-        </div>`,
-    unicos_imagen_coctel: `
-        <div class="form-section">
-            <h4>Imagen de la Card (¡Obligatoria para Cocteles!)</h4>
-            <div class="form-group">
-                <label for="producto-imagen-upload">Subir Imagen *</label>
-                <input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required>
-            </div>
-        </div>`,
-    unicos_imagen_vino: `
-        <div class="form-section">
-            <h4>Imagen del Producto (¡Obligatoria para Vinos!)</h4>
-            <div class="form-group">
-                <label for="producto-imagen-upload">Subir Imagen *</label>
-                <input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required>
-            </div>
-        </div>`,
-    unicos_vino_destacado: `
-        <div class="form-group-checkbox-inline">
-            <input type="checkbox" id="producto-destacado">
-            <label for="producto-destacado">Marcar como "Vino Destacado de la Semana"</label>
-        </div>`,
-
-    trad_es_titulo: `
-        <div class="form-group">
-            <label for="producto-titulo-es">Título (ES) *</label>
-            <input type="text" id="producto-titulo-es" class="form-input" required>
-        </div>`,
-    trad_es_descripcion: `
-        <div class="form-group">
-            <label for="producto-descripcion-es">Descripción (ES) *</label>
-            <textarea id="producto-descripcion-es" class="form-input" style="min-height: 100px;" required></textarea>
-        </div>`,
-    trad_es_region_pais: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-region-es">Región (ES)</label>
-                    <input type="text" id="producto-region-es" class="form-input">
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-pais-es">País (ES)</label>
-                    <input type="text" id="producto-pais-es" class="form-input">
-                </div>
-            </div>
-        </div>`,
-    trad_es_varietal_vino: `
-        <div class="form-group">
-            <label for="producto-varietal-es">Varietal (ES)</label>
-            <input type="text" id="producto-varietal-es" class="form-input">
-        </div>`,
-    trad_es_crianza_vino: `
-        <div class="form-group">
-            <label for="producto-crianza-es">Crianza (ES)</label>
-            <input type="text" id="producto-crianza-es" class="form-input" placeholder="Ej: 14 meses en barricas">
-        </div>`,
-    trad_es_crianza_destilado: `
-        <div class="form-group">
-            <label for="producto-crianza-es">Crianza (ES)</label>
-            <input type="text" id="producto-crianza-es" class="form-input" placeholder="Ej: En barricas nuevas...">
-        </div>`,
-
-    
-    trad_en_titulo: `
-        <div class="form-group">
-            <label for="producto-titulo-en">Título (EN) *</label>
-            <input type="text" id="producto-titulo-en" class="form-input" required>
-        </div>`,
-    trad_en_descripcion: `
-        <div class="form-group">
-            <label for="producto-descripcion-en">Descripción (EN) *</label>
-            <textarea id="producto-descripcion-en" class="form-input" style="min-height: 100px;" required></textarea>
-        </div>`,
-    trad_en_region_pais: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-region-en">Región (EN)</label>
-                    <input type="text" id="producto-region-en" class="form-input">
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-pais-en">País (EN)</label>
-                    <input type="text" id="producto-pais-en" class="form-input">
-                </div>
-            </div>
-        </div>`,
-    trad_en_varietal_vino: `
-        <div class="form-group">
-            <label for="producto-varietal-en">Varietal (EN)</label>
-            <input type="text" id="producto-varietal-en" class="form-input">
-        </div>`,
-    trad_en_crianza_vino: `
-        <div class="form-group">
-            <label for="producto-crianza-en">Crianza (EN)</label>
-            <input type="text" id="producto-crianza-en" class="form-input" placeholder="Ej: 14 months in barrels">
-        </div>`,
-    trad_en_crianza_destilado: `
-        <div class="form-group">
-            <label for="producto-crianza-en">Crianza (EN)</label>
-            <input type="text" id="producto-crianza-en" class="form-input" placeholder="Ej: In new barrels...">
-        </div>`,
-    
-    bilingue_wrapper: (html_es, html_en) => `
-        <div class="form-section-bilingue">
-            <div class="lang-tabs">
-                <button type="button" class="lang-tab-btn active" data-lang="es">Español</button>
-                <button type="button" class="lang-tab-btn" data-lang="en">Inglés</button>
-            </div>
-            <div class="form-bilingue-grid">
-                <div class="lang-content lang-col-es active" data-lang-content="es">
-                    ${html_es}
-                </div>
-                <div class="lang-content lang-col-en" data-lang-content="en">
-                    <button type="button" class="btn-translate" data-lang-group="en">
-                        <i class='bx bxs-magic-wand'></i> Sugerir traducción para todos los campos
-                    </button>
-                    ${html_en}
-                </div>
-            </div>
-        </div>`
-};
-
-const plantillasFormCarta = {
-    coctel: `
-        <div class="form-section">
-            <h4>Datos Únicos (No se traducen)</h4>
-            ${plantillasBloques.unicos_precios_copa_solo}
-            ${plantillasBloques.unicos_imagen_coctel}
-        </div>
-        ${plantillasBloques.bilingue_wrapper(
-            plantillasBloques.trad_es_titulo + plantillasBloques.trad_es_descripcion,
-            plantillasBloques.trad_en_titulo + plantillasBloques.trad_en_descripcion
-        )}
-    `,
-    sinAlcohol: `
-        <div class="form-section">
-            <h4>Datos Únicos (No se traducen)</h4>
-            ${plantillasBloques.unicos_precios_botella_solo}
-        </div>
-        ${plantillasBloques.bilingue_wrapper(
-            plantillasBloques.trad_es_titulo + plantillasBloques.trad_es_descripcion,
-            plantillasBloques.trad_en_titulo + plantillasBloques.trad_en_descripcion
-        )}
-    `,
-    
-    cervezaBarril: `
-        <div class="form-section">
-            <h4>Datos Únicos (No se traducen)</h4>
-            ${plantillasBloques.unicos_titulo_marca}
-            ${plantillasBloques.unicos_precios_cana_pinta}
-            ${plantillasBloques.unicos_cerveza_datos}
-        </div>
-        ${plantillasBloques.bilingue_wrapper(
-            plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_descripcion,
-            plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_descripcion
-        )}
-    `,
-    cervezaEnvasada: `
-        <div class="form-section">
-            <h4>Datos Únicos (No se traducen)</h4>
-            ${plantillasBloques.unicos_titulo_marca}
-            ${plantillasBloques.unicos_precios_botella_solo}
-            ${plantillasBloques.unicos_cerveza_datos}
-        </div>
-        ${plantillasBloques.bilingue_wrapper(
-            plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_descripcion,
-            plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_descripcion
-        )}
-    `,
-    vino: `
-        ${plantillasBloques.unicos_vino_destacado}
-        <div class="form-section">
-            <h4>Datos Únicos (No se traducen)</h4>
-            ${plantillasBloques.unicos_titulo_marca}
-            ${plantillasBloques.unicos_vino_datos}
-            ${plantillasBloques.unicos_precios_copa_botella}
-            ${plantillasBloques.unicos_imagen_vino}
-        </div>
-        ${plantillasBloques.bilingue_wrapper(
-            plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_varietal_vino + plantillasBloques.trad_es_crianza_vino + plantillasBloques.trad_es_descripcion,
-            plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_varietal_vino + plantillasBloques.trad_en_crianza_vino + plantillasBloques.trad_en_descripcion
-        )}
-    `,
-    destilado: `
-        <div class="form-section">
-            <h4>Datos Únicos (No se traducen)</h4>
-            ${plantillasBloques.unicos_titulo_marca}
-            ${plantillasBloques.unicos_precios_copa_botella_destilado}
-            ${plantillasBloques.unicos_destilado_datos}
-        </div>
-        ${plantillasBloques.bilingue_wrapper(
-            plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_crianza_destilado + plantillasBloques.trad_es_descripcion,
-            plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_crianza_destilado + plantillasBloques.trad_en_descripcion
-        )}
-    `
-};
-
 function inicializarFormularioCarta() {
     const selectorTipo = document.getElementById('producto-tipo');
     const container = document.getElementById('smart-form-container');
     const actions = document.getElementById('form-actions-producto');
     const form = document.getElementById('form-alta-producto');
-    for (const tipo in plantillasFormCarta) {
-        const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
-        const divId = `fields-${tipoPlantilla}`;
-        if (!document.getElementById(divId)) {
-            const div = document.createElement('div');
-            div.id = divId;
-            div.className = 'form-fields-group';
-            div.innerHTML = plantillasFormCarta[tipoPlantilla];
-            container.appendChild(div);
+    
+    // Rellenamos el contenedor si está vacío
+    if (!container.hasChildNodes()) {
+        for (const tipo in plantillasFormCarta) {
+            const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
+            const divId = `fields-${tipoPlantilla}`;
+            if (!document.getElementById(divId)) {
+                const div = document.createElement('div');
+                div.id = divId;
+                div.className = 'form-fields-group';
+                div.innerHTML = plantillasFormCarta[tipoPlantilla];
+                container.appendChild(div);
+            }
         }
     }
     
@@ -1073,7 +1084,7 @@ function inicializarFormularioCarta() {
             const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
 
             // 2. Validar (simple)
-            if (!producto_es.titulo || producto_es.titulo === '') {
+            if ((!producto_es.titulo || producto_es.titulo === '')) {
                  throw new Error("El Título (ES o Marca) es obligatorio.");
             }
 
@@ -1083,6 +1094,9 @@ function inicializarFormularioCarta() {
                 console.log("Datos listos para MODIFICAR (ES):", producto_es);
                 console.log("Datos listos para MODIFICAR (EN):", producto_en);
                 alert("¡El modo MODIFICAR producto aún está en simulación!");
+                // (Reseteamos el botón por ahora)
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
 
             } else {
                 // --- MODO CREAR (POST) ---
@@ -1097,19 +1111,23 @@ function inicializarFormularioCarta() {
 
                 if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
                 alert("¡Producto Creado con Éxito!");
+                
+                // 4. Resetear solo si se creó con éxito
+                fetchProductosData(); // Recarga la lista de productos
+                resetearFormularioCarta(); // Limpia el formulario
             }
-
-            // 4. Resetear
-            fetchProductosData(); // Recarga la lista de productos
-            resetearFormularioCarta(); // Limpia el formulario
 
         } catch (error) {
             console.error("Error al guardar producto:", error);
             alert(`Error: ${error.message}`);
-        } finally {
+            // Si hay error, reactivamos el botón
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-            if (modoEdicion) resetearFormularioCarta();
+        } finally {
+            // Esta lógica se movió arriba para que solo resetee si hay éxito
+            // btnSubmit.disabled = false;
+            // btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
+            // if (modoEdicion) resetearFormularioCarta();
         }
     });
 }
@@ -1190,7 +1208,7 @@ async function fetchProductosData() {
         // ¡CAMBIO! La API ahora nos da la estructura completa
         // y nuestro backend la arma correctamente
         if (!data.es || !data.es.productos) {
-            console.log(data); // Para ver qué está llegando
+            console.log("Datos recibidos de /api/productos:", data);
             throw new Error("La API no devolvió 'productos' para ES");
         }
         adminProductos = data.es.productos; 
@@ -1437,6 +1455,4 @@ function recolectarDatosProducto(formGroup, tipo) {
 
     return { producto_es, producto_en };
 }
-
-// --- ¡CAMBIO! Esta es la llave que cierra el 'DOMContentLoaded' ---
 });

@@ -74,12 +74,12 @@ router.get('/eventos', async (req, res) => {
 router.get('/productos', async (req, res) => {
     try {
         const db = await connectToDb();
-        
+
         const [productosES, productosEN] = await Promise.all([
             db.collection('productos_es').find({}).toArray(),
             db.collection('productos_en').find({}).toArray()
         ]);
-        
+
         // --- ARREGLO PARA LA CARTA PÚBLICA (app.js) ---
         // Hardcodeamos los textosUI que tu app.js necesita
         const textosUI_es = {
