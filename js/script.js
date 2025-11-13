@@ -293,14 +293,24 @@ window.addEventListener("click", e => {
   if (e.target === modal) modal.style.display = "none";
 });
 
-// ✅ Cargar JSON e Inicializar
-fetch("data/eventos.json") // Asumo que el JSON está en la raíz o en data/eventos.json
-  .then(res => res.json())
+// ✅ Cargar JSON desde la API e Inicializar
+fetch("/api/eventos") // CAMBIO: Llamamos a nuestra nueva API
+  .then(res => {
+      if (!res.ok) {
+          throw new Error('Error al cargar la API de eventos');
+      }
+      return res.json();
+  })
   .then(data => {
     eventos = data;
     inicializarEventos(); 
     inicializarCalendario();
     aplicarFiltros(); 
+  })
+  .catch(error => {
+      console.error(error);
+      // Opcional: Mostrar un error en el carrusel
+      if (track) track.innerHTML = "<p style='color: white; text-align: center;'>Error al cargar eventos.</p>";
   });
 
 function inicializarCalendario() {

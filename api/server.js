@@ -1,4 +1,4 @@
-// --- API/SERVER.JS (El "Cerebro" del Backend) ---
+// --- API/SERVER.JS (Versión CORREGIDA) ---
 
 const express = require('express');
 const serverless = require('serverless-http'); 
@@ -29,11 +29,11 @@ router.post('/login', (req, res) => {
     }
 });
 
-// --- "RECETA" 2: OBTENER EVENTOS (¡NUEVO INTENTO DE RUTA!) ---
+// --- "RECETA" 2: OBTENER EVENTOS (¡RUTA CORREGIDA!) ---
 router.get('/eventos', (req, res) => {
     try {
-        // CAMBIO: Asumimos que "data" está empaquetado AL LADO de server.js
-        const filePath = path.join(__dirname, 'data', 'eventos.json');
+        // CAMBIO: Subimos un nivel ('..') para salir de /api/ y entrar a /data/
+        const filePath = path.join(__dirname, '..', 'data', 'eventos.json');
         
         const data = fs.readFileSync(filePath, 'utf8');
         res.json(JSON.parse(data));
@@ -44,12 +44,12 @@ router.get('/eventos', (req, res) => {
     }
 });
 
-// --- "RECETA" 3: OBTENER PRODUCTOS (¡NUEVO INTENTO DE RUTA!) ---
+// --- "RECETA" 3: OBTENER PRODUCTOS (¡RUTA CORREGIDA!) ---
 router.get('/productos', async (req, res) => {
     try {
-        // CAMBIO: Asumimos que "data" está empaquetado AL LADO de server.js
-        const filePathES = path.join(__dirname, 'data', 'carta_es.json');
-        const filePathEN = path.join(__dirname, 'data', 'carta_en.json');
+        // CAMBIO: Subimos un nivel ('..') para salir de /api/ y entrar a /data/
+        const filePathES = path.join(__dirname, '..', 'data', 'carta_es.json');
+        const filePathEN = path.join(__dirname, '..', 'data', 'carta_en.json');
 
         const dataES = fs.readFileSync(filePathES, 'utf8');
         const dataEN = fs.readFileSync(filePathEN, 'utf8');

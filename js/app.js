@@ -1,17 +1,21 @@
 /**
- * Carga el archivo JSON correspondiente al idioma.
+ * Carga los datos de la CARTA desde la API.
  * @param {string} lang - El idioma a cargar ('es' o 'en').
  * @returns {Promise<object | null>} Los datos del JSON o null si hay error.
  */
 async function cargarDatos(lang) {
-    const filePath = `data/carta_${lang}.json`;
+    // CAMBIO: Ya no leemos un archivo, llamamos a nuestra API.
+    const apiUrl = '/api/productos'; 
     try {
-        const response = await fetch(filePath);
+        const response = await fetch(apiUrl);
         if (!response.ok) {
-            throw new Error(`Error al cargar ${filePath}: ${response.statusText}`);
+            throw new Error(`Error al cargar la API de productos: ${response.statusText}`);
         }
+        
+        // La API ya nos da los dos idiomas, seleccionamos el que queremos.
         const data = await response.json();
-        return data;
+        return data[lang]; // Devolvemos solo 'es' o 'en'
+
     } catch (error) {
         console.error(error);
         return null; // Devuelve null en caso de error
