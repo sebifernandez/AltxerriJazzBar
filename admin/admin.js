@@ -1,10 +1,10 @@
-/* --- ADMIN.JS (Versión 4.2 - Corregido con _id de MongoDB y COMPLETO) --- */
+/* --- ADMIN.JS (Versión 4.3 - Arreglo de Bugs de Fecha) --- */
 
 // --- Variables Globales ---
 const { DateTime } = luxon; 
 let adminEventos = []; 
 let modoEdicion = false; 
-let idEventoEdicion = null; // ¡CAMBIO! Esto ahora guardará el _id de Mongo
+let idEventoEdicion = null; // Guardará el _id de Mongo
 
 let adminProductos = []; 
 let adminProductos_EN = []; 
@@ -142,8 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
 let tags = []; 
 let picker; 
 
-
-
+// --- ¡CAMBIO! REEMPLAZA ESTA FUNCIÓN ENTERA ---
 function inicializarFormularioAlta() {
     
     const form = document.getElementById('form-alta-evento');
@@ -153,8 +152,14 @@ function inicializarFormularioAlta() {
     const inputTag = document.getElementById('evento-tags');
     const tagContainer = document.getElementById('tag-container');
     
-    // ¡ARREGLO! Volvemos a la inicialización simple.
-    // Creamos el picker. La variable 'picker' es global y esto está bien.
+    // --- ¡ARREGLO PARA BUG 1 (Fecha Pasada)! ---
+    // Destruimos el calendario anterior si existe (al cambiar de pestaña)
+    // para asegurarnos de que los listeners se re-apliquen.
+    if (picker) {
+        picker.destroy();
+    }
+
+    // Volvemos a crear el picker con la lógica de 'onselected'
     picker = new Litepicker({
         element: inputFecha,
         format: 'YYYY-MM-DD',
@@ -166,13 +171,12 @@ function inicializarFormularioAlta() {
             apply: 'Aplicar'
         },
         onselected: (date) => {
-            // Esta es la lógica que debe funcionar:
+            // Esta es la lógica que AHORA SÍ va a funcionar
             const fechaSeleccionadaMillis = date.getTime();
             const hoyMillis = DateTime.now().startOf('day').toMillis();
             
             if (fechaSeleccionadaMillis < hoyMillis) {
                 if (!confirm("Has seleccionado una fecha en el pasado. ¿Estás seguro de que quieres continuar?")) {
-                    // Limpiamos la selección si el usuario dice "Cancelar"
                     picker.clearSelection(); 
                 }
             }
@@ -232,7 +236,6 @@ function inicializarFormularioAlta() {
     });
     
     // --- Lógica de SUBMIT (guardado) ---
-    // (El listener del form.addEventListener('submit', ...) no cambia en absoluto)
     form.addEventListener('submit', async (e) => {
         e.preventDefault(); 
         const btnSubmit = form.querySelector('.btn-primary');
@@ -257,7 +260,7 @@ function inicializarFormularioAlta() {
             return;
         }
         if (!eventoData.fecha) {
-                alert("Error: 'Fecha' es un campo obligatorio.");
+             alert("Error: 'Fecha' es un campo obligatorio.");
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
             return;
@@ -312,8 +315,12 @@ function inicializarFormularioAlta() {
                 alert("¡Evento Modificado con Éxito!");
 
             } else {
-                if (adminEventos.some(ev => ev.fecha === eventoFinal.fecha && ev.tipoEvento === eventoFinal.tipoEvento)) {
-                    if (!confirm("¡Atención! Ya existe un evento de este tipo en esta fecha. ¿Deseas crearlo igualmente?")) {
+                
+                // --- ¡ARREGLO PARA BUG 2 (Conflicto de Fecha)! ---
+                // Comprobamos si hay CUALQUIER evento en esa fecha
+                if (adminEventos.some(ev => ev.fecha === eventoFinal.fecha)) {
+                    // Si lo hay, preguntamos
+                    if (!confirm("¡Atención! Ya existe otro evento en esta fecha. ¿Deseas crearlo igualmente?")) {
                         btnSubmit.disabled = false;
                         btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
                         return;
@@ -345,6 +352,8 @@ function inicializarFormularioAlta() {
         }
     });
 }
+// --- FIN DE LA FUNCIÓN REEMPLAZADA ---
+
 
 // (renderizarTags, esURLValida no cambian)
 function renderizarTags() {
@@ -393,10 +402,9 @@ function resetearFormularioAlta() {
 
 // -----------------------------------------------------------------
 // --- FASE 3: LÓGICA DE BÚSQUEDA Y RESULTADOS (EVENTOS) ---
-// (Corregido con _id)
+// (Esta sección no tiene cambios)
 // -----------------------------------------------------------------
 
-// (fetchEventosData no cambia)
 async function fetchEventosData() {
     try {
         const response = await fetch('/api/eventos', {
@@ -413,7 +421,6 @@ async function fetchEventosData() {
             throw new Error('No se pudo cargar eventos.json desde la API');
         }
         adminEventos = await response.json(); 
-        // ¡CAMBIO! Ya no necesitamos inventar un "id"
         renderizarResultadosEventos();
     } catch (error) {
         console.error(error);
@@ -421,7 +428,6 @@ async function fetchEventosData() {
     }
 }
 
-// (inicializarPanelesBusquedaEventos, renderizarResultadosEventos, filtrarEventos no cambian)
 function inicializarPanelesBusquedaEventos() {
     const inputs = document.querySelectorAll('#form-busqueda-mod .form-input, #form-busqueda-baja .form-input');
     inputs.forEach(input => {
@@ -490,17 +496,12 @@ function filtrarEventos(filtros) {
     });
 }
 
-
-// --- ¡CAMBIO! ---
 function crearTarjetaResultadoEvento(evento, tipoAccion) {
     const esModificar = tipoAccion === 'modificar';
-    
-    // ¡CAMBIO! Usamos evento._id (el ID de Mongo)
     const botonHtml = esModificar
         ? `<button class="btn btn-card btn-card-modificar" data-id="${evento._id}"><i class='bx bxs-pencil'></i> Modificar</button>`
         : `<button class="btn btn-card btn-card-eliminar" data-id="${evento._id}"><i class='bx bxs-trash'></i> Eliminar</button>`;
 
-    // (Lógica de visualización no cambia)
     let tituloMostrar = evento.titulo;
     let imagenMostrar = (evento.imagen && evento.imagen !== "imgBandaGenerica.jpg") 
         ? `../img/${evento.imagen}` 
@@ -542,13 +543,12 @@ function crearTarjetaResultadoEvento(evento, tipoAccion) {
     `;
 }
 
-// --- ¡CAMBIO! ---
 function manejarClickTarjetaEvento(e, accion) {
     const boton = e.target.closest(accion === 'modificar' ? '.btn-card-modificar' : '.btn-card-eliminar');
     if (!boton) return; 
     
-    const idMongo = boton.getAttribute('data-id'); // ¡CAMBIO! Esto ahora es el _id
-    const evento = adminEventos.find(ev => ev._id === idMongo); // ¡CAMBIO! Buscamos por _id
+    const idMongo = boton.getAttribute('data-id'); 
+    const evento = adminEventos.find(ev => ev._id === idMongo); 
     if (!evento) {
         alert("Error: No se encontró el evento.");
         return;
@@ -561,7 +561,6 @@ function manejarClickTarjetaEvento(e, accion) {
     }
 }
 
-// --- ¡CAMBIO! ---
 async function eliminarEvento(evento, boton) {
     if (!confirm(`¿Estás seguro de que quieres eliminar el evento "${evento.titulo || evento.tipoEvento}" del ${evento.fecha}? \n\n¡Esta acción es REAL y guarda un backup!`)) {
         return;
@@ -570,7 +569,6 @@ async function eliminarEvento(evento, boton) {
     boton.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i>";
     
     try {
-        // ¡CAMBIO! Usamos evento._id en la ruta
         const response = await fetch(`/api/eventos/eliminar/${evento._id}`, {
             method: 'DELETE',
             headers: {
@@ -582,7 +580,7 @@ async function eliminarEvento(evento, boton) {
         if (!response.ok) throw new Error(data.message);
         alert(`Evento "${evento.titulo || evento.tipoEvento}" eliminado con éxito.`);
         
-        fetchEventosData(); // Recargamos la lista
+        fetchEventosData(); 
         
     } catch (error) {
         console.error("Error al eliminar evento:", error);
@@ -592,10 +590,9 @@ async function eliminarEvento(evento, boton) {
     }
 }
 
-// --- ¡CAMBIO! ---
 function prellenarFormularioModEvento(evento) {
     modoEdicion = true;
-    idEventoEdicion = evento._id; // ¡CAMBIO! Guardamos el _id de Mongo
+    idEventoEdicion = evento._id; 
     
     const form = document.getElementById('form-alta-evento');
     form.classList.add('modo-edicion');
@@ -604,7 +601,6 @@ function prellenarFormularioModEvento(evento) {
     tabContent.querySelector('h3').textContent = `Modificando: ${evento.titulo || evento.tipoEvento}`;
     form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
 
-    // (El resto de la función no cambia)
     document.getElementById('evento-fecha').value = evento.fecha;
     if (picker) picker.setDate(evento.fecha); 
     document.getElementById('evento-tipo').value = evento.tipoEvento;
@@ -643,7 +639,7 @@ function prellenarFormularioModEvento(evento) {
 
 // -----------------------------------------------------------------
 // --- FASE 4/5/6: LÓGICA COMPLETA DE "CARTA" ---
-// (¡SECCIÓN RESTAURADA!)
+// (Esta sección no tiene cambios, sigue en simulación)
 // -----------------------------------------------------------------
 
 const plantillasBloques = {
@@ -1060,8 +1056,6 @@ async function fetchProductosData() {
         
         adminProductos = data.es.productos; 
         adminProductos_EN = data.en.productos; 
-        
-        // ¡CAMBIO! Ya no necesitamos inventar un "id"
         
         renderizarResultadosProductos();
         
