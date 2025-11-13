@@ -439,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (targetId === 'alta-producto') {
                     if (!modoEdicion) {
-                        // ¡ARREGLO! Llamamos a inicializar, no a resetear
+                        } else {
                         inicializarFormularioCarta(); 
                     }
                 }
@@ -1397,6 +1397,22 @@ function prellenarFormularioCarta(prod) {
             </div>
         `;
         const formSection = visibleGroup.querySelector('.form-section');
+        if (formSection) {
+            formSection.insertAdjacentHTML('afterbegin', infoHtml);
+        }
+    }
+    // 1. Forzamos la reinicialización de los listeners del formulario
+    inicializarFormularioCarta();
+
+    // 2. Rellenamos los datos (esto ya lo hacías)
+    const selectorTipo = document.getElementById('producto-tipo');
+    selectorTipo.value = prod.tipo;
+    // ... (todo el código que rellena los campos se queda igual) ...
+    (visibleGroup.querySelector('#producto-crianza-en') || {}).value = prod_en.crianza || '';
+
+    // ... (el código que muestra la imagen actual se queda igual) ...
+    if (prod.imagen && prod.imagen !== 'bebidaSinFoto.jpg') {
+        // ...
         if (formSection) {
             formSection.insertAdjacentHTML('afterbegin', infoHtml);
         }
