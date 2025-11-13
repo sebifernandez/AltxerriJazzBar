@@ -439,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (targetId === 'alta-producto') {
                     if (!modoEdicion) {
-                        inicializarFormularioCarta(); 
+                        resetearFormularioCarta(); 
                     }
                 }
             });
@@ -1028,8 +1028,9 @@ function inicializarFormularioCarta() {
     const container = document.getElementById('smart-form-container');
     const actions = document.getElementById('form-actions-producto');
     const form = document.getElementById('form-alta-producto');
-    
+
     // 1. Rellenamos el HTML (SOLO LA PRIMERA VEZ)
+    // Esto construye los <div id="fields-coctel"> etc.
     if (!container.hasChildNodes()) {
         for (const tipo in plantillasFormCarta) {
             const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
@@ -1042,100 +1043,91 @@ function inicializarFormularioCarta() {
                 container.appendChild(div);
             }
         }
-    }
-    
-    // 2. "LIMPIAMOS" LOS LISTENERS VIEJOS USANDO cloneNode
-    // Esto es lo que arregla el bug del selector
-    
-    // Limpiamos el selector
-    const newSelectorTipo = selectorTipo.cloneNode(true);
-    selectorTipo.parentNode.replaceChild(newSelectorTipo, selectorTipo);
-    
-    // Limpiamos el formulario (para el 'submit')
-    const newForm = form.cloneNode(true);
-    form.parentNode.replaceChild(newForm, form);
 
-    
-    // 3. AÑADIMOS LOS LISTENERS "FRESCOS" A LOS NUEVOS NODOS
-    
-    // Listener del Selector de Tipo
-    newSelectorTipo.addEventListener('change', () => {
-        let tipoSeleccionado = newSelectorTipo.value;
-        container.querySelectorAll('.form-fields-group').forEach(group => {
-            group.classList.remove('visible');
-        });
-        const tipoPlantilla = tipoSeleccionado.startsWith('vino') ? 'vino' : tipoSeleccionado;
-        if (tipoSeleccionado) {
-            const grupoAMostrar = document.getElementById(`fields-${tipoPlantilla}`);
-            if (grupoAMostrar) {
-                grupoAMostrar.classList.add('visible');
-                activarLogicaBilingue(grupoAMostrar);
-            }
-            actions.style.display = 'block'; 
-        } else {
-            actions.style.display = 'none'; 
-        }
-    });
+        // 2. AÑADIMOS LOS LISTENERS "FRESCOS" UNA SOLA VEZ
 
-    // Listener del Botón de Guardar (Submit)
-    newForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+        // Listener del Selector de Tipo
+        selectorTipo.addEventListener('change', () => {
+            let tipoSeleccionado = selectorTipo.value;
+            container.querySelectorAll('.form-fields-group').forEach(group => {
+                group.classList.remove('visible');
+            });
 
-        const btnSubmit = newForm.querySelector('.btn-primary');
-        btnSubmit.disabled = true;
-        btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
+            const tipoPlantilla = tipoSeleccionado.startsWith('vino') ? 'vino' : tipoSeleccionado;
 
-        try {
-            const tipo = document.getElementById('producto-tipo').value; 
-            const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
-            const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
-
-            const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
-
-            if ((!producto_es.titulo || producto_es.titulo === '')) {
-                 throw new Error("El Título (ES o Marca) es obligatorio.");
-            }
-
-            if (modoEdicion) {
-                // --- MODO EDICIÓN (Aún no implementado) ---
-                console.log("Datos listos para MODIFICAR (ES):", producto_es);
-                console.log("Datos listos para MODIFICAR (EN):", producto_en);
-                alert("¡El modo MODIFICAR producto aún está en simulación!");
-
-                btnSubmit.disabled = false;
-                btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
-                
-                // Reseteamos y volvemos a la pestaña de "Modificar"
-                resetearFormularioCarta();
-                document.querySelector('.tab-link[data-tab="mod-producto"]').click();
-
-
+            if (tipoSeleccionado) {
+                const grupoAMostrar = document.getElementById(`fields-${tipoPlantilla}`);
+                if (grupoAMostrar) {
+                    grupoAMostrar.classList.add('visible');
+                    activarLogicaBilingue(grupoAMostrar); // Activamos pestañas ES/EN
+                }
+                actions.style.display = 'block'; 
             } else {
-                // --- MODO CREAR (POST) ---
-                const response = await fetch('/api/productos/crear', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': getAuthToken()
-                    },
-                    body: JSON.stringify({ producto_es, producto_en })
-                });
-
-                if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
-                alert("¡Producto Creado con Éxito!");
-                
-                fetchProductosData();
-                resetearFormularioCarta();
+                actions.style.display = 'none'; 
             }
+        });
 
-        } catch (error) {
-            console.error("Error al guardar producto:", error);
-            alert(`Error: ${error.message}`);
-            // Si hay error, reactivamos el botón
-            btnSubmit.disabled = false;
-            btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-        }
-    });
+        // Listener del Botón de Guardar (Submit)
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const btnSubmit = form.querySelector('.btn-primary');
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
+
+            try {
+                // Usamos 'producto-tipo' del scope exterior, que está "vivo"
+                const tipo = selectorTipo.value; 
+                const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
+                const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
+
+                const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
+
+                if ((!producto_es.titulo || producto_es.titulo === '')) {
+                     throw new Error("El Título (ES o Marca) es obligatorio.");
+                }
+
+                if (modoEdicion) {
+                    // --- MODO EDICIÓN (Aún no implementado) ---
+                    console.log("Datos listos para MODIFICAR (ES):", producto_es);
+                    console.log("Datos listos para MODIFICAR (EN):", producto_en);
+                    alert("¡El modo MODIFICAR producto aún está en simulación!");
+
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
+
+                    // Reseteamos y volvemos a la pestaña de "Modificar"
+                    resetearFormularioCarta(); // Esto limpiará el form
+                    document.querySelector('.tab-link[data-tab="mod-producto"]').click();
+
+
+                } else {
+                    // --- MODO CREAR (POST) ---
+                    const response = await fetch('/api/productos/crear', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': getAuthToken()
+                        },
+                        body: JSON.stringify({ producto_es, producto_en })
+                    });
+
+                    if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
+                    alert("¡Producto Creado con Éxito!");
+
+                    fetchProductosData(); // Recargamos los datos
+                    resetearFormularioCarta(); // Limpiamos el form
+                }
+
+            } catch (error) {
+                console.error("Error al guardar producto:", error);
+                alert(`Error: ${error.message}`);
+                btnSubmit.disabled = false; // Reactivamos el botón si hay error
+                btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
+            }
+        }); // Fin del listener 'submit'
+
+    } // Fin del 'if (!container.hasChildNodes())'
 }
 // --- ¡¡¡FIN DEL BLOQUE A REEMPLAZAR!!! ---
 
@@ -1204,7 +1196,7 @@ function resetearFormularioCarta() {
     // ¡IMPORTANTE!
     // Volvemos a inicializar el formulario para re-adjuntar los listeners
     // al formulario reseteado.
-    inicializarFormularioCarta();
+    //inicializarFormularioCarta();
 }
 
 // --- LÓGICA DE BÚSQUEDA Y VISIBILIDAD (CARTA) ---
@@ -1334,7 +1326,7 @@ function crearTarjetaResultadoProducto(prod) {
 }
 
 function prellenarFormularioCarta(prod) {
-    inicializarFormularioCarta();
+    //inicializarFormularioCarta();
     modoEdicion = true;
     idEventoEdicion = prod._id; 
     
