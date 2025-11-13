@@ -1181,7 +1181,7 @@ function inicializarPanelesBusquedaProductos() {
     
     btnConfirm.addEventListener('click', () => {
         // ... (Lógica de Visibilidad AÚN EN SIMULACIÓN) ...
-        alert("¡"Confirmar Visibilidad" aún está en modo simulación!");
+        alert("¡'Confirmar Visibilidad' aún está en modo simulación!");
     });
 
     container.addEventListener('click', (e) => {
