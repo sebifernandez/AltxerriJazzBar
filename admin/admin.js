@@ -142,6 +142,8 @@ document.addEventListener('DOMContentLoaded', () => {
 let tags = []; 
 let picker; 
 
+
+
 function inicializarFormularioAlta() {
     
     const form = document.getElementById('form-alta-evento');
@@ -151,13 +153,8 @@ function inicializarFormularioAlta() {
     const inputTag = document.getElementById('evento-tags');
     const tagContainer = document.getElementById('tag-container');
     
-    // ¡ARREGLO! Limpiamos el picker anterior si existía para reiniciarlo
-    if (picker) {
-        picker.destroy();
-        picker = null;
-    }
-
-    // Volvemos a crear el picker con la lógica correcta
+    // ¡ARREGLO! Volvemos a la inicialización simple.
+    // Creamos el picker. La variable 'picker' es global y esto está bien.
     picker = new Litepicker({
         element: inputFecha,
         format: 'YYYY-MM-DD',
@@ -169,12 +166,13 @@ function inicializarFormularioAlta() {
             apply: 'Aplicar'
         },
         onselected: (date) => {
-            // Esta es la lógica que faltaba:
+            // Esta es la lógica que debe funcionar:
             const fechaSeleccionadaMillis = date.getTime();
             const hoyMillis = DateTime.now().startOf('day').toMillis();
             
             if (fechaSeleccionadaMillis < hoyMillis) {
                 if (!confirm("Has seleccionado una fecha en el pasado. ¿Estás seguro de que quieres continuar?")) {
+                    // Limpiamos la selección si el usuario dice "Cancelar"
                     picker.clearSelection(); 
                 }
             }
