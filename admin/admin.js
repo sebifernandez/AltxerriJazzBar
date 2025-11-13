@@ -453,6 +453,93 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const formAltaProducto = document.getElementById('form-alta-producto');
         if (formAltaProducto) { inicializarFormularioCarta(); } // Se llama una vez al cargar
+        
+        const selectorTipoCarta = document.getElementById('producto-tipo');
+    const formCarta = document.getElementById('form-alta-producto');
+    const containerCarta = document.getElementById('smart-form-container');
+    const actionsCarta = document.getElementById('form-actions-producto');
+
+    if (selectorTipoCarta && formCarta && containerCarta) {
+
+        // Listener del Selector de Tipo
+        selectorTipoCarta.addEventListener('change', () => {
+            let tipoSeleccionado = selectorTipoCarta.value;
+            containerCarta.querySelectorAll('.form-fields-group').forEach(group => {
+                group.classList.remove('visible');
+            });
+
+            const tipoPlantilla = tipoSeleccionado.startsWith('vino') ? 'vino' : tipoSeleccionado;
+
+            if (tipoSeleccionado) {
+                const grupoAMostrar = document.getElementById(`fields-${tipoPlantilla}`);
+                if (grupoAMostrar) {
+                    grupoAMostrar.classList.add('visible');
+                    activarLogicaBilingue(grupoAMostrar); // Activamos pestañas ES/EN
+                }
+                actionsCarta.style.display = 'block'; 
+            } else {
+                actionsCarta.style.display = 'none'; 
+            }
+        });
+
+        // Listener del Botón de Guardar (Submit)
+        formCarta.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const btnSubmit = formCarta.querySelector('.btn-primary');
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
+
+            try {
+                const tipo = selectorTipoCarta.value; 
+                const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
+                const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
+
+                const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
+
+                if ((!producto_es.titulo || producto_es.titulo === '')) {
+                     throw new Error("El Título (ES o Marca) es obligatorio.");
+                }
+
+                if (modoEdicion) {
+                    // --- MODO EDICIÓN (Aún no implementado) ---
+                    console.log("Datos listos para MODIFICAR (ES):", producto_es);
+                    console.log("Datos listos para MODIFICAR (EN):", producto_en);
+                    alert("¡El modo MODIFICAR producto aún está en simulación!");
+
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
+
+                    resetearFormularioCarta(); 
+                    document.querySelector('.tab-link[data-tab="mod-producto"]').click();
+
+                } else {
+                    // --- MODO CREAR (POST) ---
+                    const response = await fetch('/api/productos/crear', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': getAuthToken()
+                        },
+                        body: JSON.stringify({ producto_es, producto_en })
+                    });
+
+                    if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
+                    alert("¡Producto Creado con Éxito!");
+
+                    fetchProductosData(); 
+                    resetearFormularioCarta(); 
+                }
+
+            } catch (error) {
+                console.error("Error al guardar producto:", error);
+                alert(`Error: ${error.message}`);
+                btnSubmit.disabled = false; 
+                btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
+            }
+        }); 
+    }
+        
         fetchProductosData(); 
         inicializarPanelesBusquedaProductos();
     }
@@ -1023,15 +1110,18 @@ function prellenarFormularioModEvento(evento) {
 // -----------------------------------------------------------------
 
 // --- ¡¡¡INICIO DEL BLOQUE A REEMPLAZAR!!! ---
+// --- ¡¡¡INICIO DEL BLOQUE A REEMPLAZAR!!! ---
+// (Esta es la v4.9 - Solo construye el HTML)
+
 function inicializarFormularioCarta() {
-    const selectorTipo = document.getElementById('producto-tipo');
     const container = document.getElementById('smart-form-container');
-    const actions = document.getElementById('form-actions-producto');
-    const form = document.getElementById('form-alta-producto');
 
     // 1. Rellenamos el HTML (SOLO LA PRIMERA VEZ)
     // Esto construye los <div id="fields-coctel"> etc.
     if (!container.hasChildNodes()) {
+
+        console.log("Construyendo formularios de carta por primera vez...");
+
         for (const tipo in plantillasFormCarta) {
             const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
             const divId = `fields-${tipoPlantilla}`;
@@ -1043,92 +1133,9 @@ function inicializarFormularioCarta() {
                 container.appendChild(div);
             }
         }
-
-        // 2. AÑADIMOS LOS LISTENERS "FRESCOS" UNA SOLA VEZ
-
-        // Listener del Selector de Tipo
-        selectorTipo.addEventListener('change', () => {
-            let tipoSeleccionado = selectorTipo.value;
-            container.querySelectorAll('.form-fields-group').forEach(group => {
-                group.classList.remove('visible');
-            });
-
-            const tipoPlantilla = tipoSeleccionado.startsWith('vino') ? 'vino' : tipoSeleccionado;
-
-            if (tipoSeleccionado) {
-                const grupoAMostrar = document.getElementById(`fields-${tipoPlantilla}`);
-                if (grupoAMostrar) {
-                    grupoAMostrar.classList.add('visible');
-                    activarLogicaBilingue(grupoAMostrar); // Activamos pestañas ES/EN
-                }
-                actions.style.display = 'block'; 
-            } else {
-                actions.style.display = 'none'; 
-            }
-        });
-
-        // Listener del Botón de Guardar (Submit)
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const btnSubmit = form.querySelector('.btn-primary');
-            btnSubmit.disabled = true;
-            btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
-
-            try {
-                // Usamos 'producto-tipo' del scope exterior, que está "vivo"
-                const tipo = selectorTipo.value; 
-                const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
-                const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
-
-                const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
-
-                if ((!producto_es.titulo || producto_es.titulo === '')) {
-                     throw new Error("El Título (ES o Marca) es obligatorio.");
-                }
-
-                if (modoEdicion) {
-                    // --- MODO EDICIÓN (Aún no implementado) ---
-                    console.log("Datos listos para MODIFICAR (ES):", producto_es);
-                    console.log("Datos listos para MODIFICAR (EN):", producto_en);
-                    alert("¡El modo MODIFICAR producto aún está en simulación!");
-
-                    btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
-
-                    // Reseteamos y volvemos a la pestaña de "Modificar"
-                    resetearFormularioCarta(); // Esto limpiará el form
-                    document.querySelector('.tab-link[data-tab="mod-producto"]').click();
-
-
-                } else {
-                    // --- MODO CREAR (POST) ---
-                    const response = await fetch('/api/productos/crear', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': getAuthToken()
-                        },
-                        body: JSON.stringify({ producto_es, producto_en })
-                    });
-
-                    if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
-                    alert("¡Producto Creado con Éxito!");
-
-                    fetchProductosData(); // Recargamos los datos
-                    resetearFormularioCarta(); // Limpiamos el form
-                }
-
-            } catch (error) {
-                console.error("Error al guardar producto:", error);
-                alert(`Error: ${error.message}`);
-                btnSubmit.disabled = false; // Reactivamos el botón si hay error
-                btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-            }
-        }); // Fin del listener 'submit'
-
-    } // Fin del 'if (!container.hasChildNodes())'
+    }
 }
+// --- ¡¡¡FIN DEL BLOQUE A REEMPLAZAR!!! ---
 // --- ¡¡¡FIN DEL BLOQUE A REEMPLAZAR!!! ---
 
 function activarLogicaBilingue(visibleGroup) {
