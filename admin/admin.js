@@ -151,30 +151,35 @@ function inicializarFormularioAlta() {
     const inputTag = document.getElementById('evento-tags');
     const tagContainer = document.getElementById('tag-container');
     
-    // (Lógica del Litepicker no cambia)
-    if (!picker) { 
-        picker = new Litepicker({
-            element: inputFecha,
-            format: 'YYYY-MM-DD',
-            lang: 'es-ES',
-            buttonText: {
-                previousMonth: '<i class="bx bx-chevron-left"></i>',
-                nextMonth: '<i class="bx bx-chevron-right"></i>',
-                reset: '<i class="bx bx-refresh"></i>',
-                apply: 'Aplicar'
-            },
-            onselected: (date) => {
-                const fechaSeleccionadaMillis = date.getTime();
-                const hoyMillis = DateTime.now().startOf('day').toMillis();
-                
-                if (fechaSeleccionadaMillis < hoyMillis) {
-                    if (!confirm("Has seleccionado una fecha en el pasado. ¿Estás seguro de que quieres continuar?")) {
-                        picker.clearSelection(); 
-                    }
+    // ¡ARREGLO! Limpiamos el picker anterior si existía para reiniciarlo
+    if (picker) {
+        picker.destroy();
+        picker = null;
+    }
+
+    // Volvemos a crear el picker con la lógica correcta
+    picker = new Litepicker({
+        element: inputFecha,
+        format: 'YYYY-MM-DD',
+        lang: 'es-ES',
+        buttonText: {
+            previousMonth: '<i class="bx bx-chevron-left"></i>',
+            nextMonth: '<i class="bx bx-chevron-right"></i>',
+            reset: '<i class="bx bx-refresh"></i>',
+            apply: 'Aplicar'
+        },
+        onselected: (date) => {
+            // Esta es la lógica que faltaba:
+            const fechaSeleccionadaMillis = date.getTime();
+            const hoyMillis = DateTime.now().startOf('day').toMillis();
+            
+            if (fechaSeleccionadaMillis < hoyMillis) {
+                if (!confirm("Has seleccionado una fecha en el pasado. ¿Estás seguro de que quieres continuar?")) {
+                    picker.clearSelection(); 
                 }
             }
-        });
-    }
+        }
+    });
 
     // (Listeners de tags y checkbox no cambian)
     checkGenerica.addEventListener('change', () => {
@@ -229,13 +234,13 @@ function inicializarFormularioAlta() {
     });
     
     // --- Lógica de SUBMIT (guardado) ---
+    // (El listener del form.addEventListener('submit', ...) no cambia en absoluto)
     form.addEventListener('submit', async (e) => {
         e.preventDefault(); 
         const btnSubmit = form.querySelector('.btn-primary');
         btnSubmit.disabled = true;
         btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
         
-        // (Recolección de datos no cambia)
         const eventoData = {
             fecha: document.getElementById('evento-fecha').value,
             tipoEvento: document.getElementById('evento-tipo').value,
@@ -247,7 +252,6 @@ function inicializarFormularioAlta() {
             imgReferencia: tags
         };
 
-        // (Validación no cambia)
         if (eventoData.tipoEvento === 'Regular' && !eventoData.titulo) {
             alert("Error: 'Título' es obligatorio para eventos Regulares.");
             btnSubmit.disabled = false;
@@ -255,26 +259,23 @@ function inicializarFormularioAlta() {
             return;
         }
         if (!eventoData.fecha) {
-             alert("Error: 'Fecha' es un campo obligatorio.");
+                alert("Error: 'Fecha' es un campo obligatorio.");
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
             return;
         }
 
-        // (Lógica de Imagen no cambia - AÚN NO FUNCIONA LA SUBIDA)
         let imagenNombre = "imgBandaGenerica.jpg";
         if (!eventoData.usaGenerica) {
             if (eventoData.archivoImagen) {
                 imagenNombre = eventoData.archivoImagen.name;
                 console.log("Simulando subida de:", imagenNombre); 
             } else if (modoEdicion) {
-                const eventoOriginal = adminEventos.find(ev => ev._id === idEventoEdicion); // ¡CAMBIO! Buscamos por _id
+                const eventoOriginal = adminEventos.find(ev => ev._id === idEventoEdicion);
                 imagenNombre = eventoOriginal.imagen || "imgBandaGenerica.jpg";
             }
         }
 
-        // --- ¡CAMBIO! Creación del objeto final ---
-        // ¡Ya NO añadimos el "id: evt_..."!
         let eventoFinal = {
             fecha: eventoData.fecha,
             tipoEvento: eventoData.tipoEvento,
@@ -285,7 +286,6 @@ function inicializarFormularioAlta() {
             concierto: eventoData.concierto
         };
 
-        // (Lógica "Privado/Cerrado" no cambia)
         if (eventoFinal.tipoEvento === 'Cerrado') {
             eventoFinal.titulo = "";
             eventoFinal.imagen = "cerrado.jpg";
@@ -300,24 +300,20 @@ function inicializarFormularioAlta() {
             eventoFinal.imgReferencia = [];
         }
 
-        // --- ¡CAMBIO! Lógica de GUARDADO REAL ---
         try {
             if (modoEdicion) {
-                // --- MODO EDICIÓN (PUT) ---
-                // ¡CAMBIO! Añadimos el _id a la ruta
                 const response = await fetch(`/api/eventos/modificar/${idEventoEdicion}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': getAuthToken()
                     },
-                    body: JSON.stringify(eventoFinal) // Enviamos el objeto sin _id
+                    body: JSON.stringify(eventoFinal)
                 });
                 if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
                 alert("¡Evento Modificado con Éxito!");
 
             } else {
-                // --- MODO CREAR (POST) ---
                 if (adminEventos.some(ev => ev.fecha === eventoFinal.fecha && ev.tipoEvento === eventoFinal.tipoEvento)) {
                     if (!confirm("¡Atención! Ya existe un evento de este tipo en esta fecha. ¿Deseas crearlo igualmente?")) {
                         btnSubmit.disabled = false;

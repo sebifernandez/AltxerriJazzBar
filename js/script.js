@@ -293,7 +293,7 @@ window.addEventListener("click", e => {
   if (e.target === modal) modal.style.display = "none";
 });
 
-// ✅ Cargar JSON desde la API e Inicializar
+// ✅ Cargar JSON desde la API e Inicializar (VERSIÓN CORREGIDA)
 fetch("/api/eventos") // CAMBIO: Llamamos a nuestra nueva API
   .then(res => {
       if (!res.ok) {
@@ -302,7 +302,13 @@ fetch("/api/eventos") // CAMBIO: Llamamos a nuestra nueva API
       return res.json();
   })
   .then(data => {
+    // 1. Recibimos los datos
     eventos = data;
+    
+    // 2. ¡AQUÍ VA EL ARREGLO! Los ordenamos por fecha
+    eventos.sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+    // 3. (Y solo ahora) Inicializamos todo con los datos ordenados
     inicializarEventos(); 
     inicializarCalendario();
     aplicarFiltros(); 
