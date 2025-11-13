@@ -1,4 +1,4 @@
-/* --- ADMIN.JS (Versión 4.4 - Arreglo de Bugs de Fecha y Carta) --- */
+/* --- ADMIN.JS (Versión 4.5 - Arreglo de Bugs de Fecha, Carta y Sintaxis) --- */
 
 // --- Variables Globales ---
 const { DateTime } = luxon; 
@@ -126,7 +126,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // ¡ARREGLO! Llamamos a la función de inicialización,
                 // que ahora se encarga de todo
                 if (targetId === 'alta-evento') {
-                    inicializarFormularioAlta(); 
+                    // Solo reiniciamos/destruimos si NO estamos en modo edición
+                    if (!modoEdicion) {
+                        inicializarFormularioAlta(); 
+                    }
                 }
                 
                 if (targetId === 'alta-producto' && !modoEdicion) { 
@@ -137,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // (El resto de inicializadores no cambia)
         const formAlta = document.getElementById('form-alta-evento');
-        if (formAlta) { inicializarFormularioAlta(); }
+        if (formAlta) { inicializarFormularioAlta(); } // Se llama una vez al cargar
         fetchEventosData(); 
         inicializarPanelesBusquedaEventos();
         
@@ -146,12 +149,13 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchProductosData(); 
         inicializarPanelesBusquedaProductos();
     }
-});
+// --- ¡CAMBIO! Esta es la llave que faltaba en la línea 112 ---
+// --- Ahora está al FINAL del archivo ---
 
 
 // -----------------------------------------------------------------
 // --- FASE 2: LÓGICA DEL FORMULARIO DE ALTA (EVENTOS) ---
-// (Corregido con _id y Bugfix de UX v4.4)
+// (Corregido con _id y Bugfix de UX v4.5)
 // -----------------------------------------------------------------
 
 let tags = []; 
@@ -168,61 +172,68 @@ function inicializarFormularioAlta() {
     const tagContainer = document.getElementById('tag-container');
     
     // --- ¡ARREGLO PARA BUG 1 (Fecha Pasada)! ---
-    // Solo inicializamos el picker si no estamos en modo edición
-    // (prellenarFormularioModEvento se encargará de él si estamos editando)
-    if (!modoEdicion) {
-        // Destruimos el calendario anterior (el "fantasma") si existe
-        if (picker) {
-            picker.destroy();
-        }
-
-        // Volvemos a crear el picker con la lógica de 'onselected'
-        picker = new Litepicker({
-            element: inputFecha,
-            format: 'YYYY-MM-DD',
-            lang: 'es-ES',
-            buttonText: {
-                previousMonth: '<i class="bx bx-chevron-left"></i>',
-                nextMonth: '<i class="bx bx-chevron-right"></i>',
-                reset: '<i class="bx bx-refresh"></i>',
-                apply: 'Aplicar'
-            },
-            onselected: (date) => {
-                // Esta es la lógica que AHORA SÍ va a funcionar
-                const fechaSeleccionadaMillis = date.getTime();
-                // Comparamos con el inicio del día de hoy
-                const hoyMillis = DateTime.now().startOf('day').toMillis();
-                
-                if (fechaSeleccionadaMillis < hoyMillis) {
-                    if (!confirm("Has seleccionado una fecha en el pasado. ¿Estás seguro de que quieres continuar?")) {
-                        picker.clearSelection(); 
-                    }
-                }
-            }
-        });
+    // Destruimos el calendario anterior (el "fantasma") si existe
+    // antes de crear uno nuevo. Esto asegura que 'onselected' funcione.
+    if (picker) {
+        picker.destroy();
+        picker = null;
     }
 
+    // Volvemos a crear el picker con la lógica de 'onselected'
+    picker = new Litepicker({
+        element: inputFecha,
+        format: 'YYYY-MM-DD',
+        lang: 'es-ES',
+        buttonText: {
+            previousMonth: '<i class="bx bx-chevron-left"></i>',
+            nextMonth: '<i class="bx bx-chevron-right"></i>',
+            reset: '<i class="bx bx-refresh"></i>',
+            apply: 'Aplicar'
+        },
+        onselected: (date) => {
+            // Esta es la lógica que AHORA SÍ va a funcionar
+            const fechaSeleccionadaMillis = date.getTime();
+            // Comparamos con el inicio del día de hoy
+            const hoyMillis = DateTime.now().startOf('day').toMillis();
+            
+            if (fechaSeleccionadaMillis < hoyMillis) {
+                if (!confirm("Has seleccionado una fecha en el pasado. ¿Estás seguro de que quieres continuar?")) {
+                    picker.clearSelection(); 
+                }
+            }
+        }
+    });
+
     // (Listeners de tags y checkbox no cambian)
-    checkGenerica.addEventListener('change', () => {
-        fieldsetImagen.disabled = checkGenerica.checked;
-        if (checkGenerica.checked) {
+    // (Usamos .replaceWith(clone) para limpiar listeners viejos)
+    const newCheckGenerica = checkGenerica.cloneNode(true);
+    checkGenerica.parentNode.replaceChild(newCheckGenerica, checkGenerica);
+    newCheckGenerica.addEventListener('change', () => {
+        fieldsetImagen.disabled = newCheckGenerica.checked;
+        if (newCheckGenerica.checked) {
             tags = [];
             renderizarTags();
             document.getElementById('evento-imagen-upload').value = '';
         }
     });
-    inputTag.addEventListener('keydown', (e) => {
+
+    const newInputTag = inputTag.cloneNode(true);
+    inputTag.parentNode.replaceChild(newInputTag, inputTag);
+    newInputTag.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ',') {
             e.preventDefault(); 
-            const tagTexto = inputTag.value.trim();
+            const tagTexto = newInputTag.value.trim();
             if (tagTexto.length > 0 && !tags.includes(tagTexto)) {
                 tags.push(tagTexto);
                 renderizarTags();
             }
-            inputTag.value = ''; 
+            newInputTag.value = ''; 
         }
     });
-    tagContainer.addEventListener('click', (e) => {
+
+    const newTagContainer = tagContainer.cloneNode(true);
+    tagContainer.parentNode.replaceChild(newTagContainer, tagContainer);
+    newTagContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('remove-tag-btn')) {
             const tagTexto = e.target.getAttribute('data-tag');
             tags = tags.filter(t => t !== tagTexto);
@@ -232,22 +243,25 @@ function inicializarFormularioAlta() {
     
     // (Bugfix de UX "Privado/Cerrado" no cambia)
     const tipoEventoSelect = document.getElementById('evento-tipo');
+    const newTipoEventoSelect = tipoEventoSelect.cloneNode(true);
+    tipoEventoSelect.parentNode.replaceChild(newTipoEventoSelect, tipoEventoSelect);
+    
     const tituloInput = document.getElementById('evento-titulo');
     const liveInput = document.getElementById('evento-live');
     const conciertoInput = document.getElementById('evento-concierto');
-    tipoEventoSelect.addEventListener('change', () => {
-        const tipo = tipoEventoSelect.value;
+    newTipoEventoSelect.addEventListener('change', () => {
+        const tipo = newTipoEventoSelect.value;
         const esEspecial = (tipo === 'Privado' || tipo === 'Cerrado');
         tituloInput.disabled = esEspecial;
         liveInput.disabled = esEspecial;
         conciertoInput.disabled = esEspecial;
-        checkGenerica.disabled = esEspecial;
+        newCheckGenerica.disabled = esEspecial;
         fieldsetImagen.disabled = esEspecial;
         if (esEspecial) {
             tituloInput.value = '';
             liveInput.value = '';
             conciertoInput.value = '';
-            checkGenerica.checked = false; 
+            newCheckGenerica.checked = false; 
             document.getElementById('evento-imagen-upload').value = '';
             tags = [];
             renderizarTags();
@@ -255,10 +269,13 @@ function inicializarFormularioAlta() {
     });
     
     // --- Lógica de SUBMIT (guardado) ---
-    // (El listener del form.addEventListener('submit', ...) no cambia en absoluto)
-    form.addEventListener('submit', async (e) => {
+    // (Limpiamos el listener anterior)
+    const newForm = form.cloneNode(true);
+    form.parentNode.replaceChild(newForm, form);
+    
+    newForm.addEventListener('submit', async (e) => {
         e.preventDefault(); 
-        const btnSubmit = form.querySelector('.btn-primary');
+        const btnSubmit = newForm.querySelector('.btn-primary');
         btnSubmit.disabled = true;
         btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
         
@@ -337,9 +354,7 @@ function inicializarFormularioAlta() {
             } else {
                 
                 // --- ¡ARREGLO PARA BUG 2 (Conflicto de Fecha)! ---
-                // Comprobamos si hay CUALQUIER evento en esa fecha
                 if (adminEventos.some(ev => ev.fecha === eventoFinal.fecha)) {
-                    // Si lo hay, preguntamos
                     if (!confirm("¡Atención! Ya existe otro evento en esta fecha. ¿Deseas crearlo igualmente?")) {
                         btnSubmit.disabled = false;
                         btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
@@ -372,11 +387,14 @@ function inicializarFormularioAlta() {
         }
     });
 }
+// --- FIN DE LA FUNCIÓN REEMPLAZADA ---
 
 
 // (renderizarTags, esURLValida no cambian)
 function renderizarTags() {
     const tagContainer = document.getElementById('tag-container');
+    // (Verificamos que tagContainer exista antes de manipularlo)
+    if (!tagContainer) return; 
     tagContainer.querySelectorAll('.tag-item').forEach(tagEl => tagEl.remove());
     tags.slice().reverse().forEach(tagTexto => {
         const tagEl = document.createElement('span');
@@ -394,7 +412,7 @@ function esURLValida(string) {
     }
 }
 
-// --- ¡CAMBIO! resetearFormularioAlta ---
+// (resetearFormularioAlta no cambia)
 function resetearFormularioAlta() {
     const form = document.getElementById('form-alta-evento');
     if (!form) return;
@@ -462,7 +480,6 @@ function inicializarPanelesBusquedaEventos() {
     });
     
     document.querySelectorAll('#form-busqueda-mod .search-input-fecha, #form-busqueda-baja .search-input-fecha').forEach(input => {
-        // Inicializamos los pickers de búsqueda
         new Litepicker({
             element: input,
             format: 'YYYY-MM-DD',
@@ -628,14 +645,15 @@ function prellenarFormularioModEvento(evento) {
     tabContent.querySelector('h3').textContent = `Modificando: ${evento.titulo || evento.tipoEvento}`;
     form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
 
-    document.getElementById('evento-fecha').value = evento.fecha;
+    const inputFecha = document.getElementById('evento-fecha');
+    inputFecha.value = evento.fecha;
     
     // --- ¡ARREGLO! Aseguramos que el picker se destruya y recree
     if (picker) {
         picker.destroy();
     }
     picker = new Litepicker({
-        element: document.getElementById('evento-fecha'),
+        element: inputFecha,
         format: 'YYYY-MM-DD',
         lang: 'es-ES',
         // (El resto de la config del picker...)
@@ -1030,64 +1048,65 @@ function inicializarFormularioCarta() {
             actions.style.display = 'none'; 
         }
     });
-form.addEventListener('submit', async (e) => {
-    e.preventDefault();
 
-    const btnSubmit = form.querySelector('.btn-primary');
-    btnSubmit.disabled = true;
-    btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
+    // ¡CAMBIO! Reemplazamos el listener de submit
+    const newForm = form.cloneNode(true);
+    form.parentNode.replaceChild(newForm, form);
+    newForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-    try {
-        // 1. Recolectar los datos del formulario
-        const tipo = selectorTipo.value;
-        const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
-        const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
+        const btnSubmit = newForm.querySelector('.btn-primary');
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
 
-        const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
+        try {
+            // 1. Recolectar los datos del formulario
+            const tipo = document.getElementById('producto-tipo').value; // Leemos el valor del selector
+            const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
+            const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
 
-        // 2. Validar (simple)
-        if (producto_es.titulo === '' && (tipo === 'coctel' || tipo === 'sinAlcohol')) {
-            throw new Error("El Título (ES) es obligatorio.");
+            const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
+
+            // 2. Validar (simple)
+            if (!producto_es.titulo || producto_es.titulo === '') {
+                 throw new Error("El Título (ES o Marca) es obligatorio.");
+            }
+
+            // 3. Enviar a la API
+            if (modoEdicion) {
+                // --- MODO EDICIÓN (Aún no implementado) ---
+                console.log("Datos listos para MODIFICAR (ES):", producto_es);
+                console.log("Datos listos para MODIFICAR (EN):", producto_en);
+                alert("¡El modo MODIFICAR producto aún está en simulación!");
+
+            } else {
+                // --- MODO CREAR (POST) ---
+                const response = await fetch('/api/productos/crear', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': getAuthToken()
+                    },
+                    body: JSON.stringify({ producto_es, producto_en })
+                });
+
+                if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
+                alert("¡Producto Creado con Éxito!");
+            }
+
+            // 4. Resetear
+            fetchProductosData(); // Recarga la lista de productos
+            resetearFormularioCarta(); // Limpia el formulario
+
+        } catch (error) {
+            console.error("Error al guardar producto:", error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
+            if (modoEdicion) resetearFormularioCarta();
         }
-        if (producto_es.titulo === '' && (tipo !== 'coctel' && tipo !== 'sinAlcohol')) {
-            throw new Error("El Título (Marca) es obligatorio.");
-        }
-
-        // 3. Enviar a la API
-        if (modoEdicion) {
-            // --- MODO EDICIÓN (Aún no implementado) ---
-            console.log("Datos listos para MODIFICAR (ES):", producto_es);
-            console.log("Datos listos para MODIFICAR (EN):", producto_en);
-            alert("¡El modo MODIFICAR producto aún está en simulación!");
-
-        } else {
-            // --- MODO CREAR (POST) ---
-            const response = await fetch('/api/productos/crear', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': getAuthToken()
-                },
-                body: JSON.stringify({ producto_es, producto_en })
-            });
-
-            if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
-            alert("¡Producto Creado con Éxito!");
-        }
-
-        // 4. Resetear
-        fetchProductosData(); // Recarga la lista de productos
-        resetearFormularioCarta(); // Limpia el formulario
-
-    } catch (error) {
-        console.error("Error al guardar producto:", error);
-        alert(`Error: ${error.message}`);
-    } finally {
-        btnSubmit.disabled = false;
-        btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-        if (modoEdicion) resetearFormularioCarta();
-    }
-});
+    });
 }
 function activarLogicaBilingue(visibleGroup) {
     const langTabs = visibleGroup.querySelectorAll('.lang-tab-btn');
@@ -1164,6 +1183,10 @@ async function fetchProductosData() {
         const data = await response.json(); 
         
         // ¡CAMBIO! La API ahora nos da la estructura completa
+        // y nuestro backend la arma correctamente
+        if (!data.es || !data.es.productos) {
+            throw new Error("La API no devolvió 'productos' para ES");
+        }
         adminProductos = data.es.productos; 
         adminProductos_EN = data.en.productos; 
         
@@ -1232,7 +1255,7 @@ function crearTarjetaResultadoProducto(prod) {
     const imgRuta = (prod.imagen) ? `../img/${prod.imagen}` : `../img/bebidaSinFoto.jpg`;
     const precio = formatarPrecio(prod.precioCopa || prod.precioBotella || prod.precioPinta);
     
-    const estaHabilitado = (prod.visualizacion === undefined) ? true : prod.visualizacion; 
+    const estaHabilitado = (prod.visualizacion === undefined) ? true : prod.visualizo;
     const deshabilitadoClass = estaHabilitado ? '' : 'deshabilitado';
     const switchChecked = estaHabilitado ? 'checked' : '';
 
@@ -1359,7 +1382,9 @@ function recolectarDatosProducto(formGroup, tipo) {
 
     // --- Lógica de Imagen (Corregida) ---
     const inputFile = formGroup.querySelector('#producto-imagen-upload');
-    if (inputFile && inputFile.files[0]) {
+    
+    // ¡ARREGLO! inputFile.files puede ser null
+    if (inputFile && inputFile.files && inputFile.files.length > 0) {
         // Si el input existe y tiene un archivo, guardamos el nombre
         datosUnicos.imagen = inputFile.files[0].name;
     } else if (tipo === 'coctel' || tipo.startsWith('vino')) {
@@ -1392,8 +1417,9 @@ function recolectarDatosProducto(formGroup, tipo) {
     if (tipo === 'coctel' || tipo === 'sinAlcohol') {
         datosUnicos.tituloUnico = null; 
     } else {
-        datosES.titulo = datosUnicos.tituloUnico;
-        datosEN.titulo = datosUnicos.tituloUnico;
+        // ¡ARREGLO! Usamos el tituloUnico como fallback
+        datosES.titulo = datosUnicos.tituloUnico || datosES.titulo;
+        datosEN.titulo = datosUnicos.tituloUnico || datosEN.titulo;
     }
 
     // 5. Combinamos y devolvemos
@@ -1405,3 +1431,6 @@ function recolectarDatosProducto(formGroup, tipo) {
 
     return { producto_es, producto_en };
 }
+
+// --- ¡CAMBIO! Esta es la llave que cierra el 'DOMContentLoaded' ---
+});

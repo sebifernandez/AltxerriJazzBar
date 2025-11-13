@@ -75,10 +75,7 @@ router.get('/productos', async (req, res) => {
     try {
         const db = await connectToDb();
         
-        // Buscamos los productos Y los textosUI
-        // (Asumimos que subiste textosUI como un *único documento* en cada colección)
-        // Si no lo hiciste, esto fallará y lo ajustamos.
-        
+        // Hacemos las dos búsquedas al mismo tiempo
         const [productosES, productosEN] = await Promise.all([
             db.collection('productos_es').find({}).toArray(),
             db.collection('productos_en').find({}).toArray()
@@ -86,6 +83,7 @@ router.get('/productos', async (req, res) => {
         
         // Simulamos la estructura del JSON original
         // (¡ESTO ES TEMPORAL! Deberíamos guardar textosUI en la DB)
+        // (Tu app.js solo necesita "navbar" para no romperse)
         const textosUI_es = {
             "lang": "es",
             "langButton": "ENG",
