@@ -1,72 +1,49 @@
-// --- API/SERVER.JS (Versión 3.0 - CON SEGURIDAD y LÓGICA DE ESCRITURA) ---
+// --- API/SERVER.JS (Versión 4.0 - CONECTADO A MONGODB) ---
 
 const express = require('express');
 const serverless = require('serverless-http'); 
-const fs = require('fs'); 
+const { MongoClient, ObjectId } = require('mongodb'); // ¡NUEVO!
 const path = require('path'); 
 
 const app = express();
 app.use(express.json()); 
 const router = express.Router();
 
-// --- 1. CONFIGURACIÓN DE SEGURIDAD ---
+// --- 1. CONFIGURACIÓN DE BASE DE DATOS ---
 
-// Esta es la "llave secreta" de nuestra API.
-// Usaremos la misma contraseña del CMS para mantenerlo simple.
+// Obtenemos la "llave" que guardaste en Netlify
+const MONGODB_URI = process.env.MONGODB_URI;
+const DB_NAME = 'altxerriDB'; // El nombre que pusimos en Mongo
+
+let db; // Variable para guardar la conexión
+
+// Función para conectar a la base de datos
+async function connectToDb() {
+    if (db) return db; // Si ya está conectado, la devuelve
+    
+    // Se conecta SÓLO UNA VEZ y reutiliza la conexión
+    const client = new MongoClient(MONGODB_URI);
+    await client.connect();
+    db = client.db(DB_NAME);
+    console.log("Conectado a MongoDB Atlas!");
+    return db;
+}
+
+// --- 2. CONFIGURACIÓN DE SEGURIDAD ---
 const API_SECRET_TOKEN = process.env.CMS_PASSWORD;
 
-// Este es el "Guardia" (Middleware).
-// Se ejecutará antes de cualquier ruta que queramos proteger.
+// Middleware "Guardia" (sin cambios)
 const checkAuth = (req, res, next) => {
-    // Busca la "llave" en los headers de la petición
     const token = req.headers.authorization;
-
-    if (!token) {
-        return res.status(401).json({ success: false, message: 'Error: No se proporcionó token' });
-    }
-
-    // Compara la "llave" del usuario con la "llave" secreta del servidor
-    if (token !== API_SECRET_TOKEN) {
+    if (!token || token !== API_SECRET_TOKEN) {
         return res.status(403).json({ success: false, message: 'Error: Token inválido' });
     }
-
-    // Si la "llave" es correcta, le permite continuar.
     next();
 };
 
-// --- 2. FUNCIONES "MOTOR" PARA LEER/ESCRIBIR JSON (Helpers) ---
-// (Usan la ruta process.cwd() que ya funciona)
+// --- 3. RUTAS DE LA API (Reconstruidas para MongoDB) ---
 
-const dataDir = path.join(process.cwd(), 'data');
-
-// Función para LEER un archivo JSON
-function readData(fileName) {
-    try {
-        const filePath = path.join(dataDir, fileName);
-        const data = fs.readFileSync(filePath, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error(`Error al LEER ${fileName}:`, error.message);
-        throw new Error(`Error del servidor al leer ${fileName}`);
-    }
-}
-
-// Función para ESCRIBIR un archivo JSON
-function writeData(fileName, data) {
-    try {
-        const filePath = path.join(dataDir, fileName);
-        // Usamos null, 2 para que el JSON se guarde formateado y legible
-        const jsonData = JSON.stringify(data, null, 2); 
-        fs.writeFileSync(filePath, jsonData, 'utf8');
-    } catch (error) {
-        console.error(`Error al ESCRIBIR ${fileName}:`, error.message);
-        throw new Error(`Error del servidor al escribir ${fileName}`);
-    }
-}
-
-// --- 3. RUTAS DE LA API ---
-
-// --- "RECETA" DE LOGIN (Modificada) ---
+// --- "RECETA" DE LOGIN (sin cambios) ---
 router.post('/login', (req, res) => {
     try {
         const { username, password } = req.body;
@@ -74,68 +51,72 @@ router.post('/login', (req, res) => {
         const adminPass = process.env.CMS_PASSWORD;
 
         if (username === adminUser && password === adminPass) {
-            console.log("Login exitoso para:", username);
-            // ¡CAMBIO! Le devolvemos la "llave" secreta al frontend
             res.json({ 
                 success: true, 
                 message: 'Login correcto',
-                token: API_SECRET_TOKEN // Le enviamos la "llave"
+                token: API_SECRET_TOKEN 
             });
         } else {
-            console.log("Login fallido para:", username);
             res.status(401).json({ success: false, message: 'Usuario o contraseña incorrectos' });
         }
     } catch (error) {
-        console.error("Error en /login:", error);
         res.status(500).json({ success: false, message: 'Error interno del servidor' });
     }
 });
 
 // --- RUTAS DE "LEER" (GET) ---
-// No necesitan el "guardia" (checkAuth) porque son públicas.
 
-router.get('/eventos', (req, res) => {
+// LEER EVENTOS
+router.get('/eventos', async (req, res) => {
     try {
-        const data = readData('eventos.json');
+        const db = await connectToDb();
+        // .find() trae todo. .toArray() lo convierte en un array.
+        const data = await db.collection('eventos').find({}).toArray(); 
         res.json(data);
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        console.error("Error en GET /eventos:", error.message);
+        res.status(500).json({ success: false, message: 'Error al leer eventos' });
     }
 });
 
-router.get('/productos', (req, res) => {
+// LEER PRODUCTOS
+router.get('/productos', async (req, res) => {
     try {
-        const dataES = readData('carta_es.json');
-        const dataEN = readData('carta_en.json');
-        res.json({ es: dataES, en: dataEN });
+        const db = await connectToDb();
+        // Hacemos las dos búsquedas al mismo tiempo
+        const [dataES, dataEN] = await Promise.all([
+            db.collection('productos_es').find({}).toArray(),
+            db.collection('productos_en').find({}).toArray()
+        ]);
+        
+        // Re-creamos la estructura que tu frontend espera
+        // (Tu frontend espera el objeto "textosUI" que está en los JSON
+        // pero que no subimos a la DB. Lo "engañamos" dándole solo los productos)
+        res.json({
+            es: { productos: dataES },
+            en: { productos: dataEN }
+        });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        console.error("Error en GET /productos:", error.message);
+        res.status(500).json({ success: false, message: 'Error al leer productos' });
     }
 });
 
-// --- RUTAS DE "ESCRIBIR" (POST, PUT, DELETE) ---
-// ¡OBSERVA! Usamos 'checkAuth' antes de la lógica.
-// Nadie puede usarlas sin la "llave".
+// --- RUTAS DE "ESCRIBIR" (POST, PUT, DELETE) CON GUARDIA ---
 
-// ---
-// ¡NUEVO! "Fase Final - Paso B" (Lógica de Eventos)
-// ---
-
-// RUTA PARA CREAR (Alta)
-router.post('/eventos/crear', checkAuth, (req, res) => {
+// RUTA PARA CREAR (Alta de Evento)
+router.post('/eventos/crear', checkAuth, async (req, res) => {
     try {
+        const db = await connectToDb();
         const nuevoEvento = req.body;
         
-        // 1. Leemos los eventos actuales
-        const eventos = readData('eventos.json');
+        // ¡NUEVO! MongoDB crea su propio _id.
+        // Lo borramos si viene del frontend para evitar conflictos.
+        delete nuevoEvento._id; 
         
-        // 2. Añadimos el nuevo
-        eventos.push(nuevoEvento);
+        const result = await db.collection('eventos').insertOne(nuevoEvento);
         
-        // 3. Sobrescribimos el archivo
-        writeData('eventos.json', eventos);
-        
-        console.log("EVENTO CREADO:", nuevoEvento.id);
+        console.log("EVENTO CREADO:", result.insertedId);
         res.json({ success: true, message: 'Evento creado con éxito', evento: nuevoEvento });
         
     } catch (error) {
@@ -144,41 +125,39 @@ router.post('/eventos/crear', checkAuth, (req, res) => {
     }
 });
 
-// RUTA PARA MODIFICAR (Modificación)
-router.put('/eventos/modificar/:id', checkAuth, (req, res) => {
+// RUTA PARA MODIFICAR (Modificación de Evento)
+router.put('/eventos/modificar/:id', checkAuth, async (req, res) => {
     try {
-        const idEventoModificar = req.params.id;
+        const db = await connectToDb();
+        const idEventoModificar = req.params.id; // Este es tu ID (ej: "evt_123456")
         const eventoModificado = req.body;
         
-        // --- Lógica de Backup (Tu requisito) ---
-        // 1. Leemos los eventos actuales y el backup
-        const eventos = readData('eventos.json');
-        const eventosModificados = readData('eventosModificados.json');
+        // Mongo usa un id especial "_id". No lo necesitamos.
+        delete eventoModificado._id; 
 
-        // 2. Buscamos el evento ORIGINAL (antes de modificarlo)
-        const eventoOriginal = eventos.find(e => e.id === idEventoModificar);
+        // --- Lógica de Backup (Tu requisito) ---
+        // 1. Buscamos el evento ORIGINAL por tu ID
+        const eventoOriginal = await db.collection('eventos').findOne({ id: idEventoModificar });
 
         if (eventoOriginal) {
-            // 3. Creamos la copia de seguridad con timestamp
+            // 2. Creamos la copia de seguridad
             const backupEvento = {
                 ...eventoOriginal,
                 fechaModificacion: new Date().toISOString()
             };
-            eventosModificados.push(backupEvento);
+            delete backupEvento._id; // Le quitamos el _id de Mongo
             
-            // 4. Guardamos el backup
-            writeData('eventosModificados.json', eventosModificados);
+            // 3. Guardamos el backup
+            await db.collection('eventosModificados').insertOne(backupEvento);
             console.log("BACKUP DE MODIFICACIÓN CREADO:", idEventoModificar);
         }
 
         // --- Lógica de Actualización ---
-        // 5. Creamos la nueva lista de eventos actualizados
-        const eventosActualizados = eventos.map(evento => {
-            return evento.id === idEventoModificar ? eventoModificado : evento;
-        });
-
-        // 6. Sobrescribimos el archivo principal
-        writeData('eventos.json', eventosActualizados);
+        // 4. Actualizamos el evento principal buscando por tu "id"
+        await db.collection('eventos').updateOne(
+            { id: idEventoModificar }, // El filtro (cómo buscarlo)
+            { $set: eventoModificado }  // Los nuevos datos
+        );
         
         console.log("EVENTO MODIFICADO:", idEventoModificar);
         res.json({ success: true, message: 'Evento modificado con éxito', evento: eventoModificado });
@@ -189,40 +168,34 @@ router.put('/eventos/modificar/:id', checkAuth, (req, res) => {
     }
 });
 
-// RUTA PARA ELIMINAR (Baja)
-router.delete('/eventos/eliminar/:id', checkAuth, (req, res) => {
+// RUTA PARA ELIMINAR (Baja de Evento)
+router.delete('/eventos/eliminar/:id', checkAuth, async (req, res) => {
     try {
-        const idEventoEliminar = req.params.id;
+        const db = await connectToDb();
+        const idEventoEliminar = req.params.id; // Tu ID
 
         // --- Lógica de Backup (Tu requisito) ---
-        // 1. Leemos los eventos actuales y el backup de eliminados
-        const eventos = readData('eventos.json');
-        const eventosEliminados = readData('eventosEliminados.json');
-
-        // 2. Buscamos el evento que vamos a borrar
-        const eventoABorrar = eventos.find(e => e.id === idEventoEliminar);
+        // 1. Buscamos el evento que vamos a borrar
+        const eventoABorrar = await db.collection('eventos').findOne({ id: idEventoEliminar });
         
         if (!eventoABorrar) {
              return res.status(404).json({ success: false, message: 'Evento no encontrado' });
         }
 
-        // 3. Creamos la copia de seguridad con timestamp
+        // 2. Creamos la copia de seguridad
         const backupEvento = {
             ...eventoABorrar,
             fechaEliminacion: new Date().toISOString()
         };
-        eventosEliminados.push(backupEvento);
+        delete backupEvento._id; // Le quitamos el _id de Mongo
 
-        // 4. Guardamos el backup
-        writeData('eventosEliminados.json', eventosEliminados);
+        // 3. Guardamos el backup
+        await db.collection('eventosEliminados').insertOne(backupEvento);
         console.log("BACKUP DE ELIMINACIÓN CREADO:", idEventoEliminar);
 
         // --- Lógica de Eliminación ---
-        // 5. Creamos la nueva lista (filtrando el evento eliminado)
-        const eventosActualizados = eventos.filter(evento => evento.id !== idEventoEliminar);
-
-        // 6. Sobrescribimos el archivo principal
-        writeData('eventos.json', eventosActualizados);
+        // 4. Borramos el evento de la colección principal
+        await db.collection('eventos').deleteOne({ id: idEventoEliminar });
         
         console.log("EVENTO ELIMINADO:", idEventoEliminar);
         res.json({ success: true, message: 'Evento eliminado con éxito' });
