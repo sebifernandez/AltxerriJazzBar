@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
 let tags = []; 
 let picker; 
 
-// --- ¡CAMBIO! REEMPLAZA ESTA FUNCIÓN ENTERA ---
+
 function inicializarFormularioAlta() {
     
     const form = document.getElementById('form-alta-evento');
@@ -153,8 +153,8 @@ function inicializarFormularioAlta() {
     const tagContainer = document.getElementById('tag-container');
     
     // --- ¡ARREGLO PARA BUG 1 (Fecha Pasada)! ---
-    // Destruimos el calendario anterior si existe (al cambiar de pestaña)
-    // para asegurarnos de que los listeners se re-apliquen.
+    // Destruimos el calendario anterior (el "fantasma") si existe
+    // antes de crear uno nuevo. Esto asegura que 'onselected' funcione.
     if (picker) {
         picker.destroy();
     }
@@ -173,6 +173,7 @@ function inicializarFormularioAlta() {
         onselected: (date) => {
             // Esta es la lógica que AHORA SÍ va a funcionar
             const fechaSeleccionadaMillis = date.getTime();
+            // Comparamos con el inicio del día de hoy
             const hoyMillis = DateTime.now().startOf('day').toMillis();
             
             if (fechaSeleccionadaMillis < hoyMillis) {
@@ -260,7 +261,7 @@ function inicializarFormularioAlta() {
             return;
         }
         if (!eventoData.fecha) {
-             alert("Error: 'Fecha' es un campo obligatorio.");
+            alert("Error: 'Fecha' es un campo obligatorio.");
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
             return;
@@ -317,7 +318,8 @@ function inicializarFormularioAlta() {
             } else {
                 
                 // --- ¡ARREGLO PARA BUG 2 (Conflicto de Fecha)! ---
-                // Comprobamos si hay CUALQUIER evento en esa fecha
+                // Comprobamos si hay CUALQUIER evento en esa fecha, 
+                // sin importar el tipo.
                 if (adminEventos.some(ev => ev.fecha === eventoFinal.fecha)) {
                     // Si lo hay, preguntamos
                     if (!confirm("¡Atención! Ya existe otro evento en esta fecha. ¿Deseas crearlo igualmente?")) {
@@ -352,7 +354,6 @@ function inicializarFormularioAlta() {
         }
     });
 }
-// --- FIN DE LA FUNCIÓN REEMPLAZADA ---
 
 
 // (renderizarTags, esURLValida no cambian)
