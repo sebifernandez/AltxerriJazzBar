@@ -1,4 +1,4 @@
-/* --- ADMIN.JS (Versión 4.5 - Arreglo de Bugs de Fecha, Carta y Sintaxis) --- */
+/* --- ADMIN.JS (Versión 4.6 - Arreglo de Bugs de Fecha, Carta y Sintaxis) --- */
 
 // --- Variables Globales ---
 const { DateTime } = luxon; 
@@ -9,6 +9,11 @@ let idEventoEdicion = null; // Guardará el _id de Mongo
 let adminProductos = []; 
 let adminProductos_EN = []; 
 let modoVisibilidad = false; 
+
+// --- ¡ARREGLO PARA BUG 2! ---
+// Movemos 'picker' aquí, al ámbito global
+let tags = []; 
+let picker; 
 
 // (formatarPrecio y sugerirTraduccion no cambian)
 function formatarPrecio(precio) {
@@ -107,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         
-        // --- ¡CAMBIO! Lógica del listener de TABS ---
+        // (Listener de TABS no cambia)
         tabLinks.forEach(link => {
             link.addEventListener('click', () => {
                 const targetId = link.getAttribute('data-tab');
@@ -123,10 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 
-                // ¡ARREGLO! Llamamos a la función de inicialización,
-                // que ahora se encarga de todo
                 if (targetId === 'alta-evento') {
-                    // Solo reiniciamos/destruimos si NO estamos en modo edición
                     if (!modoEdicion) {
                         inicializarFormularioAlta(); 
                     }
@@ -149,17 +151,15 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchProductosData(); 
         inicializarPanelesBusquedaProductos();
     }
-// --- ¡CAMBIO! Esta es la llave que faltaba en la línea 112 ---
-// --- Ahora está al FINAL del archivo ---
+// --- ¡ARREGLO DE SINTAXIS! ---
+// La llave de cierre de 'DOMContentLoaded'
+// se ha movido al FINAL del archivo.
 
 
 // -----------------------------------------------------------------
 // --- FASE 2: LÓGICA DEL FORMULARIO DE ALTA (EVENTOS) ---
 // (Corregido con _id y Bugfix de UX v4.5)
 // -----------------------------------------------------------------
-
-let tags = []; 
-let picker; 
 
 // --- ¡CAMBIO! REEMPLAZA ESTA FUNCIÓN ENTERA ---
 function inicializarFormularioAlta() {
@@ -393,7 +393,6 @@ function inicializarFormularioAlta() {
 // (renderizarTags, esURLValida no cambian)
 function renderizarTags() {
     const tagContainer = document.getElementById('tag-container');
-    // (Verificamos que tagContainer exista antes de manipularlo)
     if (!tagContainer) return; 
     tagContainer.querySelectorAll('.tag-item').forEach(tagEl => tagEl.remove());
     tags.slice().reverse().forEach(tagTexto => {
@@ -416,6 +415,8 @@ function esURLValida(string) {
 function resetearFormularioAlta() {
     const form = document.getElementById('form-alta-evento');
     if (!form) return;
+    
+    // Reseteamos el formulario
     form.reset();
     tags = [];
     renderizarTags();
@@ -1031,8 +1032,12 @@ function inicializarFormularioCarta() {
             container.appendChild(div);
         }
     }
-    selectorTipo.addEventListener('change', () => {
-        let tipoSeleccionado = selectorTipo.value;
+    
+    // (Limpiamos listeners viejos)
+    const newSelectorTipo = selectorTipo.cloneNode(true);
+    selectorTipo.parentNode.replaceChild(newSelectorTipo, selectorTipo);
+    newSelectorTipo.addEventListener('change', () => {
+        let tipoSeleccionado = newSelectorTipo.value;
         container.querySelectorAll('.form-fields-group').forEach(group => {
             group.classList.remove('visible');
         });
@@ -1185,6 +1190,7 @@ async function fetchProductosData() {
         // ¡CAMBIO! La API ahora nos da la estructura completa
         // y nuestro backend la arma correctamente
         if (!data.es || !data.es.productos) {
+            console.log(data); // Para ver qué está llegando
             throw new Error("La API no devolvió 'productos' para ES");
         }
         adminProductos = data.es.productos; 
@@ -1255,7 +1261,7 @@ function crearTarjetaResultadoProducto(prod) {
     const imgRuta = (prod.imagen) ? `../img/${prod.imagen}` : `../img/bebidaSinFoto.jpg`;
     const precio = formatarPrecio(prod.precioCopa || prod.precioBotella || prod.precioPinta);
     
-    const estaHabilitado = (prod.visualizacion === undefined) ? true : prod.visualizo;
+    const estaHabilitado = (prod.visualizacion === undefined) ? true : prod.visualizacion; 
     const deshabilitadoClass = estaHabilitado ? '' : 'deshabilitado';
     const switchChecked = estaHabilitado ? 'checked' : '';
 
@@ -1357,7 +1363,7 @@ function prellenarFormularioCarta(prod) {
     form.scrollIntoView({ behavior: 'smooth' });
 }
 
-// --- ¡CAMBIO! Arreglo Bug Guardar Carta ---
+// --- ¡ARREGLO! Arreglo Bug Guardar Carta ---
 function recolectarDatosProducto(formGroup, tipo) {
 
     // --- 1. DATOS ÚNICOS (No se traducen) ---

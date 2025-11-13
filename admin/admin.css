@@ -209,6 +209,7 @@ body {
     grid-column: 2 / 3; /* Ocupa la 2da columna */
     padding: 2rem;
     background-color: var(--color-bg);
+    overflow-x: hidden;
 }
 
 .main-header {

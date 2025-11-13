@@ -70,42 +70,65 @@ router.get('/eventos', async (req, res) => {
     }
 });
 
-// ¡CAMBIO! LEER PRODUCTOS (Ahora incluye textosUI)
+// ¡CAMBIO! LEER PRODUCTOS (Ahora incluye textosUI COMPLETOS)
 router.get('/productos', async (req, res) => {
     try {
         const db = await connectToDb();
         
-        // Hacemos las dos búsquedas al mismo tiempo
         const [productosES, productosEN] = await Promise.all([
             db.collection('productos_es').find({}).toArray(),
             db.collection('productos_en').find({}).toArray()
         ]);
         
-        // Simulamos la estructura del JSON original
-        // (¡ESTO ES TEMPORAL! Deberíamos guardar textosUI en la DB)
-        // (Tu app.js solo necesita "navbar" para no romperse)
+        // --- ARREGLO PARA LA CARTA PÚBLICA (app.js) ---
+        // Hardcodeamos los textosUI que tu app.js necesita
         const textosUI_es = {
-            "lang": "es",
-            "langButton": "ENG",
+            "lang": "es", "langButton": "ENG",
             "navbar": [
-              { "id": "cocteles", "texto": "Cocteles" },
-              { "id": "cervezas", "texto": "Cervezas" },
-              { "id": "vinos", "texto": "Vinos" },
-              { "id": "destilados", "texto": "Destilados" },
+              { "id": "cocteles", "texto": "Cocteles" }, { "id": "cervezas", "texto": "Cervezas" },
+              { "id": "vinos", "texto": "Vinos" }, { "id": "destilados", "texto": "Destilados" },
               { "id": "sinAlcohol", "texto": "Sin Alcohol" }
-            ]
+            ],
+            "titulosSeccion": {
+              "cocteles": "Cocteles", "cervezas": "Cervezas", "vinos": "Nuestros Vinos",
+              "destilados": "Destilados", "sinAlcohol": "Sin Alcohol"
+            },
+            "subtitulos": {
+              "cervezaBarril": "Cervezas de Barril", "cervezaEnvasada": "Cervezas Envasadas",
+              "vinosDestacados": "Los Destacados de la Semana", "vinosTintos": "Tintos",
+              "vinosBlancos": "Blancos", "vinosOtros": "Rosados y Espumantes"
+            },
+            "etiquetasPrecio": {
+              "cana": "Caña", "pinta": "Pinta", "copa": "Copa", "botella": "Botella", "vaso": "Vaso"
+            },
+            "etiquetasVino": {
+              "bodega": "Bodega", "varietal": "Varietal", "ano": "Año", "crianza": "Crianza"
+            }
         };
          const textosUI_en = {
-            "lang": "en",
-            "langButton": "ESP",
+            "lang": "en", "langButton": "ESP",
             "navbar": [
-              { "id": "cocteles", "texto": "Cocktails" },
-              { "id": "cervezas", "texto": "Beers" },
-              { "id": "vinos", "texto": "Wines" },
-              { "id": "destilados", "texto": "Spirits" },
+              { "id": "cocteles", "texto": "Cocktails" }, { "id": "cervezas", "texto": "Beers" },
+              { "id": "vinos", "texto": "Wines" }, { "id": "destilados", "texto": "Spirits" },
               { "id": "sinAlcohol", "texto": "Non-Alcoholic" }
-            ]
+            ],
+            "titulosSeccion": {
+              "cocteles": "Cocktails", "cervezas": "Beers", "vinos": "Our Wines",
+              "destilados": "Spirits", "sinAlcohol": "Non-Alcoholic"
+            },
+            "subtitulos": {
+              "cervezaBarril": "Draft Beers", "cervezaEnvasada": "Bottled & Canned Beers",
+              "vinosDestacados": "Featured Wines of the Week", "vinosTintos": "Red Wines",
+              "vinosBlancos": "White Wines", "vinosOtros": "Rosé & Sparkling"
+            },
+            "etiquetasPrecio": {
+              "cana": "Small", "pinta": "Pint", "copa": "Glass", "botella": "Bottle", "vaso": "Glass"
+            },
+            "etiquetasVino": {
+              "bodega": "Winery", "varietal": "Varietal", "ano": "Year", "crianza": "Aging"
+            }
         };
+        // --- FIN DEL ARREGLO ---
 
         res.json({
             es: { productos: productosES, textosUI: textosUI_es },
@@ -119,7 +142,6 @@ router.get('/productos', async (req, res) => {
 });
 
 // --- RUTAS DE "ESCRIBIR" (POST, PUT, DELETE) CON GUARDIA ---
-
 // (Rutas de Eventos no cambian)
 router.post('/eventos/crear', checkAuth, async (req, res) => {
     try {
@@ -134,7 +156,6 @@ router.post('/eventos/crear', checkAuth, async (req, res) => {
         res.status(500).json({ success: false, message: 'Error interno al crear el evento' });
     }
 });
-
 router.put('/eventos/modificar/:_id', checkAuth, async (req, res) => {
     try {
         const db = await connectToDb();
@@ -158,7 +179,6 @@ router.put('/eventos/modificar/:_id', checkAuth, async (req, res) => {
         res.status(500).json({ success: false, message: 'Error interno al modificar el evento' });
     }
 });
-
 router.delete('/eventos/eliminar/:_id', checkAuth, async (req, res) => {
     try {
         const db = await connectToDb();
