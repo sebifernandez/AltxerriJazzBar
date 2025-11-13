@@ -1,76 +1,53 @@
-/* --- ADMIN.JS (Versión 3.1 - Con Bugfix de UX de Eventos) --- */
+/* --- ADMIN.JS (Versión 4.2 - Corregido con _id de MongoDB y COMPLETO) --- */
 
 // --- Variables Globales ---
 const { DateTime } = luxon; 
 let adminEventos = []; 
 let modoEdicion = false; 
-let idEventoEdicion = null; 
+let idEventoEdicion = null; // ¡CAMBIO! Esto ahora guardará el _id de Mongo
 
 let adminProductos = []; 
 let adminProductos_EN = []; 
 let modoVisibilidad = false; 
 
-/**
- * Helper para formatear precios.
- */
+// (formatarPrecio y sugerirTraduccion no cambian)
 function formatarPrecio(precio) {
     if (!precio || precio === 0) {
         return '–'; 
     }
     return `${precio}€`;
 }
-
-/**
- * Helper de Traducción (Simulación Gratuita)
- */
 function sugerirTraduccion(texto) {
     if (!texto) return "";
     console.log("Simulando traducción...");
     return texto; 
 }
-
-// --- ¡NUEVO! Helper de Seguridad ---
-/**
- * Obtiene el token de autenticación guardado.
- * @returns {string} El token o un string vacío.
- */
 function getAuthToken() {
     return localStorage.getItem('altxerri_token') || '';
 }
 
 
-// --- Inicializador Principal ---
+// --- Inicializador Principal (sin cambios) ---
 document.addEventListener('DOMContentLoaded', () => {
-
-    // --- Lógica de "PORTERO" (BOUNCER) DE SEGURIDAD ---
     const loginForm = document.querySelector('.login-form');
     const dashboardContainer = document.querySelector('.dashboard-container');
-
     if (loginForm) {
-        // --- ESTAMOS EN LA PÁGINA DE LOGIN (index.html) ---
-        
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault(); 
-
             const errorMessage = document.getElementById('login-error');
             errorMessage.textContent = 'Verificando...';
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-
             try {
                 const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password }) 
                 });
-
                 const data = await response.json();
-
                 if (data.success) {
-                    // ¡CAMBIO! Guardamos el "ticket" Y la "llave" (token)
                     localStorage.setItem('altxerri_auth', 'true');
-                    localStorage.setItem('altxerri_token', data.token); // ¡NUEVO!
-                    
+                    localStorage.setItem('altxerri_token', data.token);
                     window.location.href = 'dashboard.html';
                 } else {
                     errorMessage.textContent = data.message;
@@ -82,116 +59,76 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     } 
     else if (dashboardContainer) {
-        // --- ESTAMOS EN LA PÁGINA DE DASHBOARD (dashboard.html) ---
-
-        // 1. Revisar el "ticket" (sin cambios)
         if (localStorage.getItem('altxerri_auth') !== 'true') {
             alert("Acceso denegado. Por favor, inicia sesión.");
             window.location.href = 'index.html';
             return; 
         }
-
-        // 2. Lógica del botón "Salir"
         const logoutBtn = document.getElementById('logout-btn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                // ¡CAMBIO! Destruye el "ticket" Y la "llave"
                 localStorage.removeItem('altxerri_auth');
-                localStorage.removeItem('altxerri_token'); // ¡NUEVO!
-                
+                localStorage.removeItem('altxerri_token');
                 window.location.href = 'index.html';
             });
         }
-
-        // --- Lógica FASE 1: Navegación Base ---
-        // (Esta parte no cambia, la omito por brevedad...)
+        
+        // (Navegación base no cambia)
         const sidebar = document.getElementById('sidebar');
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const navLinks = document.querySelectorAll('.nav-link');
         const contentSections = document.querySelectorAll('.content-section');
         const tabLinks = document.querySelectorAll('.tab-link');
         const dashCards = document.querySelectorAll('.dash-card');
-
-        if (mobileMenuBtn) {
-            mobileMenuBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('open');
-            });
-        }
-
+        if (mobileMenuBtn) { mobileMenuBtn.addEventListener('click', () => sidebar.classList.toggle('open')); }
         navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const targetId = link.getAttribute('data-target');
                 if (!targetId) return;
-                
                 navLinks.forEach(l => l.classList.remove('active'));
                 link.classList.add('active');
-
                 contentSections.forEach(section => {
                     section.classList.remove('active');
                     if (section.id === targetId) {
                         section.classList.add('active');
                     }
                 });
-
-                if (sidebar.classList.contains('open')) {
-                    sidebar.classList.remove('open');
-                }
+                if (sidebar.classList.contains('open')) { sidebar.classList.remove('open'); }
             });
         });
-        
         dashCards.forEach(card => {
             card.addEventListener('click', () => {
                 const targetId = card.getAttribute('data-target');
                 document.querySelector(`.nav-link[data-target="${targetId}"]`).click();
             });
         });
-
         tabLinks.forEach(link => {
             link.addEventListener('click', () => {
                 const targetId = link.getAttribute('data-tab');
                 const parentSection = link.closest('.content-section');
-
                 parentSection.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
                 link.classList.add('active');
-
                 parentSection.querySelectorAll('.tab-content').forEach(content => {
                     content.classList.remove('active');
                     if (content.id === targetId) {
                         content.classList.add('active');
                     }
                 });
-                
-                if (targetId === 'alta-evento' && !modoEdicion) {
-                    resetearFormularioAlta();
-                }
-                if (targetId === 'alta-producto' && !modoEdicion) {
-                    resetearFormularioCarta();
-                }
+                if (targetId === 'alta-evento' && !modoEdicion) { resetearFormularioAlta(); }
+                if (targetId === 'alta-producto' && !modoEdicion) { resetearFormularioCarta(); }
             });
         });
         
-        // --- Lógica FASE 2: Formulario de Alta Eventos ---
         const formAlta = document.getElementById('form-alta-evento');
-        if (formAlta) {
-            inicializarFormularioAlta();
-        }
-        
-        // --- Lógica FASE 3: Búsqueda Eventos ---
-        // ¡CAMBIO! Ahora le pasamos el token de seguridad
-        fetchEventosData(); // Esta función ahora usa el token
+        if (formAlta) { inicializarFormularioAlta(); }
+        fetchEventosData(); 
         inicializarPanelesBusquedaEventos();
         
-        // --- Lógica FASE 4/5/6: Formulario de Alta Carta ---
         const formAltaProducto = document.getElementById('form-alta-producto');
-        if (formAltaProducto) {
-            inicializarFormularioCarta();
-        }
-
-        // --- Lógica FASE 5/6: Búsqueda Carta ---
-        // ¡CAMBIO! Ahora le pasamos el token de seguridad
-        fetchProductosData(); // Esta función ahora usa el token
+        if (formAltaProducto) { inicializarFormularioCarta(); }
+        fetchProductosData(); 
         inicializarPanelesBusquedaProductos();
     }
 });
@@ -199,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // -----------------------------------------------------------------
 // --- FASE 2: LÓGICA DEL FORMULARIO DE ALTA (EVENTOS) ---
-// (Con Bugfix de UX y Conectado al Backend Real)
+// (Corregido con _id y Bugfix de UX)
 // -----------------------------------------------------------------
 
 let tags = []; 
@@ -207,7 +144,6 @@ let picker;
 
 function inicializarFormularioAlta() {
     
-    // (Esta parte no cambia, la omito por brevedad...)
     const form = document.getElementById('form-alta-evento');
     const inputFecha = document.getElementById('evento-fecha');
     const checkGenerica = document.getElementById('evento-img-generica');
@@ -215,28 +151,32 @@ function inicializarFormularioAlta() {
     const inputTag = document.getElementById('evento-tags');
     const tagContainer = document.getElementById('tag-container');
     
-    picker = new Litepicker({
-        element: inputFecha,
-        format: 'YYYY-MM-DD',
-        lang: 'es-ES',
-        buttonText: {
-            previousMonth: '<i class="bx bx-chevron-left"></i>',
-            nextMonth: '<i class="bx bx-chevron-right"></i>',
-            reset: '<i class="bx bx-refresh"></i>',
-            apply: 'Aplicar'
-        },
-        onselected: (date) => {
-            const fechaSeleccionadaMillis = date.getTime();
-            const hoyMillis = DateTime.now().startOf('day').toMillis();
-            
-            if (fechaSeleccionadaMillis < hoyMillis) {
-                if (!confirm("Has seleccionado una fecha en el pasado. ¿Estás seguro de que quieres continuar?")) {
-                    picker.clearSelection(); 
+    // (Lógica del Litepicker no cambia)
+    if (!picker) { 
+        picker = new Litepicker({
+            element: inputFecha,
+            format: 'YYYY-MM-DD',
+            lang: 'es-ES',
+            buttonText: {
+                previousMonth: '<i class="bx bx-chevron-left"></i>',
+                nextMonth: '<i class="bx bx-chevron-right"></i>',
+                reset: '<i class="bx bx-refresh"></i>',
+                apply: 'Aplicar'
+            },
+            onselected: (date) => {
+                const fechaSeleccionadaMillis = date.getTime();
+                const hoyMillis = DateTime.now().startOf('day').toMillis();
+                
+                if (fechaSeleccionadaMillis < hoyMillis) {
+                    if (!confirm("Has seleccionado una fecha en el pasado. ¿Estás seguro de que quieres continuar?")) {
+                        picker.clearSelection(); 
+                    }
                 }
             }
-        }
-    });
+        });
+    }
 
+    // (Listeners de tags y checkbox no cambian)
     checkGenerica.addEventListener('change', () => {
         fieldsetImagen.disabled = checkGenerica.checked;
         if (checkGenerica.checked) {
@@ -245,7 +185,6 @@ function inicializarFormularioAlta() {
             document.getElementById('evento-imagen-upload').value = '';
         }
     });
-
     inputTag.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ',') {
             e.preventDefault(); 
@@ -257,7 +196,6 @@ function inicializarFormularioAlta() {
             inputTag.value = ''; 
         }
     });
-    
     tagContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('remove-tag-btn')) {
             const tagTexto = e.target.getAttribute('data-tag');
@@ -266,25 +204,19 @@ function inicializarFormularioAlta() {
         }
     });
     
-    // --- ¡INICIO BLOQUE NUEVO! (BUGFIX UX) ---
+    // (Bugfix de UX "Privado/Cerrado" no cambia)
     const tipoEventoSelect = document.getElementById('evento-tipo');
     const tituloInput = document.getElementById('evento-titulo');
     const liveInput = document.getElementById('evento-live');
     const conciertoInput = document.getElementById('evento-concierto');
-    // (checkGenerica y fieldsetImagen ya estaban definidos arriba)
-
     tipoEventoSelect.addEventListener('change', () => {
         const tipo = tipoEventoSelect.value;
         const esEspecial = (tipo === 'Privado' || tipo === 'Cerrado');
-
-        // Habilita o deshabilita los campos
         tituloInput.disabled = esEspecial;
         liveInput.disabled = esEspecial;
         conciertoInput.disabled = esEspecial;
         checkGenerica.disabled = esEspecial;
         fieldsetImagen.disabled = esEspecial;
-
-        // Limpia los campos si es especial
         if (esEspecial) {
             tituloInput.value = '';
             liveInput.value = '';
@@ -295,17 +227,15 @@ function inicializarFormularioAlta() {
             renderizarTags();
         }
     });
-    // --- ¡FIN BLOQUE NUEVO! ---
-
     
     // --- Lógica de SUBMIT (guardado) ---
     form.addEventListener('submit', async (e) => {
         e.preventDefault(); 
         const btnSubmit = form.querySelector('.btn-primary');
-        btnSubmit.disabled = true; // Deshabilita el botón
+        btnSubmit.disabled = true;
         btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
         
-        // --- 1. Recolección de datos (sin cambios) ---
+        // (Recolección de datos no cambia)
         const eventoData = {
             fecha: document.getElementById('evento-fecha').value,
             tipoEvento: document.getElementById('evento-tipo').value,
@@ -317,38 +247,35 @@ function inicializarFormularioAlta() {
             imgReferencia: tags
         };
 
-        // --- 2. Validación (MODIFICADA) ---
-        // Si NO es especial, el título es obligatorio
+        // (Validación no cambia)
         if (eventoData.tipoEvento === 'Regular' && !eventoData.titulo) {
             alert("Error: 'Título' es obligatorio para eventos Regulares.");
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
             return;
         }
-        // La fecha siempre es obligatoria
         if (!eventoData.fecha) {
              alert("Error: 'Fecha' es un campo obligatorio.");
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
             return;
         }
-        // ... (Aquí irían tus otras validaciones como la de URL)
 
-        // --- 3. Lógica de Imagen (sin cambios) ---
+        // (Lógica de Imagen no cambia - AÚN NO FUNCIONA LA SUBIDA)
         let imagenNombre = "imgBandaGenerica.jpg";
         if (!eventoData.usaGenerica) {
             if (eventoData.archivoImagen) {
                 imagenNombre = eventoData.archivoImagen.name;
                 console.log("Simulando subida de:", imagenNombre); 
             } else if (modoEdicion) {
-                const eventoOriginal = adminEventos.find(ev => ev.id === idEventoEdicion);
+                const eventoOriginal = adminEventos.find(ev => ev._id === idEventoEdicion); // ¡CAMBIO! Buscamos por _id
                 imagenNombre = eventoOriginal.imagen || "imgBandaGenerica.jpg";
             }
         }
 
-        // --- 4. Creación del objeto final (¡MODIFICADO!) ---
+        // --- ¡CAMBIO! Creación del objeto final ---
+        // ¡Ya NO añadimos el "id: evt_..."!
         let eventoFinal = {
-            id: modoEdicion ? idEventoEdicion : `evt_${Date.now()}`,
             fecha: eventoData.fecha,
             tipoEvento: eventoData.tipoEvento,
             imagen: imagenNombre,
@@ -358,32 +285,33 @@ function inicializarFormularioAlta() {
             concierto: eventoData.concierto
         };
 
-        // Tu lógica automática para "Privado" o "Cerrado"
+        // (Lógica "Privado/Cerrado" no cambia)
         if (eventoFinal.tipoEvento === 'Cerrado') {
             eventoFinal.titulo = "";
-            eventoFinal.imagen = "cerrado.jpg"; // JS lo pone automático
+            eventoFinal.imagen = "cerrado.jpg";
             eventoFinal.live = "";
             eventoFinal.concierto = "";
             eventoFinal.imgReferencia = [];
         } else if (eventoFinal.tipoEvento === 'Privado') {
             eventoFinal.titulo = "";
-            eventoFinal.imagen = "eventoPrivado.jpg"; // JS lo pone automático
+            eventoFinal.imagen = "eventoPrivado.jpg";
             eventoFinal.live = "";
             eventoFinal.concierto = "";
             eventoFinal.imgReferencia = [];
         }
 
-        // --- 5. LÓGICA DE GUARDADO REAL (Sin cambios) ---
+        // --- ¡CAMBIO! Lógica de GUARDADO REAL ---
         try {
             if (modoEdicion) {
                 // --- MODO EDICIÓN (PUT) ---
-                const response = await fetch(`/api/eventos/modificar/${eventoFinal.id}`, {
+                // ¡CAMBIO! Añadimos el _id a la ruta
+                const response = await fetch(`/api/eventos/modificar/${idEventoEdicion}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': getAuthToken() // ¡Enviamos la "llave"!
+                        'Authorization': getAuthToken()
                     },
-                    body: JSON.stringify(eventoFinal)
+                    body: JSON.stringify(eventoFinal) // Enviamos el objeto sin _id
                 });
                 if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
                 alert("¡Evento Modificado con Éxito!");
@@ -402,7 +330,7 @@ function inicializarFormularioAlta() {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': getAuthToken() // ¡Enviamos la "llave"!
+                        'Authorization': getAuthToken()
                     },
                     body: JSON.stringify(eventoFinal)
                 });
@@ -424,7 +352,7 @@ function inicializarFormularioAlta() {
     });
 }
 
-// (renderizarTags, esURLValida, resetearFormularioAlta no cambian)
+// (renderizarTags, esURLValida no cambian)
 function renderizarTags() {
     const tagContainer = document.getElementById('tag-container');
     tagContainer.querySelectorAll('.tag-item').forEach(tagEl => tagEl.remove());
@@ -435,7 +363,6 @@ function renderizarTags() {
         tagContainer.prepend(tagEl);
     });
 }
-
 function esURLValida(string) {
     try {
         new URL(string);
@@ -445,6 +372,7 @@ function esURLValida(string) {
     }
 }
 
+// (resetearFormularioAlta no cambia)
 function resetearFormularioAlta() {
     const form = document.getElementById('form-alta-evento');
     if (!form) return;
@@ -453,33 +381,28 @@ function resetearFormularioAlta() {
     renderizarTags();
     if (picker) picker.clearSelection();
     document.getElementById('fieldset-imagen').disabled = false;
-    
-    // Habilita los campos por si quedaron deshabilitados
     document.getElementById('evento-titulo').disabled = false;
     document.getElementById('evento-live').disabled = false;
     document.getElementById('evento-concierto').disabled = false;
     document.getElementById('evento-img-generica').disabled = false;
-
     modoEdicion = false;
     idEventoEdicion = null;
     form.classList.remove('modo-edicion');
-    
     const tabContent = form.closest('.tab-content');
     if (tabContent) { 
         tabContent.querySelector('h3').textContent = "Crear Nuevo Evento";
     }
-    
     form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
-    
     const infoImg = document.getElementById('info-img-actual');
     if (infoImg) infoImg.remove();
 }
 
 // -----------------------------------------------------------------
 // --- FASE 3: LÓGICA DE BÚSQUEDA Y RESULTADOS (EVENTOS) ---
-// (Conectado al Backend Real)
+// (Corregido con _id)
 // -----------------------------------------------------------------
 
+// (fetchEventosData no cambia)
 async function fetchEventosData() {
     try {
         const response = await fetch('/api/eventos', {
@@ -496,7 +419,7 @@ async function fetchEventosData() {
             throw new Error('No se pudo cargar eventos.json desde la API');
         }
         adminEventos = await response.json(); 
-        adminEventos.forEach((ev, index) => ev.id = ev.id || ev.fecha || `evt_${index}`); 
+        // ¡CAMBIO! Ya no necesitamos inventar un "id"
         renderizarResultadosEventos();
     } catch (error) {
         console.error(error);
@@ -504,7 +427,7 @@ async function fetchEventosData() {
     }
 }
 
-// (inicializarPanelesBusquedaEventos, renderizarResultadosEventos, filtrarEventos, crearTarjetaResultadoEvento no cambian)
+// (inicializarPanelesBusquedaEventos, renderizarResultadosEventos, filtrarEventos no cambian)
 function inicializarPanelesBusquedaEventos() {
     const inputs = document.querySelectorAll('#form-busqueda-mod .form-input, #form-busqueda-baja .form-input');
     inputs.forEach(input => {
@@ -538,12 +461,10 @@ function inicializarPanelesBusquedaEventos() {
     if (modContainer) modContainer.addEventListener('click', (e) => manejarClickTarjetaEvento(e, 'modificar'));
     if (bajaContainer) bajaContainer.addEventListener('click', (e) => manejarClickTarjetaEvento(e, 'eliminar'));
 }
-
 function renderizarResultadosEventos() {
     const contenedorMod = document.getElementById('mod-resultados-container');
     const contenedorBaja = document.getElementById('baja-resultados-container');
     if (!contenedorMod || !contenedorBaja) return;
-
     const filtrosMod = {
         fecha: document.getElementById('mod-search-fecha').value,
         tipo: document.getElementById('mod-search-tipo').value,
@@ -556,39 +477,36 @@ function renderizarResultadosEventos() {
         titulo: document.getElementById('baja-search-titulo').value.toLowerCase(),
         tags: document.getElementById('baja-search-tags').value.toLowerCase(),
     };
-    
-    // Filtramos y ordenamos por fecha (más reciente primero)
     const eventosFiltradosMod = filtrarEventos(filtrosMod)
         .sort((a, b) => b.fecha.localeCompare(a.fecha));
     const eventosFiltradosBaja = filtrarEventos(filtrosBaja)
         .sort((a, b) => b.fecha.localeCompare(a.fecha));
-
     contenedorMod.innerHTML = eventosFiltradosMod.map(evento => crearTarjetaResultadoEvento(evento, 'modificar')).join('');
     contenedorBaja.innerHTML = eventosFiltradosBaja.map(evento => crearTarjetaResultadoEvento(evento, 'eliminar')).join('');
 }
-
 function filtrarEventos(filtros) {
     return adminEventos.filter(evento => {
-        // Ajuste: si el tipo es Privado o Cerrado, el título no importa
         const checkTitulo = !filtros.titulo || 
                             (evento.titulo && evento.titulo.toLowerCase().includes(filtros.titulo)) ||
                             (evento.tipoEvento !== 'Regular' && evento.tipoEvento.toLowerCase().includes(filtros.titulo));
-
         const checkFecha = !filtros.fecha || (evento.fecha === filtros.fecha);
         const checkTipo = !filtros.tipo || (evento.tipoEvento === filtros.tipo);
         const checkTags = !filtros.tags || (evento.imgReferencia && evento.imgReferencia.join(' ').toLowerCase().includes(filtros.tags));
-        
         return checkFecha && checkTipo && checkTitulo && checkTags;
     });
 }
 
+
+// --- ¡CAMBIO! ---
 function crearTarjetaResultadoEvento(evento, tipoAccion) {
     const esModificar = tipoAccion === 'modificar';
+    
+    // ¡CAMBIO! Usamos evento._id (el ID de Mongo)
     const botonHtml = esModificar
-        ? `<button class="btn btn-card btn-card-modificar" data-id="${evento.id}"><i class='bx bxs-pencil'></i> Modificar</button>`
-        : `<button class="btn btn-card btn-card-eliminar" data-id="${evento.id}"><i class='bx bxs-trash'></i> Eliminar</button>`;
+        ? `<button class="btn btn-card btn-card-modificar" data-id="${evento._id}"><i class='bx bxs-pencil'></i> Modificar</button>`
+        : `<button class="btn btn-card btn-card-eliminar" data-id="${evento._id}"><i class='bx bxs-trash'></i> Eliminar</button>`;
 
-    // --- Lógica de Visualización para Privado/Cerrado ---
+    // (Lógica de visualización no cambia)
     let tituloMostrar = evento.titulo;
     let imagenMostrar = (evento.imagen && evento.imagen !== "imgBandaGenerica.jpg") 
         ? `../img/${evento.imagen}` 
@@ -601,11 +519,10 @@ function crearTarjetaResultadoEvento(evento, tipoAccion) {
         tituloMostrar = "EVENTO PRIVADO";
         imagenMostrar = "../img/eventoPrivado.jpg";
     }
-
     const tipoClase = `tipo-${evento.tipoEvento.toLowerCase()}`;
 
     return `
-    <div class="card-resultado" id="evento-card-${evento.id}">
+    <div class="card-resultado" id="evento-card-${evento._id}">
         <div class="card-resultado-header">
             <img src="${imagenMostrar}" alt="${tituloMostrar}" class="card-resultado-img">
             <div class="card-resultado-info">
@@ -631,14 +548,13 @@ function crearTarjetaResultadoEvento(evento, tipoAccion) {
     `;
 }
 
-// (manejarClickTarjetaEvento no cambia)
+// --- ¡CAMBIO! ---
 function manejarClickTarjetaEvento(e, accion) {
     const boton = e.target.closest(accion === 'modificar' ? '.btn-card-modificar' : '.btn-card-eliminar');
-    
     if (!boton) return; 
     
-    const idEvento = boton.getAttribute('data-id');
-    const evento = adminEventos.find(ev => ev.id === idEvento);
+    const idMongo = boton.getAttribute('data-id'); // ¡CAMBIO! Esto ahora es el _id
+    const evento = adminEventos.find(ev => ev._id === idMongo); // ¡CAMBIO! Buscamos por _id
     if (!evento) {
         alert("Error: No se encontró el evento.");
         return;
@@ -647,37 +563,32 @@ function manejarClickTarjetaEvento(e, accion) {
     if (accion === 'modificar') {
         prellenarFormularioModEvento(evento);
     } else {
-        eliminarEvento(evento, boton); // ¡CAMBIO! Pasamos el botón para deshabilitarlo
+        eliminarEvento(evento, boton);
     }
 }
 
-// (eliminarEvento no cambia)
+// --- ¡CAMBIO! ---
 async function eliminarEvento(evento, boton) {
     if (!confirm(`¿Estás seguro de que quieres eliminar el evento "${evento.titulo || evento.tipoEvento}" del ${evento.fecha}? \n\n¡Esta acción es REAL y guarda un backup!`)) {
         return;
     }
-
     boton.disabled = true;
     boton.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i>";
     
     try {
-        const response = await fetch(`/api/eventos/eliminar/${evento.id}`, {
+        // ¡CAMBIO! Usamos evento._id en la ruta
+        const response = await fetch(`/api/eventos/eliminar/${evento._id}`, {
             method: 'DELETE',
             headers: {
-                'Authorization': getAuthToken() // ¡Enviamos la "llave"!
+                'Authorization': getAuthToken()
             }
         });
         
         const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.message);
-        }
-
+        if (!response.ok) throw new Error(data.message);
         alert(`Evento "${evento.titulo || evento.tipoEvento}" eliminado con éxito.`);
         
-        // Sincronizamos el array local y recargamos la vista
-        fetchEventosData();
+        fetchEventosData(); // Recargamos la lista
         
     } catch (error) {
         console.error("Error al eliminar evento:", error);
@@ -687,46 +598,38 @@ async function eliminarEvento(evento, boton) {
     }
 }
 
-// (prellenarFormularioModEvento no cambia)
+// --- ¡CAMBIO! ---
 function prellenarFormularioModEvento(evento) {
     modoEdicion = true;
-    idEventoEdicion = evento.id; 
+    idEventoEdicion = evento._id; // ¡CAMBIO! Guardamos el _id de Mongo
     
     const form = document.getElementById('form-alta-evento');
     form.classList.add('modo-edicion');
     
     const tabContent = form.closest('.tab-content');
     tabContent.querySelector('h3').textContent = `Modificando: ${evento.titulo || evento.tipoEvento}`;
-    
     form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
 
+    // (El resto de la función no cambia)
     document.getElementById('evento-fecha').value = evento.fecha;
     if (picker) picker.setDate(evento.fecha); 
-    
     document.getElementById('evento-tipo').value = evento.tipoEvento;
     document.getElementById('evento-titulo').value = evento.titulo;
     document.getElementById('evento-live').value = evento.live || '';
     document.getElementById('evento-concierto').value = evento.concierto || '';
-
-    // Disparamos el 'change' para que se deshabilite el form si es Privado/Cerrado
     document.getElementById('evento-tipo').dispatchEvent(new Event('change'));
-
     tags = evento.imgReferencia || [];
     renderizarTags();
-
     const checkGenerica = document.getElementById('evento-img-generica');
     const fieldsetImagen = document.getElementById('fieldset-imagen');
-    
     const infoImg = document.getElementById('info-img-actual');
     if (infoImg) infoImg.remove();
-    
     if (evento.imagen === 'imgBandaGenerica.jpg') {
         checkGenerica.checked = true;
         fieldsetImagen.disabled = true;
     } else {
         checkGenerica.checked = false;
         fieldsetImagen.disabled = false;
-        
         const infoHtml = `
             <div id="info-img-actual" class="info-imagen-actual">
                 <strong>Imagen Actual:</strong> ${evento.imagen}
@@ -736,13 +639,9 @@ function prellenarFormularioModEvento(evento) {
         `;
         fieldsetImagen.insertAdjacentHTML('afterbegin', infoHtml);
     }
-    
-    // Si es especial, aseguramos que fieldsetImagen esté deshabilitado
     if (evento.tipoEvento === 'Cerrado' || evento.tipoEvento === 'Privado') {
         fieldsetImagen.disabled = true;
     }
-
-
     document.querySelector('.tab-link[data-tab="alta-evento"]').click();
     form.scrollIntoView({ behavior: 'smooth' });
 }
@@ -750,12 +649,8 @@ function prellenarFormularioModEvento(evento) {
 
 // -----------------------------------------------------------------
 // --- FASE 4/5/6: LÓGICA COMPLETA DE "CARTA" ---
-// (Aún en modo SIMULACIÓN, pendiente de conectar)
+// (¡SECCIÓN RESTAURADA!)
 // -----------------------------------------------------------------
-
-// (Toda esta sección de "plantillasBloques", "plantillasFormCarta", 
-// "inicializarFormularioCarta", "activarLogicaBilingue", "resetearFormularioCarta"
-// sigue exactamente igual por ahora, la omito por brevedad)
 
 const plantillasBloques = {
     unicos_titulo_marca: `
@@ -867,7 +762,7 @@ const plantillasBloques = {
         </div>`,
     unicos_imagen_vino: `
         <div class="form-section">
-            <h4>Imagen del Producto (¡ObligatorIA para Vinos!)</h4>
+            <h4>Imagen del Producto (¡Obligatoria para Vinos!)</h4>
             <div class="form-group">
                 <label for="producto-imagen-upload">Subir Imagen *</label>
                 <input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required>
@@ -1062,12 +957,9 @@ function inicializarFormularioCarta() {
     const container = document.getElementById('smart-form-container');
     const actions = document.getElementById('form-actions-producto');
     const form = document.getElementById('form-alta-producto');
-
-    // 1. Crear los contenedores para cada tipo
     for (const tipo in plantillasFormCarta) {
         const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
         const divId = `fields-${tipoPlantilla}`;
-        
         if (!document.getElementById(divId)) {
             const div = document.createElement('div');
             div.id = divId;
@@ -1076,16 +968,12 @@ function inicializarFormularioCarta() {
             container.appendChild(div);
         }
     }
-
-    // 2. Escuchar cambios en el selector
     selectorTipo.addEventListener('change', () => {
         let tipoSeleccionado = selectorTipo.value;
         container.querySelectorAll('.form-fields-group').forEach(group => {
             group.classList.remove('visible');
         });
-
         const tipoPlantilla = tipoSeleccionado.startsWith('vino') ? 'vino' : tipoSeleccionado;
-
         if (tipoSeleccionado) {
             const grupoAMostrar = document.getElementById(`fields-${tipoPlantilla}`);
             if (grupoAMostrar) {
@@ -1097,26 +985,14 @@ function inicializarFormularioCarta() {
             actions.style.display = 'none'; 
         }
     });
-
-    // 3. Lógica de Submit Bilingüe (AÚN EN SIMULACIÓN)
     form.addEventListener('submit', (e) => {
         e.preventDefault();
-        
-        // ... (Tu lógica de recolección de datos bilingüe va aquí) ...
-        // (Por ahora, la dejamos en simulación)
-        
         alert(`¡"Guardar Producto" aún está en modo simulación!`);
-        
-        // fetchProductosData();
-        // resetearFormularioCarta();
     });
 }
-
 function activarLogicaBilingue(visibleGroup) {
-    // 1. Pestañas de Idioma (para Móvil)
     const langTabs = visibleGroup.querySelectorAll('.lang-tab-btn');
     const langContents = visibleGroup.querySelectorAll('.lang-content');
-
     langTabs.forEach(tab => {
         tab.addEventListener('click', (e) => {
             e.preventDefault(); 
@@ -1128,71 +1004,56 @@ function activarLogicaBilingue(visibleGroup) {
             });
         });
     });
-
-    // 2. Botón "Sugerir Traducción" (Mod #3)
     const translateBtn = visibleGroup.querySelector('.btn-translate[data-lang-group="en"]');
     if (translateBtn) {
         translateBtn.addEventListener('click', (e) => {
             e.preventDefault();
             const langGroupES = visibleGroup.querySelector('.lang-content[data-lang-content="es"]');
             const langGroupEN = visibleGroup.querySelector('.lang-content[data-lang-content="en"]');
-
             const campos = ['titulo', 'descripcion', 'region', 'pais', 'varietal', 'crianza'];
-            
             campos.forEach(campo => {
                 const inputES = langGroupES.querySelector(`[id$="-${campo}-es"]`); 
                 const inputEN = langGroupEN.querySelector(`[id$="-${campo}-en"]`); 
-                
                 if (inputES && inputEN && inputES.value) {
                     if (inputEN.value.trim() === '') {
-                        inputEN.value = sugerirTraduccion(inputES.value); // (Aún en simulación)
+                        inputEN.value = sugerirTraduccion(inputES.value); 
                     }
                 }
             });
         });
     }
 }
-
 function resetearFormularioCarta() {
     const form = document.getElementById('form-alta-producto');
     if (!form) return;
     form.reset();
-    
     document.getElementById('smart-form-container').querySelectorAll('.form-fields-group').forEach(group => {
         group.classList.remove('visible');
     });
-    
     document.getElementById('form-actions-producto').style.display = 'none';
     document.getElementById('producto-tipo').value = "";
-    
     modoEdicion = false;
     idEventoEdicion = null; 
-    
     form.classList.remove('modo-edicion');
-    
     const tabContent = document.getElementById('alta-producto');
     if (tabContent) {
         tabContent.querySelector('h3').textContent = "Crear Nuevo Producto";
     }
-
     const infoImg = document.getElementById('info-img-actual-prod');
     if (infoImg) infoImg.remove();
 }
 
-
 // --- LÓGICA DE BÚSQUEDA Y VISIBILIDAD (CARTA) ---
+// (Corregido con _id)
 
 async function fetchProductosData() {
     try {
-        // ¡CAMBIO! Enviamos el token de seguridad
         const response = await fetch('/api/productos', {
              headers: {
                 'Authorization': getAuthToken()
             }
         });
-        
         if (!response.ok) {
-            // Si el token falla, la API devuelve 401 o 403
             if (response.status === 401 || response.status === 403) {
                  alert("Error de autenticación. Saliendo...");
                  document.getElementById('logout-btn').click();
@@ -1206,13 +1067,7 @@ async function fetchProductosData() {
         adminProductos = data.es.productos; 
         adminProductos_EN = data.en.productos; 
         
-        adminProductos.forEach((prod, index) => {
-            const id = prod.id || `prod_${prod.titulo.replace(/\s/g, '_')}_${index}`;
-            prod.id = id;
-            if (adminProductos_EN[index]) {
-                adminProductos_EN[index].id = id;
-            }
-        });
+        // ¡CAMBIO! Ya no necesitamos inventar un "id"
         
         renderizarResultadosProductos();
         
@@ -1222,24 +1077,19 @@ async function fetchProductosData() {
     }
 }
 
-// (inicializarPanelesBusquedaProductos, renderizarResultadosProductos, crearTarjetaResultadoProducto, prellenarFormularioCarta
-// siguen exactamente igual por ahora, la omito por brevedad)
-
+// (inicializarPanelesBusquedaProductos no cambia)
 function inicializarPanelesBusquedaProductos() {
     const inputs = document.querySelectorAll('#form-busqueda-producto .form-input');
     inputs.forEach(input => {
         const eventType = (input.tagName === 'SELECT') ? 'change' : 'input';
         input.addEventListener(eventType, renderizarResultadosProductos);
     });
-
     const btnToggle = document.getElementById('btn-toggle-visibility');
     const btnConfirm = document.getElementById('btn-confirm-visibility');
     const container = document.getElementById('prod-resultados-container');
-    
     btnToggle.addEventListener('click', () => {
         modoVisibilidad = !modoVisibilidad;
         container.classList.toggle('visibility-mode', modoVisibilidad);
-        
         if (modoVisibilidad) {
             btnToggle.innerHTML = "<i class='bx bx-pencil'></i> Salir de Modo Visibilidad";
             btnToggle.classList.replace('btn-secondary', 'btn-primary');
@@ -1250,45 +1100,40 @@ function inicializarPanelesBusquedaProductos() {
             btnConfirm.style.display = 'none';
         }
     });
-    
     btnConfirm.addEventListener('click', () => {
-        // ... (Lógica de Visibilidad AÚN EN SIMULACIÓN) ...
-        
-        // ¡¡AQUÍ ESTÁ EL ERROR QUE ARREGLAMOS!!
+        // ¡Este es el alert que arreglamos!
         alert("¡'Confirmar Visibilidad' aún está en modo simulación!");
     });
-
     container.addEventListener('click', (e) => {
         const botonMod = e.target.closest('.btn-card-modificar');
         if (botonMod) {
-            const id = botonMod.dataset.id;
-            const producto = adminProductos.find(p => p.id === id);
+            const idMongo = botonMod.dataset.id; // ¡CAMBIO!
+            const producto = adminProductos.find(p => p._id === idMongo); // ¡CAMBIO!
             if (producto) {
                 prellenarFormularioCarta(producto);
             }
         }
     });
 }
-
+// (renderizarResultadosProductos no cambia)
 function renderizarResultadosProductos() {
     const contenedor = document.getElementById('prod-resultados-container');
     if (!contenedor) return;
-
     const filtros = {
         titulo: document.getElementById('prod-search-titulo').value.toLowerCase(),
         tipo: document.getElementById('prod-search-tipo').value,
     };
-    
     const eventosFiltrados = adminProductos.filter(prod => { 
         const checkTitulo = !filtros.titulo || (prod.titulo && prod.titulo.toLowerCase().includes(filtros.titulo));
         const checkTipo = !filtros.tipo || prod.tipo === filtros.tipo;
         return checkTitulo && checkTipo;
     });
-
     contenedor.innerHTML = eventosFiltrados.map(prod => crearTarjetaResultadoProducto(prod)).join('');
 }
 
+// --- ¡CAMBIO! ---
 function crearTarjetaResultadoProducto(prod) {
+    // ¡CAMBIO! Leemos el _id
     const imgRuta = (prod.imagen) ? `../img/${prod.imagen}` : `../img/bebidaSinFoto.jpg`;
     const precio = formatarPrecio(prod.precioCopa || prod.precioBotella || prod.precioPinta);
     
@@ -1297,7 +1142,7 @@ function crearTarjetaResultadoProducto(prod) {
     const switchChecked = estaHabilitado ? 'checked' : '';
 
     return `
-    <div class="card-resultado ${deshabilitadoClass}" id="prod-card-${prod.id}">
+    <div class="card-resultado ${deshabilitadoClass}" id="prod-card-${prod._id}">
         <div class="card-resultado-header">
             <img src="${imgRuta}" alt="${prod.titulo}" class="card-resultado-img">
             <div class="card-resultado-info">
@@ -1308,13 +1153,13 @@ function crearTarjetaResultadoProducto(prod) {
         </div>
         
         <div class="card-resultado-footer">
-            <button class="btn btn-card btn-card-modificar" data-id="${prod.id}">
+            <button class="btn btn-card btn-card-modificar" data-id="${prod._id}">
                 <i class='bx bxs-pencil'></i> Modificar
             </button>
             
             <div class="visibility-switch">
                 <label class="switch">
-                    <input type="checkbox" data-id="${prod.id}" ${switchChecked}>
+                    <input type="checkbox" data-id="${prod._id}" ${switchChecked}>
                     <span class="slider"></span>
                 </label>
             </div>
@@ -1323,9 +1168,10 @@ function crearTarjetaResultadoProducto(prod) {
     `;
 }
 
+// --- ¡CAMBIO! ---
 function prellenarFormularioCarta(prod) {
     modoEdicion = true;
-    idEventoEdicion = prod.id;
+    idEventoEdicion = prod._id; // ¡CAMBIO! Guardamos el _id
     
     const form = document.getElementById('form-alta-producto');
     form.classList.add('modo-edicion');
@@ -1334,7 +1180,6 @@ function prellenarFormularioCarta(prod) {
     if (tabContent) { 
         tabContent.querySelector('h3').textContent = `Modificando: ${prod.titulo}`;
     }
-    
     form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
 
     console.log("SIMULACIÓN: Guardando copia de seguridad de producto...", prod);
@@ -1346,15 +1191,15 @@ function prellenarFormularioCarta(prod) {
     const tipoPlantilla = prod.tipo.startsWith('vino') ? 'vino' : prod.tipo;
     const visibleGroup = document.getElementById(`fields-${tipoPlantilla}`);
     
-    const prod_es = adminProductos.find(p => p.id === prod.id);
-    const prod_en = adminProductos_EN.find(p => p.id === prod.id);
+    const prod_es = adminProductos.find(p => p._id === prod._id); // ¡CAMBIO!
+    const prod_en = adminProductos_EN.find(p => p._id === prod._id); // ¡CAMBIO!
     
     if (!prod_es || !prod_en) {
         alert("Error: No se pudo encontrar el producto en ambos idiomas.");
         return;
     }
 
-    // Llenamos campos ÚNICOS (desde prod_es)
+    // (El resto de la función no cambia)
     (visibleGroup.querySelector('#producto-titulo') || {}).value = prod_es.titulo || '';
     (visibleGroup.querySelector('#producto-precio-copa') || {}).value = prod_es.precioCopa || '';
     (visibleGroup.querySelector('#producto-precio-botella') || {}).value = prod_es.precioBotella || '';
@@ -1365,26 +1210,20 @@ function prellenarFormularioCarta(prod) {
     (visibleGroup.querySelector('#producto-abv') || {}).value = prod_es.abv || '';
     (visibleGroup.querySelector('#producto-ibu') || {}).value = prod_es.ibu || '';
     (visibleGroup.querySelector('#producto-destacado') || {}).checked = prod_es.destacado || false;
-
-    // Llenamos campos ES
     (visibleGroup.querySelector('#producto-titulo-es') || {}).value = prod_es.titulo || ''; 
     (visibleGroup.querySelector('#producto-descripcion-es') || {}).value = prod_es.descripcion || '';
     (visibleGroup.querySelector('#producto-region-es') || {}).value = prod_es.region || '';
     (visibleGroup.querySelector('#producto-pais-es') || {}).value = prod_es.pais || '';
     (visibleGroup.querySelector('#producto-varietal-es') || {}).value = prod_es.varietal || '';
     (visibleGroup.querySelector('#producto-crianza-es') || {}).value = prod_es.crianza || '';
-    
-    // Llenamos campos EN
     (visibleGroup.querySelector('#producto-titulo-en') || {}).value = prod_en.titulo || ''; 
     (visibleGroup.querySelector('#producto-descripcion-en') || {}).value = prod_en.descripcion || '';
     (visibleGroup.querySelector('#producto-region-en') || {}).value = prod_en.region || '';
     (visibleGroup.querySelector('#producto-pais-en') || {}).value = prod_en.pais || '';
     (visibleGroup.querySelector('#producto-varietal-en') || {}).value = prod_en.varietal || '';
     (visibleGroup.querySelector('#producto-crianza-en') || {}).value = prod_en.crianza || '';
-    
     const infoImg = document.getElementById('info-img-actual-prod');
     if (infoImg) infoImg.remove();
-    
     if (prod.imagen && prod.imagen !== 'bebidaSinFoto.jpg') {
         const infoHtml = `
             <div id="info-img-actual-prod" class="info-imagen-actual">
@@ -1398,7 +1237,6 @@ function prellenarFormularioCarta(prod) {
             formSection.insertAdjacentHTML('afterbegin', infoHtml);
         }
     }
-    
     document.querySelector('.tab-link[data-tab="alta-producto"]').click();
     form.scrollIntoView({ behavior: 'smooth' });
 }

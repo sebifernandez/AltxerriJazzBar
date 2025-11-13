@@ -1,8 +1,8 @@
-// --- API/SERVER.JS (Versión 4.0 - CONECTADO A MONGODB) ---
+// --- API/SERVER.JS (Versión 4.2 - Corregido con _id de MongoDB) ---
 
 const express = require('express');
 const serverless = require('serverless-http'); 
-const { MongoClient, ObjectId } = require('mongodb'); // ¡NUEVO!
+const { MongoClient, ObjectId } = require('mongodb'); // ¡ObjectId es clave!
 const path = require('path'); 
 
 const app = express();
@@ -10,18 +10,12 @@ app.use(express.json());
 const router = express.Router();
 
 // --- 1. CONFIGURACIÓN DE BASE DE DATOS ---
-
-// Obtenemos la "llave" que guardaste en Netlify
 const MONGODB_URI = process.env.MONGODB_URI;
-const DB_NAME = 'altxerriDB'; // El nombre que pusimos en Mongo
+const DB_NAME = 'altxerriDB';
+let db;
 
-let db; // Variable para guardar la conexión
-
-// Función para conectar a la base de datos
 async function connectToDb() {
-    if (db) return db; // Si ya está conectado, la devuelve
-    
-    // Se conecta SÓLO UNA VEZ y reutiliza la conexión
+    if (db) return db;
     const client = new MongoClient(MONGODB_URI);
     await client.connect();
     db = client.db(DB_NAME);
@@ -31,8 +25,6 @@ async function connectToDb() {
 
 // --- 2. CONFIGURACIÓN DE SEGURIDAD ---
 const API_SECRET_TOKEN = process.env.CMS_PASSWORD;
-
-// Middleware "Guardia" (sin cambios)
 const checkAuth = (req, res, next) => {
     const token = req.headers.authorization;
     if (!token || token !== API_SECRET_TOKEN) {
@@ -41,7 +33,7 @@ const checkAuth = (req, res, next) => {
     next();
 };
 
-// --- 3. RUTAS DE LA API (Reconstruidas para MongoDB) ---
+// --- 3. RUTAS DE LA API (Corregidas) ---
 
 // --- "RECETA" DE LOGIN (sin cambios) ---
 router.post('/login', (req, res) => {
@@ -64,13 +56,10 @@ router.post('/login', (req, res) => {
     }
 });
 
-// --- RUTAS DE "LEER" (GET) ---
-
-// LEER EVENTOS
+// --- RUTAS DE "LEER" (GET) (sin cambios) ---
 router.get('/eventos', async (req, res) => {
     try {
         const db = await connectToDb();
-        // .find() trae todo. .toArray() lo convierte en un array.
         const data = await db.collection('eventos').find({}).toArray(); 
         res.json(data);
     } catch (error) {
@@ -79,19 +68,13 @@ router.get('/eventos', async (req, res) => {
     }
 });
 
-// LEER PRODUCTOS
 router.get('/productos', async (req, res) => {
     try {
         const db = await connectToDb();
-        // Hacemos las dos búsquedas al mismo tiempo
         const [dataES, dataEN] = await Promise.all([
             db.collection('productos_es').find({}).toArray(),
             db.collection('productos_en').find({}).toArray()
         ]);
-        
-        // Re-creamos la estructura que tu frontend espera
-        // (Tu frontend espera el objeto "textosUI" que está en los JSON
-        // pero que no subimos a la DB. Lo "engañamos" dándole solo los productos)
         res.json({
             es: { productos: dataES },
             en: { productos: dataEN }
@@ -102,7 +85,7 @@ router.get('/productos', async (req, res) => {
     }
 });
 
-// --- RUTAS DE "ESCRIBIR" (POST, PUT, DELETE) CON GUARDIA ---
+// --- RUTAS DE "ESCRIBIR" (Corregidas con _id) ---
 
 // RUTA PARA CREAR (Alta de Evento)
 router.post('/eventos/crear', checkAuth, async (req, res) => {
@@ -110,13 +93,14 @@ router.post('/eventos/crear', checkAuth, async (req, res) => {
         const db = await connectToDb();
         const nuevoEvento = req.body;
         
-        // ¡NUEVO! MongoDB crea su propio _id.
-        // Lo borramos si viene del frontend para evitar conflictos.
-        delete nuevoEvento._id; 
+        // ¡CAMBIO! Borramos el "id" personalizado que nos manda el frontend
+        // para que no entre en conflicto. Dejamos que Mongo cree el _id.
+        delete nuevoEvento.id; 
         
         const result = await db.collection('eventos').insertOne(nuevoEvento);
         
         console.log("EVENTO CREADO:", result.insertedId);
+        // Devolvemos el evento insertado, que ahora SÍ tiene un _id
         res.json({ success: true, message: 'Evento creado con éxito', evento: nuevoEvento });
         
     } catch (error) {
@@ -126,40 +110,42 @@ router.post('/eventos/crear', checkAuth, async (req, res) => {
 });
 
 // RUTA PARA MODIFICAR (Modificación de Evento)
-router.put('/eventos/modificar/:id', checkAuth, async (req, res) => {
+// ¡CAMBIO! La ruta ahora usa "_id"
+router.put('/eventos/modificar/:_id', checkAuth, async (req, res) => {
     try {
         const db = await connectToDb();
-        const idEventoModificar = req.params.id; // Este es tu ID (ej: "evt_123456")
+        // ¡CAMBIO! Usamos _id y lo convertimos a un ObjectId
+        const idMongo = new ObjectId(req.params._id); 
         const eventoModificado = req.body;
         
-        // Mongo usa un id especial "_id". No lo necesitamos.
-        delete eventoModificado._id; 
+        delete eventoModificado._id; // Le quitamos el _id al *cuerpo* del JSON
+        delete eventoModificado.id;  // Le quitamos el "id" viejo por las dudas
 
-        // --- Lógica de Backup (Tu requisito) ---
-        // 1. Buscamos el evento ORIGINAL por tu ID
-        const eventoOriginal = await db.collection('eventos').findOne({ id: idEventoModificar });
+        // --- Lógica de Backup (Corregida) ---
+        // ¡CAMBIO! Buscamos por el _id de Mongo
+        const eventoOriginal = await db.collection('eventos').findOne({ _id: idMongo });
 
         if (eventoOriginal) {
-            // 2. Creamos la copia de seguridad
             const backupEvento = {
-                ...eventoOriginal,
+                ...eventoOriginal, // Esto incluye el _id original
                 fechaModificacion: new Date().toISOString()
             };
-            delete backupEvento._id; // Le quitamos el _id de Mongo
-            
-            // 3. Guardamos el backup
+            // Guardamos el backup
             await db.collection('eventosModificados').insertOne(backupEvento);
-            console.log("BACKUP DE MODIFICACIÓN CREADO:", idEventoModificar);
+            console.log("BACKUP DE MODIFICACIÓN CREADO:", idMongo);
+        } else {
+            console.log("No se encontró evento original para backup:", idMongo);
+            // Igual seguimos, puede que solo queramos modificar
         }
 
-        // --- Lógica de Actualización ---
-        // 4. Actualizamos el evento principal buscando por tu "id"
+        // --- Lógica de Actualización (Corregida) ---
+        // ¡CAMBIO! Actualizamos usando el _id de Mongo
         await db.collection('eventos').updateOne(
-            { id: idEventoModificar }, // El filtro (cómo buscarlo)
-            { $set: eventoModificado }  // Los nuevos datos
+            { _id: idMongo },          // Filtro por _id
+            { $set: eventoModificado } // Los nuevos datos
         );
         
-        console.log("EVENTO MODIFICADO:", idEventoModificar);
+        console.log("EVENTO MODIFICADO:", idMongo);
         res.json({ success: true, message: 'Evento modificado con éxito', evento: eventoModificado });
 
     } catch (error) {
@@ -169,35 +155,34 @@ router.put('/eventos/modificar/:id', checkAuth, async (req, res) => {
 });
 
 // RUTA PARA ELIMINAR (Baja de Evento)
-router.delete('/eventos/eliminar/:id', checkAuth, async (req, res) => {
+// ¡CAMBIO! La ruta ahora usa "_id"
+router.delete('/eventos/eliminar/:_id', checkAuth, async (req, res) => {
     try {
         const db = await connectToDb();
-        const idEventoEliminar = req.params.id; // Tu ID
+        // ¡CAMBIO! Usamos _id y lo convertimos a un ObjectId
+        const idMongo = new ObjectId(req.params._id);
 
-        // --- Lógica de Backup (Tu requisito) ---
-        // 1. Buscamos el evento que vamos a borrar
-        const eventoABorrar = await db.collection('eventos').findOne({ id: idEventoEliminar });
+        // --- Lógica de Backup (Corregida) ---
+        // ¡CAMBIO! Buscamos por el _id de Mongo
+        const eventoABorrar = await db.collection('eventos').findOne({ _id: idMongo });
         
         if (!eventoABorrar) {
              return res.status(404).json({ success: false, message: 'Evento no encontrado' });
         }
 
-        // 2. Creamos la copia de seguridad
         const backupEvento = {
             ...eventoABorrar,
             fechaEliminacion: new Date().toISOString()
         };
-        delete backupEvento._id; // Le quitamos el _id de Mongo
-
-        // 3. Guardamos el backup
+        // Guardamos el backup
         await db.collection('eventosEliminados').insertOne(backupEvento);
-        console.log("BACKUP DE ELIMINACIÓN CREADO:", idEventoEliminar);
+        console.log("BACKUP DE ELIMINACIÓN CREADO:", idMongo);
 
-        // --- Lógica de Eliminación ---
-        // 4. Borramos el evento de la colección principal
-        await db.collection('eventos').deleteOne({ id: idEventoEliminar });
+        // --- Lógica de Eliminación (Corregida) ---
+        // ¡CAMBIO! Borramos usando el _id de Mongo
+        await db.collection('eventos').deleteOne({ _id: idMongo });
         
-        console.log("EVENTO ELIMINADO:", idEventoEliminar);
+        console.log("EVENTO ELIMINADO:", idMongo);
         res.json({ success: true, message: 'Evento eliminado con éxito' });
 
     } catch (error) {
