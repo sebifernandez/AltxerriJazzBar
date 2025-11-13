@@ -75,9 +75,11 @@ router.get('/productos', async (req, res) => {
     try {
         const db = await connectToDb();
 
+        const filtroProductos = { "tipo": { "$exists": true } };
+
         const [productosES, productosEN] = await Promise.all([
-            db.collection('productos_es').find({}).toArray(),
-            db.collection('productos_en').find({}).toArray()
+            db.collection('productos_es').find(filtroProductos).toArray(),
+            db.collection('productos_en').find(filtroProductos).toArray()
         ]);
 
         // --- ARREGLO PARA LA CARTA PÚBLICA (app.js) ---

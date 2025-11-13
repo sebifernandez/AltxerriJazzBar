@@ -1023,14 +1023,16 @@ function prellenarFormularioModEvento(evento) {
 // (Esta sección no tiene cambios, sigue en simulación)
 // -----------------------------------------------------------------
 
+// --- ¡ARREGLO PARA BUG DE "ALTA PRODUCTO" (Listeners duplicados) ---
 function inicializarFormularioCarta() {
     const selectorTipo = document.getElementById('producto-tipo');
     const container = document.getElementById('smart-form-container');
     const actions = document.getElementById('form-actions-producto');
     const form = document.getElementById('form-alta-producto');
     
-    // Rellenamos el contenedor si está vacío
+    // ESTE BLOQUE AHORA SOLO CORRE 1 VEZ (Y ESO ES LO CORRECTO)
     if (!container.hasChildNodes()) {
+        // 1. Construimos los <div class="form-fields-group">
         for (const tipo in plantillasFormCarta) {
             const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
             const divId = `fields-${tipoPlantilla}`;
@@ -1042,95 +1044,94 @@ function inicializarFormularioCarta() {
                 container.appendChild(div);
             }
         }
-    }
-    
-    // (Limpiamos listeners viejos)
-    const newSelectorTipo = selectorTipo.cloneNode(true);
-    selectorTipo.parentNode.replaceChild(newSelectorTipo, selectorTipo);
-    newSelectorTipo.addEventListener('change', () => {
-        let tipoSeleccionado = newSelectorTipo.value;
-        container.querySelectorAll('.form-fields-group').forEach(group => {
-            group.classList.remove('visible');
-        });
-        const tipoPlantilla = tipoSeleccionado.startsWith('vino') ? 'vino' : tipoSeleccionado;
-        if (tipoSeleccionado) {
-            const grupoAMostrar = document.getElementById(`fields-${tipoPlantilla}`);
-            if (grupoAMostrar) {
-                grupoAMostrar.classList.add('visible');
-                activarLogicaBilingue(grupoAMostrar);
-            }
-            actions.style.display = 'block'; 
-        } else {
-            actions.style.display = 'none'; 
-        }
-    });
-
-    // ¡CAMBIO! Reemplazamos el listener de submit
-    const newForm = form.cloneNode(true);
-    form.parentNode.replaceChild(newForm, form);
-    newForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const btnSubmit = newForm.querySelector('.btn-primary');
-        btnSubmit.disabled = true;
-        btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
-
-        try {
-            // 1. Recolectar los datos del formulario
-            const tipo = document.getElementById('producto-tipo').value; // Leemos el valor del selector
-            const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
-            const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
-
-            const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
-
-            // 2. Validar (simple)
-            if ((!producto_es.titulo || producto_es.titulo === '')) {
-                 throw new Error("El Título (ES o Marca) es obligatorio.");
-            }
-
-            // 3. Enviar a la API
-            if (modoEdicion) {
-                // --- MODO EDICIÓN (Aún no implementado) ---
-                console.log("Datos listos para MODIFICAR (ES):", producto_es);
-                console.log("Datos listos para MODIFICAR (EN):", producto_en);
-                alert("¡El modo MODIFICAR producto aún está en simulación!");
-                // (Reseteamos el botón por ahora)
-                btnSubmit.disabled = false;
-                btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
-
+        
+        // 2. ATAMOS LOS LISTENERS UNA SOLA VEZ (¡AQUÍ ESTABA EL BUG!)
+        
+        // Listener del Selector de Tipo
+        selectorTipo.addEventListener('change', () => {
+            let tipoSeleccionado = selectorTipo.value;
+            container.querySelectorAll('.form-fields-group').forEach(group => {
+                group.classList.remove('visible');
+            });
+            const tipoPlantilla = tipoSeleccionado.startsWith('vino') ? 'vino' : tipoSeleccionado;
+            if (tipoSeleccionado) {
+                const grupoAMostrar = document.getElementById(`fields-${tipoPlantilla}`);
+                if (grupoAMostrar) {
+                    grupoAMostrar.classList.add('visible');
+                    activarLogicaBilingue(grupoAMostrar);
+                }
+                actions.style.display = 'block'; 
             } else {
-                // --- MODO CREAR (POST) ---
-                const response = await fetch('/api/productos/crear', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': getAuthToken()
-                    },
-                    body: JSON.stringify({ producto_es, producto_en })
-                });
-
-                if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
-                alert("¡Producto Creado con Éxito!");
-                
-                // 4. Resetear solo si se creó con éxito
-                fetchProductosData(); // Recarga la lista de productos
-                resetearFormularioCarta(); // Limpia el formulario
+                actions.style.display = 'none'; 
             }
+        });
 
-        } catch (error) {
-            console.error("Error al guardar producto:", error);
-            alert(`Error: ${error.message}`);
-            // Si hay error, reactivamos el botón
-            btnSubmit.disabled = false;
-            btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-        } finally {
-            // Esta lógica se movió arriba para que solo resetee si hay éxito
-            // btnSubmit.disabled = false;
-            // btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-            // if (modoEdicion) resetearFormularioCarta();
-        }
-    });
+        // Listener del Botón de Guardar (Submit)
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const btnSubmit = form.querySelector('.btn-primary');
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
+
+            try {
+                const tipo = document.getElementById('producto-tipo').value;
+                const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
+                const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
+
+                const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
+
+                if ((!producto_es.titulo || producto_es.titulo === '')) {
+                    throw new Error("El Título (ES o Marca) es obligatorio.");
+                }
+
+                if (modoEdicion) {
+                    // --- MODO EDICIÓN (Aún no implementado) ---
+                    console.log("Datos listos para MODIFICAR (ES):", producto_es);
+                    console.log("Datos listos para MODIFICAR (EN):", producto_en);
+                    alert("¡El modo MODIFICAR producto aún está en simulación!");
+                    
+                    // ¡LO CAMBIAMOS A MANO POR AHORA HASTA LA FASE 2!
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
+                    // (Llamamos a resetear manualmente)
+                    resetearFormularioCarta();
+                    document.querySelector('.tab-link[data-tab="mod-producto"]').click();
+
+
+                } else {
+                    // --- MODO CREAR (POST) ---
+                    const response = await fetch('/api/productos/crear', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': getAuthToken()
+                        },
+                        body: JSON.stringify({ producto_es, producto_en })
+                    });
+
+                    if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
+                    alert("¡Producto Creado con Éxito!");
+                    
+                    fetchProductosData();
+                    resetearFormularioCarta();
+                }
+
+            } catch (error) {
+                console.error("Error al guardar producto:", error);
+                alert(`Error: ${error.message}`);
+                btnSubmit.disabled = false; // Reactiva el botón si hay error
+                btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
+            } finally {
+                // Ya no necesitamos 'finally' para resetear, se hace en el 'try'
+            }
+        });
+    }
+
+    // El reseteo (si no estamos en modo edición)
+    // se maneja desde el listener de TABS (línea 173)
 }
+
 function activarLogicaBilingue(visibleGroup) {
     const langTabs = visibleGroup.querySelectorAll('.lang-tab-btn');
     const langContents = visibleGroup.querySelectorAll('.lang-content');
