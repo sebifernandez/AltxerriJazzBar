@@ -1,8 +1,8 @@
-// --- API/SERVER.JS (Versión 4.2 - Corregido con _id de MongoDB) ---
+// --- API/SERVER.JS (Versión 4.3 - Arreglo Bug Carta Pública) ---
 
 const express = require('express');
 const serverless = require('serverless-http'); 
-const { MongoClient, ObjectId } = require('mongodb'); // ¡ObjectId es clave!
+const { MongoClient, ObjectId } = require('mongodb'); 
 const path = require('path'); 
 
 const app = express();
@@ -56,7 +56,9 @@ router.post('/login', (req, res) => {
     }
 });
 
-// --- RUTAS DE "LEER" (GET) (sin cambios) ---
+// --- RUTAS DE "LEER" (GET) ---
+
+// LEER EVENTOS
 router.get('/eventos', async (req, res) => {
     try {
         const db = await connectToDb();
@@ -68,153 +70,132 @@ router.get('/eventos', async (req, res) => {
     }
 });
 
+// ¡CAMBIO! LEER PRODUCTOS (Ahora incluye textosUI)
 router.get('/productos', async (req, res) => {
     try {
         const db = await connectToDb();
-        const [dataES, dataEN] = await Promise.all([
+        
+        // Buscamos los productos Y los textosUI
+        // (Asumimos que subiste textosUI como un *único documento* en cada colección)
+        // Si no lo hiciste, esto fallará y lo ajustamos.
+        
+        const [productosES, productosEN] = await Promise.all([
             db.collection('productos_es').find({}).toArray(),
             db.collection('productos_en').find({}).toArray()
         ]);
+        
+        // Simulamos la estructura del JSON original
+        // (¡ESTO ES TEMPORAL! Deberíamos guardar textosUI en la DB)
+        const textosUI_es = {
+            "lang": "es",
+            "langButton": "ENG",
+            "navbar": [
+              { "id": "cocteles", "texto": "Cocteles" },
+              { "id": "cervezas", "texto": "Cervezas" },
+              { "id": "vinos", "texto": "Vinos" },
+              { "id": "destilados", "texto": "Destilados" },
+              { "id": "sinAlcohol", "texto": "Sin Alcohol" }
+            ]
+        };
+         const textosUI_en = {
+            "lang": "en",
+            "langButton": "ESP",
+            "navbar": [
+              { "id": "cocteles", "texto": "Cocktails" },
+              { "id": "cervezas", "texto": "Beers" },
+              { "id": "vinos", "texto": "Wines" },
+              { "id": "destilados", "texto": "Spirits" },
+              { "id": "sinAlcohol", "texto": "Non-Alcoholic" }
+            ]
+        };
+
         res.json({
-            es: { productos: dataES },
-            en: { productos: dataEN }
+            es: { productos: productosES, textosUI: textosUI_es },
+            en: { productos: productosEN, textosUI: textosUI_en }
         });
+
     } catch (error) {
         console.error("Error en GET /productos:", error.message);
         res.status(500).json({ success: false, message: 'Error al leer productos' });
     }
 });
 
-// --- RUTAS DE "ESCRIBIR" (Corregidas con _id) ---
+// --- RUTAS DE "ESCRIBIR" (POST, PUT, DELETE) CON GUARDIA ---
 
-// RUTA PARA CREAR (Alta de Evento)
+// (Rutas de Eventos no cambian)
 router.post('/eventos/crear', checkAuth, async (req, res) => {
     try {
         const db = await connectToDb();
         const nuevoEvento = req.body;
-        
-        // ¡CAMBIO! Borramos el "id" personalizado que nos manda el frontend
-        // para que no entre en conflicto. Dejamos que Mongo cree el _id.
         delete nuevoEvento.id; 
-        
         const result = await db.collection('eventos').insertOne(nuevoEvento);
-        
         console.log("EVENTO CREADO:", result.insertedId);
-        // Devolvemos el evento insertado, que ahora SÍ tiene un _id
         res.json({ success: true, message: 'Evento creado con éxito', evento: nuevoEvento });
-        
     } catch (error) {
         console.error("Error en POST /eventos/crear:", error);
         res.status(500).json({ success: false, message: 'Error interno al crear el evento' });
     }
 });
 
-// RUTA PARA MODIFICAR (Modificación de Evento)
-// ¡CAMBIO! La ruta ahora usa "_id"
 router.put('/eventos/modificar/:_id', checkAuth, async (req, res) => {
     try {
         const db = await connectToDb();
-        // ¡CAMBIO! Usamos _id y lo convertimos a un ObjectId
         const idMongo = new ObjectId(req.params._id); 
         const eventoModificado = req.body;
-        
-        delete eventoModificado._id; // Le quitamos el _id al *cuerpo* del JSON
-        delete eventoModificado.id;  // Le quitamos el "id" viejo por las dudas
-
-        // --- Lógica de Backup (Corregida) ---
-        // ¡CAMBIO! Buscamos por el _id de Mongo
+        delete eventoModificado._id; 
+        delete eventoModificado.id; 
         const eventoOriginal = await db.collection('eventos').findOne({ _id: idMongo });
-
         if (eventoOriginal) {
-            const backupEvento = {
-                ...eventoOriginal, // Esto incluye el _id original
-                fechaModificacion: new Date().toISOString()
-            };
-            // Guardamos el backup
+            const backupEvento = { ...eventoOriginal, fechaModificacion: new Date().toISOString() };
             await db.collection('eventosModificados').insertOne(backupEvento);
             console.log("BACKUP DE MODIFICACIÓN CREADO:", idMongo);
         } else {
             console.log("No se encontró evento original para backup:", idMongo);
-            // Igual seguimos, puede que solo queramos modificar
         }
-
-        // --- Lógica de Actualización (Corregida) ---
-        // ¡CAMBIO! Actualizamos usando el _id de Mongo
-        await db.collection('eventos').updateOne(
-            { _id: idMongo },          // Filtro por _id
-            { $set: eventoModificado } // Los nuevos datos
-        );
-        
+        await db.collection('eventos').updateOne({ _id: idMongo }, { $set: eventoModificado });
         console.log("EVENTO MODIFICADO:", idMongo);
         res.json({ success: true, message: 'Evento modificado con éxito', evento: eventoModificado });
-
     } catch (error) {
         console.error("Error en PUT /eventos/modificar:", error);
         res.status(500).json({ success: false, message: 'Error interno al modificar el evento' });
     }
 });
 
-// RUTA PARA ELIMINAR (Baja de Evento)
-// ¡CAMBIO! La ruta ahora usa "_id"
 router.delete('/eventos/eliminar/:_id', checkAuth, async (req, res) => {
     try {
         const db = await connectToDb();
-        // ¡CAMBIO! Usamos _id y lo convertimos a un ObjectId
         const idMongo = new ObjectId(req.params._id);
-
-        // --- Lógica de Backup (Corregida) ---
-        // ¡CAMBIO! Buscamos por el _id de Mongo
         const eventoABorrar = await db.collection('eventos').findOne({ _id: idMongo });
-        
         if (!eventoABorrar) {
              return res.status(404).json({ success: false, message: 'Evento no encontrado' });
         }
-
-        const backupEvento = {
-            ...eventoABorrar,
-            fechaEliminacion: new Date().toISOString()
-        };
-        // Guardamos el backup
+        const backupEvento = { ...eventoABorrar, fechaEliminacion: new Date().toISOString() };
         await db.collection('eventosEliminados').insertOne(backupEvento);
         console.log("BACKUP DE ELIMINACIÓN CREADO:", idMongo);
-
-        // --- Lógica de Eliminación (Corregida) ---
-        // ¡CAMBIO! Borramos usando el _id de Mongo
         await db.collection('eventos').deleteOne({ _id: idMongo });
-        
         console.log("EVENTO ELIMINADO:", idMongo);
         res.json({ success: true, message: 'Evento eliminado con éxito' });
-
     } catch (error) {
         console.error("Error en DELETE /eventos/eliminar:", error);
         res.status(500).json({ success: false, message: 'Error interno al eliminar el evento' });
     }
 });
 
-// --- FIN LÓGICA DE EVENTOS ---
+// (Ruta de Crear Producto no cambia)
 router.post('/productos/crear', checkAuth, async (req, res) => {
     try {
         const db = await connectToDb();
-        // Recibimos el objeto "maestro" bilingüe desde admin.js
         const { producto_es, producto_en } = req.body;
-
-        // 1. Insertamos el producto en español
         const resES = await db.collection('productos_es').insertOne(producto_es);
-
-        // 2. Insertamos el producto en inglés
         const resEN = await db.collection('productos_en').insertOne(producto_en);
-
         console.log("PRODUCTO CREADO (ES):", resES.insertedId);
         console.log("PRODUCTO CREADO (EN):", resEN.insertedId);
-
-        // Devolvemos los IDs creados (por si los necesitamos)
         res.json({ 
             success: true, 
             message: 'Producto creado con éxito',
             id_es: resES.insertedId,
             id_en: resEN.insertedId
         });
-
     } catch (error) {
         console.error("Error en POST /productos/crear:", error);
         res.status(500).json({ success: false, message: 'Error interno al crear el producto' });
