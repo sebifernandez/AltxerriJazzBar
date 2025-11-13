@@ -199,21 +199,34 @@ router.delete('/eventos/eliminar/:_id', checkAuth, async (req, res) => {
     }
 });
 
-// (Ruta de Crear Producto no cambia)
+// (Ruta de Crear Producto CORREGIDA)
 router.post('/productos/crear', checkAuth, async (req, res) => {
     try {
         const db = await connectToDb();
         const { producto_es, producto_en } = req.body;
+
+        // --- ¡ARREGLO CRÍTICO! ---
+        // 1. Generamos UN solo _id nuevo
+        const nuevoId = new ObjectId(); 
+        
+        // 2. Asignamos ese mismo _id a ambos productos
+        producto_es._id = nuevoId;
+        producto_en._id = nuevoId;
+        // --- FIN DEL ARREGLO ---
+
+        // 3. Insertamos ambos (ahora sí comparten _id)
         const resES = await db.collection('productos_es').insertOne(producto_es);
         const resEN = await db.collection('productos_en').insertOne(producto_en);
-        console.log("PRODUCTO CREADO (ES):", resES.insertedId);
-        console.log("PRODUCTO CREADO (EN):", resEN.insertedId);
+        
+        console.log("PRODUCTO CREADO (ES/EN):", resES.insertedId); // El ID será el mismo
+        
         res.json({ 
             success: true, 
             message: 'Producto creado con éxito',
-            id_es: resES.insertedId,
-            id_en: resEN.insertedId
+            id_es: resES.insertedId, // Devolverá el ID compartido
+            id_en: resEN.insertedId  // Devolverá el ID compartido
         });
+
     } catch (error) {
         console.error("Error en POST /productos/crear:", error);
         res.status(500).json({ success: false, message: 'Error interno al crear el producto' });
