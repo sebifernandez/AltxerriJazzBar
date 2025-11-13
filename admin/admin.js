@@ -976,10 +976,66 @@ function inicializarFormularioCarta() {
             actions.style.display = 'none'; 
         }
     });
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        alert(`¡"Guardar Producto" aún está en modo simulación!`);
-    });
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const btnSubmit = form.querySelector('.btn-primary');
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
+
+    try {
+        // 1. Recolectar los datos del formulario
+        const tipo = selectorTipo.value;
+        const formGroup = document.getElementById(`fields-${tipo.startsWith('vino') ? 'vino' : tipo}`);
+
+        const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
+
+        // 2. Validar (simple)
+        if (producto_es.titulo === '' && (tipo === 'coctel' || tipo === 'sinAlcohol')) {
+            throw new Error("El Título (ES) es obligatorio.");
+        }
+        if (producto_es.titulo === '' && (tipo !== 'coctel' && tipo !== 'sinAlcohol')) {
+            throw new Error("El Título (Marca) es obligatorio.");
+        }
+
+        // 3. Enviar a la API
+        // (Por ahora solo implementamos CREAR. El 'modoEdicion' vendrá después)
+        if (modoEdicion) {
+            // --- MODO EDICIÓN (Aún no implementado) ---
+            console.log("Datos listos para MODIFICAR (ES):", producto_es);
+            console.log("Datos listos para MODIFICAR (EN):", producto_en);
+            alert("¡El modo MODIFICAR producto aún está en simulación!");
+
+            // --- Aquí iría el fetch a PUT /api/productos/modificar ---
+
+        } else {
+            // --- MODO CREAR (POST) ---
+            const response = await fetch('/api/productos/crear', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': getAuthToken()
+                },
+                body: JSON.stringify({ producto_es, producto_en })
+            });
+
+            if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
+            alert("¡Producto Creado con Éxito!");
+        }
+
+        // 4. Resetear
+        fetchProductosData(); // Recarga la lista de productos
+        resetearFormularioCarta(); // Limpia el formulario
+
+    } catch (error) {
+        console.error("Error al guardar producto:", error);
+        alert(`Error: ${error.message}`);
+    } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
+        if (modoEdicion) resetearFormularioCarta();
+    }
+});
 }
 function activarLogicaBilingue(visibleGroup) {
     const langTabs = visibleGroup.querySelectorAll('.lang-tab-btn');
@@ -1228,4 +1284,76 @@ function prellenarFormularioCarta(prod) {
     }
     document.querySelector('.tab-link[data-tab="alta-producto"]').click();
     form.scrollIntoView({ behavior: 'smooth' });
+}
+
+/**
+ * Lee el formulario inteligente y crea los objetos bilingües
+ * @param {HTMLElement} formGroup - El div.form-fields-group.visible
+ * @param {string} tipo - El tipo de producto (ej: "coctel", "vinoTinto")
+ * @returns {object} - { producto_es, producto_en }
+ */
+function recolectarDatosProducto(formGroup, tipo) {
+
+    // --- 1. DATOS ÚNICOS (No se traducen) ---
+    // (Leemos los campos de la plantilla "unicos_")
+    const datosUnicos = {
+        tipo: tipo,
+        visualizacion: true, // Siempre visible al crear
+        destacado: (formGroup.querySelector('#producto-destacado') || {}).checked || false,
+        // ¡Simulación de imagen! Aún no subimos el archivo.
+        imagen: (formGroup.querySelector('#producto-imagen-upload') || {}).files[0] 
+            ? formGroup.querySelector('#producto-imagen-upload').files[0].name 
+            : (tipo === 'coctel' || tipo.startsWith('vino')) ? 'bebidaSinFoto.jpg' : null,
+
+        precioCopa: parseFloat(formGroup.querySelector('#producto-precio-copa')?.value) || null,
+        precioBotella: parseFloat(formGroup.querySelector('#producto-precio-botella')?.value) || null,
+        precioCana: parseFloat(formGroup.querySelector('#producto-precio-cana')?.value) || null,
+        precioPinta: parseFloat(formGroup.querySelector('#producto-precio-pinta')?.value) || null,
+        abv: parseFloat(formGroup.querySelector('#producto-abv')?.value) || null,
+        ibu: parseInt(formGroup.querySelector('#producto-ibu')?.value) || null,
+        productor: (formGroup.querySelector('#producto-productor') || {}).value || null,
+        ano: (formGroup.querySelector('#producto-ano') || {}).value || null,
+        // Este es el título de "marca" (para vinos, cervezas, etc.)
+        tituloUnico: (formGroup.querySelector('#producto-titulo') || {}).value || null
+    };
+
+    // --- 2. DATOS TRADUCIBLES (ES) ---
+    const datosES = {
+        titulo: formGroup.querySelector('#producto-titulo-es')?.value || '',
+        descripcion: formGroup.querySelector('#producto-descripcion-es')?.value || '',
+        region: formGroup.querySelector('#producto-region-es')?.value || null,
+        pais: formGroup.querySelector('#producto-pais-es')?.value || null,
+        varietal: formGroup.querySelector('#producto-varietal-es')?.value || null,
+        crianza: formGroup.querySelector('#producto-crianza-es')?.value || null,
+    };
+
+    // --- 3. DATOS TRADUCIBLES (EN) ---
+    const datosEN = {
+        titulo: formGroup.querySelector('#producto-titulo-en')?.value || '',
+        descripcion: formGroup.querySelector('#producto-descripcion-en')?.value || '',
+        region: formGroup.querySelector('#producto-region-en')?.value || null,
+        pais: formGroup.querySelector('#producto-pais-en')?.value || null,
+        varietal: formGroup.querySelector('#producto-varietal-en')?.value || null,
+        crianza: formGroup.querySelector('#producto-crianza-en')?.value || null,
+    };
+
+    // --- 4. LÓGICA DE TÍTULO HÍBRIDO (Tu requisito) ---
+    if (tipo === 'coctel' || tipo === 'sinAlcohol') {
+        // El título es traducible (viene de datosES y datosEN)
+        datosUnicos.tituloUnico = null; 
+    } else {
+        // Es marca (vino, cerveza, etc.), el título es único
+        datosES.titulo = datosUnicos.tituloUnico;
+        datosEN.titulo = datosUnicos.tituloUnico;
+    }
+
+    // 5. Combinamos y devolvemos
+    const producto_es = { ...datosUnicos, ...datosES };
+    const producto_en = { ...datosUnicos, ...datosEN };
+
+    // Limpiamos el 'tituloUnico' que solo fue un ayudante
+    delete producto_es.tituloUnico;
+    delete producto_en.tituloUnico;
+
+    return { producto_es, producto_en };
 }

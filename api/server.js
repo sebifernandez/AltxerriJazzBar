@@ -192,6 +192,36 @@ router.delete('/eventos/eliminar/:_id', checkAuth, async (req, res) => {
 });
 
 // --- FIN LÓGICA DE EVENTOS ---
+router.post('/productos/crear', checkAuth, async (req, res) => {
+    try {
+        const db = await connectToDb();
+        // Recibimos el objeto "maestro" bilingüe desde admin.js
+        const { producto_es, producto_en } = req.body;
+
+        // 1. Insertamos el producto en español
+        const resES = await db.collection('productos_es').insertOne(producto_es);
+
+        // 2. Insertamos el producto en inglés
+        const resEN = await db.collection('productos_en').insertOne(producto_en);
+
+        console.log("PRODUCTO CREADO (ES):", resES.insertedId);
+        console.log("PRODUCTO CREADO (EN):", resEN.insertedId);
+
+        // Devolvemos los IDs creados (por si los necesitamos)
+        res.json({ 
+            success: true, 
+            message: 'Producto creado con éxito',
+            id_es: resES.insertedId,
+            id_en: resEN.insertedId
+        });
+
+    } catch (error) {
+        console.error("Error en POST /productos/crear:", error);
+        res.status(500).json({ success: false, message: 'Error interno al crear el producto' });
+    }
+});
+
+// --- FIN LÓGICA DE CARTA ---
 
 // Conectamos el libro de recetas a la app
 app.use('/api', router);
