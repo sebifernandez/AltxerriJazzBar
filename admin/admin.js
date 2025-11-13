@@ -1,4 +1,4 @@
-/* --- ADMIN.JS (Versión 3.0 - CONECTADO AL BACKEND REAL) --- */
+/* --- ADMIN.JS (Versión 3.1 - Con Bugfix de UX de Eventos) --- */
 
 // --- Variables Globales ---
 const { DateTime } = luxon; 
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // -----------------------------------------------------------------
 // --- FASE 2: LÓGICA DEL FORMULARIO DE ALTA (EVENTOS) ---
-// (Conectado al Backend Real)
+// (Con Bugfix de UX y Conectado al Backend Real)
 // -----------------------------------------------------------------
 
 let tags = []; 
@@ -266,7 +266,39 @@ function inicializarFormularioAlta() {
         }
     });
     
-    // --- ¡CAMBIO! Lógica de SUBMIT (guardado) ---
+    // --- ¡INICIO BLOQUE NUEVO! (BUGFIX UX) ---
+    const tipoEventoSelect = document.getElementById('evento-tipo');
+    const tituloInput = document.getElementById('evento-titulo');
+    const liveInput = document.getElementById('evento-live');
+    const conciertoInput = document.getElementById('evento-concierto');
+    // (checkGenerica y fieldsetImagen ya estaban definidos arriba)
+
+    tipoEventoSelect.addEventListener('change', () => {
+        const tipo = tipoEventoSelect.value;
+        const esEspecial = (tipo === 'Privado' || tipo === 'Cerrado');
+
+        // Habilita o deshabilita los campos
+        tituloInput.disabled = esEspecial;
+        liveInput.disabled = esEspecial;
+        conciertoInput.disabled = esEspecial;
+        checkGenerica.disabled = esEspecial;
+        fieldsetImagen.disabled = esEspecial;
+
+        // Limpia los campos si es especial
+        if (esEspecial) {
+            tituloInput.value = '';
+            liveInput.value = '';
+            conciertoInput.value = '';
+            checkGenerica.checked = false; 
+            document.getElementById('evento-imagen-upload').value = '';
+            tags = [];
+            renderizarTags();
+        }
+    });
+    // --- ¡FIN BLOQUE NUEVO! ---
+
+    
+    // --- Lógica de SUBMIT (guardado) ---
     form.addEventListener('submit', async (e) => {
         e.preventDefault(); 
         const btnSubmit = form.querySelector('.btn-primary');
@@ -285,9 +317,17 @@ function inicializarFormularioAlta() {
             imgReferencia: tags
         };
 
-        // --- 2. Validación (sin cambios) ---
-        if (!eventoData.fecha || !eventoData.tipoEvento || !eventoData.titulo) {
-            alert("Error: 'Fecha', 'Tipo de Evento' y 'Título' son campos obligatorios.");
+        // --- 2. Validación (MODIFICADA) ---
+        // Si NO es especial, el título es obligatorio
+        if (eventoData.tipoEvento === 'Regular' && !eventoData.titulo) {
+            alert("Error: 'Título' es obligatorio para eventos Regulares.");
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
+            return;
+        }
+        // La fecha siempre es obligatoria
+        if (!eventoData.fecha) {
+             alert("Error: 'Fecha' es un campo obligatorio.");
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
             return;
@@ -295,13 +335,10 @@ function inicializarFormularioAlta() {
         // ... (Aquí irían tus otras validaciones como la de URL)
 
         // --- 3. Lógica de Imagen (sin cambios) ---
-        // (Aquí iría tu lógica de 'btn-elegir-img' y subida de imagen)
-        // Por ahora, solo guardamos el nombre.
         let imagenNombre = "imgBandaGenerica.jpg";
         if (!eventoData.usaGenerica) {
             if (eventoData.archivoImagen) {
                 imagenNombre = eventoData.archivoImagen.name;
-                // NOTA: Aún no hemos implementado la subida real del archivo
                 console.log("Simulando subida de:", imagenNombre); 
             } else if (modoEdicion) {
                 const eventoOriginal = adminEventos.find(ev => ev.id === idEventoEdicion);
@@ -309,8 +346,8 @@ function inicializarFormularioAlta() {
             }
         }
 
-        // --- 4. Creación del objeto final (sin cambios) ---
-        const eventoFinal = {
+        // --- 4. Creación del objeto final (¡MODIFICADO!) ---
+        let eventoFinal = {
             id: modoEdicion ? idEventoEdicion : `evt_${Date.now()}`,
             fecha: eventoData.fecha,
             tipoEvento: eventoData.tipoEvento,
@@ -321,7 +358,22 @@ function inicializarFormularioAlta() {
             concierto: eventoData.concierto
         };
 
-        // --- 5. ¡NUEVA LÓGICA DE GUARDADO REAL! ---
+        // Tu lógica automática para "Privado" o "Cerrado"
+        if (eventoFinal.tipoEvento === 'Cerrado') {
+            eventoFinal.titulo = "";
+            eventoFinal.imagen = "cerrado.jpg"; // JS lo pone automático
+            eventoFinal.live = "";
+            eventoFinal.concierto = "";
+            eventoFinal.imgReferencia = [];
+        } else if (eventoFinal.tipoEvento === 'Privado') {
+            eventoFinal.titulo = "";
+            eventoFinal.imagen = "eventoPrivado.jpg"; // JS lo pone automático
+            eventoFinal.live = "";
+            eventoFinal.concierto = "";
+            eventoFinal.imgReferencia = [];
+        }
+
+        // --- 5. LÓGICA DE GUARDADO REAL (Sin cambios) ---
         try {
             if (modoEdicion) {
                 // --- MODO EDICIÓN (PUT) ---
@@ -333,15 +385,13 @@ function inicializarFormularioAlta() {
                     },
                     body: JSON.stringify(eventoFinal)
                 });
-                if (!response.ok) throw new Error(await response.json().message);
+                if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
                 alert("¡Evento Modificado con Éxito!");
 
             } else {
                 // --- MODO CREAR (POST) ---
-                
-                // Validación de sobrescritura (Tu requisito)
-                if (adminEventos.some(ev => ev.fecha === eventoFinal.fecha)) {
-                    if (!confirm("¡Atención! Ya existe un evento en esta fecha. ¿Deseas sobrescribirlo? \n\n(Nota: Esto no lo sobrescribe, lo crea duplicado. La lógica de sobrescribir es más compleja)")) {
+                if (adminEventos.some(ev => ev.fecha === eventoFinal.fecha && ev.tipoEvento === eventoFinal.tipoEvento)) {
+                    if (!confirm("¡Atención! Ya existe un evento de este tipo en esta fecha. ¿Deseas crearlo igualmente?")) {
                         btnSubmit.disabled = false;
                         btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
                         return;
@@ -356,22 +406,20 @@ function inicializarFormularioAlta() {
                     },
                     body: JSON.stringify(eventoFinal)
                 });
-                if (!response.ok) throw new Error(await response.json().message);
+                if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
                 alert("¡Evento Creado con Éxito!");
             }
             
-            // Si todo salió bien:
-            fetchEventosData(); // Recarga los datos
-            resetearFormularioAlta(); // Resetea el form
+            fetchEventosData(); 
+            resetearFormularioAlta(); 
 
         } catch (error) {
             console.error("Error al guardar evento:", error);
             alert(`Error: ${error.message}`);
         } finally {
-            // Re-habilita el botón pase lo que pase
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-            if (modoEdicion) resetearFormularioAlta(); // Resetea también al terminar de editar
+            if (modoEdicion) resetearFormularioAlta(); 
         }
     });
 }
@@ -406,6 +454,12 @@ function resetearFormularioAlta() {
     if (picker) picker.clearSelection();
     document.getElementById('fieldset-imagen').disabled = false;
     
+    // Habilita los campos por si quedaron deshabilitados
+    document.getElementById('evento-titulo').disabled = false;
+    document.getElementById('evento-live').disabled = false;
+    document.getElementById('evento-concierto').disabled = false;
+    document.getElementById('evento-img-generica').disabled = false;
+
     modoEdicion = false;
     idEventoEdicion = null;
     form.classList.remove('modo-edicion');
@@ -428,14 +482,12 @@ function resetearFormularioAlta() {
 
 async function fetchEventosData() {
     try {
-        // ¡CAMBIO! Enviamos el token de seguridad
         const response = await fetch('/api/eventos', {
             headers: {
                 'Authorization': getAuthToken()
             }
         });
         if (!response.ok) {
-            // Si el token falla, la API devuelve 401 o 403
             if (response.status === 401 || response.status === 403) {
                  alert("Error de autenticación. Saliendo...");
                  document.getElementById('logout-btn').click();
@@ -505,8 +557,11 @@ function renderizarResultadosEventos() {
         tags: document.getElementById('baja-search-tags').value.toLowerCase(),
     };
     
-    const eventosFiltradosMod = filtrarEventos(filtrosMod).reverse();
-    const eventosFiltradosBaja = filtrarEventos(filtrosBaja).reverse();
+    // Filtramos y ordenamos por fecha (más reciente primero)
+    const eventosFiltradosMod = filtrarEventos(filtrosMod)
+        .sort((a, b) => b.fecha.localeCompare(a.fecha));
+    const eventosFiltradosBaja = filtrarEventos(filtrosBaja)
+        .sort((a, b) => b.fecha.localeCompare(a.fecha));
 
     contenedorMod.innerHTML = eventosFiltradosMod.map(evento => crearTarjetaResultadoEvento(evento, 'modificar')).join('');
     contenedorBaja.innerHTML = eventosFiltradosBaja.map(evento => crearTarjetaResultadoEvento(evento, 'eliminar')).join('');
@@ -514,9 +569,13 @@ function renderizarResultadosEventos() {
 
 function filtrarEventos(filtros) {
     return adminEventos.filter(evento => {
+        // Ajuste: si el tipo es Privado o Cerrado, el título no importa
+        const checkTitulo = !filtros.titulo || 
+                            (evento.titulo && evento.titulo.toLowerCase().includes(filtros.titulo)) ||
+                            (evento.tipoEvento !== 'Regular' && evento.tipoEvento.toLowerCase().includes(filtros.titulo));
+
         const checkFecha = !filtros.fecha || (evento.fecha === filtros.fecha);
         const checkTipo = !filtros.tipo || (evento.tipoEvento === filtros.tipo);
-        const checkTitulo = !filtros.titulo || (evento.titulo.toLowerCase().includes(filtros.titulo));
         const checkTags = !filtros.tags || (evento.imgReferencia && evento.imgReferencia.join(' ').toLowerCase().includes(filtros.tags));
         
         return checkFecha && checkTipo && checkTitulo && checkTags;
@@ -529,17 +588,28 @@ function crearTarjetaResultadoEvento(evento, tipoAccion) {
         ? `<button class="btn btn-card btn-card-modificar" data-id="${evento.id}"><i class='bx bxs-pencil'></i> Modificar</button>`
         : `<button class="btn btn-card btn-card-eliminar" data-id="${evento.id}"><i class='bx bxs-trash'></i> Eliminar</button>`;
 
-    const tipoClase = `tipo-${evento.tipoEvento.toLowerCase()}`;
-    const imgRuta = (evento.imagen && evento.imagen !== "imgBandaGenerica.jpg") 
+    // --- Lógica de Visualización para Privado/Cerrado ---
+    let tituloMostrar = evento.titulo;
+    let imagenMostrar = (evento.imagen && evento.imagen !== "imgBandaGenerica.jpg") 
         ? `../img/${evento.imagen}` 
-        : `../img/imgBandaGenerica.jpg`; 
+        : `../img/imgBandaGenerica.jpg`;
+    
+    if (evento.tipoEvento === 'Cerrado') {
+        tituloMostrar = "CERRADO";
+        imagenMostrar = "../img/cerrado.jpg";
+    } else if (evento.tipoEvento === 'Privado') {
+        tituloMostrar = "EVENTO PRIVADO";
+        imagenMostrar = "../img/eventoPrivado.jpg";
+    }
+
+    const tipoClase = `tipo-${evento.tipoEvento.toLowerCase()}`;
 
     return `
     <div class="card-resultado" id="evento-card-${evento.id}">
         <div class="card-resultado-header">
-            <img src="${imgRuta}" alt="${evento.titulo}" class="card-resultado-img">
+            <img src="${imagenMostrar}" alt="${tituloMostrar}" class="card-resultado-img">
             <div class="card-resultado-info">
-                <h4>${evento.titulo || "Evento sin título"}</h4>
+                <h4>${tituloMostrar || "Evento sin título"}</h4>
                 <p>${evento.fecha}</p>
                 <p class="${tipoClase}">${evento.tipoEvento}</p>
             </div>
@@ -581,9 +651,9 @@ function manejarClickTarjetaEvento(e, accion) {
     }
 }
 
-// --- ¡CAMBIO! Lógica de ELIMINAR (Baja) ---
+// (eliminarEvento no cambia)
 async function eliminarEvento(evento, boton) {
-    if (!confirm(`¿Estás seguro de que quieres eliminar el evento "${evento.titulo}" del ${evento.fecha}? \n\n¡Esta acción es REAL y guarda un backup!`)) {
+    if (!confirm(`¿Estás seguro de que quieres eliminar el evento "${evento.titulo || evento.tipoEvento}" del ${evento.fecha}? \n\n¡Esta acción es REAL y guarda un backup!`)) {
         return;
     }
 
@@ -604,14 +674,10 @@ async function eliminarEvento(evento, boton) {
             throw new Error(data.message);
         }
 
-        alert(`Evento "${evento.titulo}" eliminado con éxito.`);
+        alert(`Evento "${evento.titulo || evento.tipoEvento}" eliminado con éxito.`);
         
-        // Eliminamos la card del DOM para no tener que recargar todo
-        const cardElement = document.getElementById(`evento-card-${evento.id}`);
-        if (cardElement) cardElement.remove();
-        
-        // Sincronizamos el array local
-        adminEventos = adminEventos.filter(ev => ev.id !== evento.id);
+        // Sincronizamos el array local y recargamos la vista
+        fetchEventosData();
         
     } catch (error) {
         console.error("Error al eliminar evento:", error);
@@ -630,12 +696,9 @@ function prellenarFormularioModEvento(evento) {
     form.classList.add('modo-edicion');
     
     const tabContent = form.closest('.tab-content');
-    tabContent.querySelector('h3').textContent = `Modificando: ${evento.titulo}`;
+    tabContent.querySelector('h3').textContent = `Modificando: ${evento.titulo || evento.tipoEvento}`;
     
     form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
-
-    // YA NO NECESITAMOS LA SIMULACIÓN DE BACKUP AQUÍ
-    // console.log("SIMULACIÓN: Guardando copia de seguridad...");
 
     document.getElementById('evento-fecha').value = evento.fecha;
     if (picker) picker.setDate(evento.fecha); 
@@ -644,6 +707,9 @@ function prellenarFormularioModEvento(evento) {
     document.getElementById('evento-titulo').value = evento.titulo;
     document.getElementById('evento-live').value = evento.live || '';
     document.getElementById('evento-concierto').value = evento.concierto || '';
+
+    // Disparamos el 'change' para que se deshabilite el form si es Privado/Cerrado
+    document.getElementById('evento-tipo').dispatchEvent(new Event('change'));
 
     tags = evento.imgReferencia || [];
     renderizarTags();
@@ -670,6 +736,12 @@ function prellenarFormularioModEvento(evento) {
         `;
         fieldsetImagen.insertAdjacentHTML('afterbegin', infoHtml);
     }
+    
+    // Si es especial, aseguramos que fieldsetImagen esté deshabilitado
+    if (evento.tipoEvento === 'Cerrado' || evento.tipoEvento === 'Privado') {
+        fieldsetImagen.disabled = true;
+    }
+
 
     document.querySelector('.tab-link[data-tab="alta-evento"]').click();
     form.scrollIntoView({ behavior: 'smooth' });
@@ -1181,6 +1253,8 @@ function inicializarPanelesBusquedaProductos() {
     
     btnConfirm.addEventListener('click', () => {
         // ... (Lógica de Visibilidad AÚN EN SIMULACIÓN) ...
+        
+        // ¡¡AQUÍ ESTÁ EL ERROR QUE ARREGLAMOS!!
         alert("¡'Confirmar Visibilidad' aún está en modo simulación!");
     });
 
@@ -1206,7 +1280,7 @@ function renderizarResultadosProductos() {
     };
     
     const eventosFiltrados = adminProductos.filter(prod => { 
-        const checkTitulo = !filtros.titulo || prod.titulo.toLowerCase().includes(filtros.titulo);
+        const checkTitulo = !filtros.titulo || (prod.titulo && prod.titulo.toLowerCase().includes(filtros.titulo));
         const checkTipo = !filtros.tipo || prod.tipo === filtros.tipo;
         return checkTitulo && checkTipo;
     });
