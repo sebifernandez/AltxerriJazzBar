@@ -489,7 +489,45 @@ document.addEventListener('DOMContentLoaded', () => {
             const btnSubmit = formCarta.querySelector('.btn-primary');
             btnSubmit.disabled = true;
             btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
+            
+            const langGroupEN = formGroup.querySelector('.lang-content[data-lang-content="en"]');
+            const requiredInputsEN = langGroupEN.querySelectorAll('input[required], textarea[required]');
+            let firstInvalid = null;
 
+            for (const input of requiredInputsEN) {
+                if (!input.value.trim()) {
+                    firstInvalid = input; // Encontramos el primer campo vacío
+                    break;
+                }
+            }
+
+            if (firstInvalid) {
+                // ¡Hay un error!
+                alert("¡Faltan campos obligatorios en la pestaña 'Inglés'!");
+                
+                // Cambiamos a la pestaña de Inglés
+                const tabButtonEN = formGroup.querySelector('.lang-tab-btn[data-lang="en"]');
+                if(tabButtonEN) tabButtonEN.click();
+                
+                // Marcamos la pestaña como "rota" (¡tu idea!)
+                const langTabs = formGroup.querySelectorAll('.lang-tab-btn');
+                langTabs.forEach(tab => {
+                    if(tab.dataset.lang === 'en') {
+                        tab.style.color = 'var(--color-primario-rojo)';
+                        tab.style.border = '1px solid var(--color-primario-rojo)';
+                    } else {
+                        tab.style.color = '';
+                        tab.style.border = '';
+                    }
+                });
+
+                firstInvalid.focus(); // Hacemos foco en el campo vacío
+
+                // Reactivamos el botón y detenemos el envío
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
+                return; // ¡IMPORTANTE! Detiene la función
+            }
             try {
                 const tipo = selectorTipoCarta.value; 
                 const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
@@ -526,9 +564,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
                     alert("¡Producto Creado con Éxito!");
-
-                    fetchProductosData(); 
-                    resetearFormularioCarta(); 
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Producto";
+                    resetearFormularioCarta();
+                    //fetchProductosData(); 
                 }
 
             } catch (error) {
@@ -1149,8 +1188,13 @@ function activarLogicaBilingue(visibleGroup) {
         newTab.addEventListener('click', (e) => {
             e.preventDefault(); 
             const lang = newTab.dataset.lang;
+            visibleGroup.querySelectorAll('.lang-tab-btn').forEach(t => {
+                t.style.color = '';
+                t.style.border = '';
+                t.classList.remove('active');
+            });
             // Necesitamos buscar los tabs de nuevo dentro del grupo visible
-            visibleGroup.querySelectorAll('.lang-tab-btn').forEach(t => t.classList.remove('active'));
+            //visibleGroup.querySelectorAll('.lang-tab-btn').forEach(t => t.classList.remove('active'));
             newTab.classList.add('active');
             visibleGroup.querySelectorAll('.lang-content').forEach(c => {
                 c.classList.toggle('active', c.dataset.langContent === lang);
