@@ -110,7 +110,7 @@ router.get('/productos', async (req, res) => {
               "vinosBlancos": "Blancos", "vinosOtros": "Rosados y Espumantes"
             },
             "etiquetasPrecio": {
-              "cana": "Caña", "pinta": "Pinta", "copa": "Copa", "botella": "Botella", "vaso": "Vaso"
+              "cana": "Caña", "pinta": "Pinta", "copa": "Copa", "botella": "Botella", "vaso": "Vaso", "chupito": "Chupito", "vasoDestilado": "Vaso"
             },
             "etiquetasVino": {
               "bodega": "Bodega", "varietal": "Varietal", "ano": "Año", "crianza": "Crianza"
@@ -133,7 +133,7 @@ router.get('/productos', async (req, res) => {
               "vinosBlancos": "White Wines", "vinosOtros": "Rosé & Sparkling"
             },
             "etiquetasPrecio": {
-              "cana": "Small", "pinta": "Pint", "copa": "Glass", "botella": "Bottle", "vaso": "Glass"
+              "cana": "Small", "pinta": "Pint", "copa": "Glass", "botella": "Bottle", "vaso": "Glass", "chupito": "Shot", "vasoDestilado": "Glass"
             },
             "etiquetasVino": {
               "bodega": "Winery", "varietal": "Varietal", "ano": "Year", "crianza": "Aging"

@@ -289,11 +289,12 @@ function renderizarListado(productos, subtitulo, etiquetas, tipoPlantilla) {
                 <div class="listado-header">
                     <div class="listado-item-textos"></div>
                     <div class="listado-item-precios precios-dos">
-                        <span>${etiquetasPrecio.vaso}</span>
-                        <span>${etiquetasPrecio.botella}</span>
+                        <span>${etiquetasPrecio.chupito || 'Chupito'}</span>
+                        <span>${etiquetasPrecio.vasoDestilado || 'Vaso'}</span>
                     </div>
                 </div>
             `;
+            break;
             break;
         case 'unPrecio': // Cerveza Envasada / Sin Alcohol
             // No lleva header, se queda vacío.
@@ -362,12 +363,12 @@ function renderizarItemLista(item, etiquetas, tipoPlantilla) {
             preciosHtml = `
                 <div class="listado-item-precios precios-dos">
                     <span class="precio-item">
-                        ${formatarPrecio(item.precioCopa)} 
-                        <span class="precio-etiqueta">(${etiquetasPrecio.vaso})</span>
+                        ${formatarPrecio(item.precioCana)} 
+                        <span class="precio-etiqueta">(${etiquetasPrecio.chupito || 'Chupito'})</span>
                     </span>
                     <span class="precio-item">
-                        ${formatarPrecio(item.precioBotella)} 
-                        <span class="precio-etiqueta">(${etiquetasPrecio.botella})</span>
+                        ${formatarPrecio(item.precioCopa)} 
+                        <span class="precio-etiqueta">(${etiquetasPrecio.vasoDestilado || 'Vaso'})</span>
                     </span>
                 </div>
             `;

@@ -65,14 +65,14 @@ const plantillasBloques = {
         <div class="form-grid">
             <div class="form-col">
                 <div class="form-group">
-                    <label for="producto-precio-copa">Precio (Vaso) *</label>
-                    <input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 8" required>
+                    <label for="producto-precio-cana">Precio (Chupito) *</label>
+                    <input type="number" step="0.01" id="producto-precio-cana" class="form-input" placeholder="Ej: 4" required>
                 </div>
             </div>
             <div class="form-col">
                 <div class="form-group">
-                    <label for="producto-precio-botella">Precio (Botella)</label>
-                    <input type="number" step="0.01" id="producto-precio-botella" class="form-input" placeholder="Ej: 65">
+                    <label for="producto-precio-copa">Precio (Vaso)</label>
+                    <input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 8">
                 </div>
             </div>
         </div>`,
