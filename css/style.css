@@ -261,7 +261,6 @@ body {
 .historia-section {
   background-color: #111;
   color: #fff;
-  *padding: 6rem 2rem;
 }
 
 .historia-container {
@@ -277,8 +276,6 @@ body {
   width: 65%;
   z-index: 2;
   position: relative;
-  *padding-left: 10%;
-  *padding-top: 10%;
   padding: 10%;
 }
 
@@ -952,6 +949,57 @@ body {
     padding: 20px;
 }
 
+/* ------ SECCIÓN UBICACIÓN (NUEVA) --------*/
+
+.location-section {
+  background-color: #111; /* Coherente con .contact-section */
+  color: #fff;
+  padding: 5rem 2rem;
+}
+
+.location-container {
+  max-width: 1200px; /* Mantenemos la coherencia del ancho */
+  margin: 2rem auto 0;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: nowrap; /* Evitamos que se envuelva en desktop */
+}
+
+/* El texto de la dirección */
+.location-address {
+  flex: 1; /* Ocupa 1 parte */
+  text-align: right;
+  font-size: 1.2rem;
+  color: #ccc;
+  line-height: 1.7;
+}
+
+.location-address p:first-child {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* El contenedor del mapa */
+.location-map-wrapper {
+  flex: 2; /* Ocupa 2 partes (más grande) */
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden; /* Para que el iframe respete el borde redondeado */
+  border: 1px solid #333;
+}
+
+.location-map-wrapper iframe {
+  width: 100%;
+  height: 400px;
+  display: block;
+  border: 0;
+  
+  /* UX/UI: Filtro para mapa oscuro */
+  filter: invert(100%) grayscale(80%);
+}
+
 
 /* ------ MEDIAQUERYS --------*/
 
@@ -1115,6 +1163,20 @@ body {
         padding: 0.5rem 0.3rem;
     }
 
+    .location-container {
+    flex-direction: column; /* Apila los elementos */
+    gap: 2.5rem;
+}
+
+.location-address {
+    text-align: center; /* Centra el texto en móvil */
+    order: 1; /* La dirección va primero */
+}
+
+.location-map-wrapper {
+    width: 100%;
+    order: 2; /* El mapa va segundo */
+}
   }
 
 @media (max-width: 600px) {
