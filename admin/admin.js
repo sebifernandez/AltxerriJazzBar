@@ -11,6 +11,7 @@ let adminProductos_EN = [];
 let modoVisibilidad = false; 
 
 // --- ¡ARREGLO! Movido al ámbito global
+const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
 let tags = []; 
 let picker; 
 
@@ -531,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const tipo = selectorTipoCarta.value; 
                 const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
-                const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
+
 
                 const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
 
