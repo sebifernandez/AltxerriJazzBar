@@ -1118,7 +1118,7 @@ function inicializarFormularioCarta() {
 
     // 1. Rellenamos el HTML (SOLO LA PRIMERA VEZ)
     // Esto construye los <div id="fields-coctel"> etc.
-    if (!container.hasChildNodes()) {
+    if (container.children.length === 0) {
 
         console.log("Construyendo formularios de carta por primera vez...");
 
