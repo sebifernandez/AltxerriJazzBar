@@ -11,7 +11,7 @@ let adminProductos_EN = [];
 let modoVisibilidad = false; 
 
 // --- ¡ARREGLO! Movido al ámbito global
-const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
+
 let tags = []; 
 let picker; 
 
@@ -470,7 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const tipoPlantilla = tipoSeleccionado.startsWith('vino') ? 'vino' : tipoSeleccionado;
-
+            
             if (tipoSeleccionado) {
                 const grupoAMostrar = document.getElementById(`fields-${tipoPlantilla}`);
                 if (grupoAMostrar) {
@@ -486,7 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Listener del Botón de Guardar (Submit)
         formCarta.addEventListener('submit', async (e) => {
             e.preventDefault();
-
+            const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
             const btnSubmit = formCarta.querySelector('.btn-primary');
             btnSubmit.disabled = true;
             btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
