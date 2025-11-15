@@ -4,9 +4,11 @@ const express = require('express');
 const serverless = require('serverless-http'); 
 const { MongoClient, ObjectId } = require('mongodb'); 
 const path = require('path'); 
+const cloudinary = require('cloudinary').v2;    
 
 const app = express();
-app.use(express.json()); 
+// Aumentamos el límite a 10MB para poder recibir imágenes en Base64
+app.use(express.json({ limit: '10mb' }));
 const router = express.Router();
 
 // --- 1. CONFIGURACIÓN DE BASE DE DATOS ---
@@ -22,6 +24,13 @@ async function connectToDb() {
     console.log("Conectado a MongoDB Atlas!");
     return db;
 }
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+});
 
 // --- 2. CONFIGURACIÓN DE SEGURIDAD ---
 const API_SECRET_TOKEN = process.env.CMS_PASSWORD;
@@ -238,6 +247,34 @@ router.post('/productos/crear', checkAuth, async (req, res) => {
 // --- FIN LÓGICA DE CARTA ---
 
 // Conectamos el libro de recetas a la app
+// --- RUTA PARA SUBIR IMÁGENES ---
+router.post('/imagenes/subir', checkAuth, async (req, res) => {
+    try {
+        // El frontend nos enviará la imagen como un string Base64
+        const fileStr = req.body.data;
+        
+        // La enviamos a Cloudinary
+        const uploadResponse = await cloudinary.uploader.upload(fileStr, {
+            // Opciones de subida:
+            upload_preset: 'ml_default', // 'ml_default' es un preset que suele venir por defecto
+            folder: 'altxerri_jazz_club' // Opcional: para organizar en una carpeta
+        });
+
+        // Devolvemos la URL segura de la imagen subida
+        res.json({ 
+            success: true, 
+            message: 'Imagen subida con éxito', 
+            url: uploadResponse.secure_url 
+        });
+
+    } catch (error) {
+        console.error("Error en POST /imagenes/subir:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error interno al subir la imagen' 
+        });
+    }
+});
 app.use('/api', router);
 
 // Exportamos el "enchufe" final
