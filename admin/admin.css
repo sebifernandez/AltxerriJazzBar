@@ -807,7 +807,7 @@ fieldset:disabled .form-group label::after {
 }
 
 .resultados-container:not(.visibility-mode) .visibility-switch {
-    display: none; /* Oculta el switch por defecto */
+    display: block; /* Oculta el switch por defecto */
 }
 
 /* Estilo para la card "deshabilitada" */
