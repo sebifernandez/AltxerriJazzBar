@@ -570,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     btnSubmit.disabled = false;
                     btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Producto";
                     resetearFormularioCarta();
-                    //fetchProductosData(); 
+                    fetchProductosData(); 
                 }
 
             } catch (error) {
