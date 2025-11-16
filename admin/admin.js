@@ -486,6 +486,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Listener del Botón de Guardar (Submit)
         formCarta.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const tipo = selectorTipoCarta.value;
+            const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
             const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
             const btnSubmit = formCarta.querySelector('.btn-primary');
             btnSubmit.disabled = true;
