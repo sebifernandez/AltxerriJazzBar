@@ -434,9 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (targetId === 'alta-evento') {
                     if (!modoEdicion) {
-                        if (!picker) {
-                            crearCalendarioAlta();
-                        }; 
+                        crearCalendarioAlta();
                     }
                 }
                 
@@ -605,6 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // (Corregido con _id y Bugfix de UX v4.5)
 // -----------------------------------------------------------------
 
+// --- INICIO DE LA FUNCIÓN REEMPLAZADA ---
 function inicializarFormularioAlta() {
     
     // 1. Obtenemos referencias a los elementos PERMANENTES
@@ -614,9 +613,8 @@ function inicializarFormularioAlta() {
     const inputTag = document.getElementById('evento-tags');
     const tagContainer = document.getElementById('tag-container');
     const tipoEventoSelect = document.getElementById('evento-tipo');
-    const inputFecha = form.querySelector('#evento-fecha'); // Buscamos dentro del form
 
-    // 2. Listener del Checkbox (sin clonar)
+    // 2. Listener del Checkbox
     checkGenerica.addEventListener('change', () => {
         fieldsetImagen.disabled = checkGenerica.checked;
         if (checkGenerica.checked) {
@@ -626,7 +624,7 @@ function inicializarFormularioAlta() {
         }
     });
 
-    // 3. Listener de Tags (sin clonar)
+    // 3. Listener de Tags
     inputTag.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ',') {
             e.preventDefault(); 
@@ -647,10 +645,8 @@ function inicializarFormularioAlta() {
         }
     });
     
-    // 4. Listener de "Privado/Cerrado" (sin clonar)
-    // ¡ESTO ARREGLA EL BUG DE DESHABILITAR CAMPOS!
+    // 4. Listener de "Privado/Cerrado"
     tipoEventoSelect.addEventListener('change', () => {
-        // Obtenemos los inputs en el momento del click
         const tituloInput = document.getElementById('evento-titulo');
         const liveInput = document.getElementById('evento-live');
         const conciertoInput = document.getElementById('evento-concierto');
@@ -677,13 +673,10 @@ function inicializarFormularioAlta() {
         }
     });
     
-    // 5. Creación del Calendario
-    crearCalendarioAlta();
-    
+    // 5. Creación INICIAL del Calendario
+    crearCalendarioAlta(); 
 
-    // 6. Listener de SUBMIT (sin clonar)
-    // Este único listener manejará tanto CREAR como MODIFICAR
-    // gracias a la variable global 'modoEdicion'
+    // 6. Listener de SUBMIT (Se añade UNA SOLA VEZ)
     form.addEventListener('submit', async (e) => {
         e.preventDefault(); 
         const btnSubmit = form.querySelector('.btn-primary');
@@ -691,7 +684,7 @@ function inicializarFormularioAlta() {
         btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
         
         const eventoData = {
-            fecha: inputFecha.value, // Usamos la referencia directa
+            fecha: document.getElementById('evento-fecha').value,
             tipoEvento: document.getElementById('evento-tipo').value,
             titulo: document.getElementById('evento-titulo').value.trim(),
             live: document.getElementById('evento-live').value.trim(),
@@ -701,7 +694,7 @@ function inicializarFormularioAlta() {
             imgReferencia: tags
         };
 
-        // ... (El resto de la lógica de validación y subida de imagen NO CAMBIA) ...
+        // ... (Validación y lógica de subida de imagen - SIN CAMBIOS) ...
         if (eventoData.tipoEvento === 'Regular' && !eventoData.titulo) {
             alert("Error: 'Título' es obligatorio para eventos Regulares.");
             btnSubmit.disabled = false;
@@ -715,7 +708,7 @@ function inicializarFormularioAlta() {
             return;
         }
 
-        let imagenUrl;
+        let imagenUrl; 
 
         if (eventoData.tipoEvento === 'Cerrado') {
             imagenUrl = "cerrado.jpg";
@@ -737,7 +730,7 @@ function inicializarFormularioAlta() {
             if (!uploadData.success) {
                 throw new Error(uploadData.message || "Falló la subida de imagen a Cloudinary");
             }
-            imagenUrl = uploadData.url; 
+            imagenUrl = uploadData.url;
             console.log("Imagen subida:", imagenUrl);
             
             btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
@@ -759,10 +752,9 @@ function inicializarFormularioAlta() {
             concierto: eventoData.concierto
         };
 
-        // ... (El bloque try/catch/finally NO CAMBIA) ...
+        // ... (Bloque try/catch/finally - SIN CAMBIOS) ...
         try {
             if (modoEdicion) {
-                // --- MODO MODIFICAR (PUT) ---
                 const response = await fetch(`/api/eventos/modificar/${idEventoEdicion}`, {
                     method: 'PUT',
                     headers: {
@@ -775,7 +767,7 @@ function inicializarFormularioAlta() {
                 alert("¡Evento Modificado con Éxito!");
 
             } else {
-                // --- MODO CREAR (POST) ---
+                
                 if (adminEventos.some(ev => ev.fecha === eventoFinal.fecha)) {
                     if (!confirm("¡Atención! Ya existe otro evento en esta fecha. ¿Deseas crearlo igualmente?")) {
                         btnSubmit.disabled = false;
@@ -809,6 +801,44 @@ function inicializarFormularioAlta() {
         }
     });
 }
+// --- FIN DE LA FUNCIÓN REEMPLAZADA ---
+
+// --- INICIO DE LA NUEVA FUNCIÓN ---
+function crearCalendarioAlta() {
+    const inputFecha = document.getElementById('evento-fecha');
+    // Si no encontramos el input, salimos para evitar errores
+    if (!inputFecha) return; 
+    
+    // Destruye el picker anterior si existe
+    if (picker) {
+        picker.destroy();
+        picker = null;
+    }
+
+    // Vuelve a crear el picker
+    picker = new Litepicker({
+        element: inputFecha, 
+        format: 'YYYY-MM-DD',
+        lang: 'es-ES',
+        buttonText: {
+            previousMonth: '<i class="bx bx-chevron-left"></i>',
+            nextMonth: '<i class="bx bx-chevron-right"></i>',
+            reset: '<i class="bx bx-refresh"></i>',
+            apply: 'Aplicar'
+        },
+        onselected: (date) => {
+            const fechaSeleccionadaMillis = date.toMillis();
+            const hoyMillis = DateTime.now().startOf('day').toMillis();
+            
+            if (fechaSeleccionadaMillis < hoyMillis) {
+                if (!confirm("Has seleccionado una fecha en el pasado. ¿Estás seguro de que quieres continuar?")) {
+                    picker.clearSelection(); 
+               }
+            }
+        }
+    });
+}
+// --- FIN DE LA NUEVA FUNCIÓN ---
 
 
 
@@ -833,39 +863,39 @@ function esURLValida(string) {
     }
 }
 
-// (resetearFormularioAlta no cambia)
 function resetearFormularioAlta() {
-    const form = document.getElementById('form-alta-evento');
-    if (!form) return;
-    
-    // Reseteamos el formulario
-    form.reset();
-    tags = [];
-    renderizarTags();
-    
-    // ¡ARREGLO! Destruimos el picker para que se
-    // reinicie la próxima vez que se llame a inicializarFormularioAlta()
-    if (picker) {
-        picker.destroy();
-        picker = null; 
-    }
-    
-    document.getElementById('fieldset-imagen').disabled = false;
-    document.getElementById('evento-titulo').disabled = false;
-    document.getElementById('evento-live').disabled = false;
-    document.getElementById('evento-concierto').disabled = false;
-    document.getElementById('evento-img-generica').disabled = false;
-    modoEdicion = false;
-    idEventoEdicion = null;
-    form.classList.remove('modo-edicion');
-    const tabContent = form.closest('.tab-content');
-    if (tabContent) { 
-        tabContent.querySelector('h3').textContent = "Crear Nuevo Evento";
-    }
-    form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
-    const infoImg = document.getElementById('info-img-actual');
-    if (infoImg) infoImg.remove();
-    //inicializarFormularioAlta();
+    const form = document.getElementById('form-alta-evento');
+    if (!form) return;
+    
+    // Reseteamos el formulario
+    form.reset();
+    tags = [];
+    renderizarTags();
+    
+    // Destruimos el picker
+    if (picker) {
+        picker.destroy();
+        picker = null; 
+    }
+    
+    document.getElementById('fieldset-imagen').disabled = false;
+    document.getElementById('evento-titulo').disabled = false;
+    document.getElementById('evento-live').disabled = false;
+    document.getElementById('evento-concierto').disabled = false;
+    document.getElementById('evento-img-generica').disabled = false;
+    modoEdicion = false;
+    idEventoEdicion = null;
+    form.classList.remove('modo-edicion');
+    const tabContent = form.closest('.tab-content');
+    if (tabContent) { 
+        tabContent.querySelector('h3').textContent = "Crear Nuevo Evento";
+    }
+    form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
+    const infoImg = document.getElementById('info-img-actual');
+    if (infoImg) infoImg.remove();
+
+
+    crearCalendarioAlta(); 
 }
 
 // -----------------------------------------------------------------
