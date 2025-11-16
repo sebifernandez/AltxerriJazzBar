@@ -434,7 +434,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (targetId === 'alta-evento') {
                     if (!modoEdicion) {
-                        inicializarFormularioAlta(); 
+                        if (!picker) {
+                            crearCalendarioAlta();
+                        }; 
                     }
                 }
                 
@@ -676,31 +678,8 @@ function inicializarFormularioAlta() {
     });
     
     // 5. Creación del Calendario
-    if (picker) {
-        picker.destroy();
-        picker = null;
-    }
-    picker = new Litepicker({
-        element: inputFecha, // Usamos la referencia directa
-        format: 'YYYY-MM-DD',
-        lang: 'es-ES',
-        buttonText: {
-            previousMonth: '<i class="bx bx-chevron-left"></i>',
-            nextMonth: '<i class="bx bx-chevron-right"></i>',
-            reset: '<i class="bx bx-refresh"></i>',
-            apply: 'Aplicar'
-        },
-        onselected: (date) => {
-            const fechaSeleccionadaMillis = date.toMillis();
-            const hoyMillis = DateTime.now().startOf('day').toMillis();
-            
-            if (fechaSeleccionadaMillis < hoyMillis) {
-                if (!confirm("Has seleccionado una fecha en el pasado. ¿Estás seguro de que quieres continuar?")) {
-                    picker.clearSelection(); 
-                }
-            }
-        }
-    });
+    crearCalendarioAlta();
+    
 
     // 6. Listener de SUBMIT (sin clonar)
     // Este único listener manejará tanto CREAR como MODIFICAR
@@ -1187,6 +1166,34 @@ function inicializarFormularioCarta() {
     }
 }
 // --- ¡¡¡FIN DEL BLOQUE A REEMPLAZAR!!! ---
+function crearCalendarioAlta() {
+    const inputFecha = document.getElementById('evento-fecha');
+    if (picker) {
+            picker.destroy();
+            picker = null;
+        }
+        picker = new Litepicker({
+            element: inputFecha, // Usamos la referencia directa
+            format: 'YYYY-MM-DD',
+            lang: 'es-ES',
+            buttonText: {
+                previousMonth: '<i class="bx bx-chevron-left"></i>',
+                nextMonth: '<i class="bx bx-chevron-right"></i>',
+                reset: '<i class="bx bx-refresh"></i>',
+                apply: 'Aplicar'
+            },
+            onselected: (date) => {
+                const fechaSeleccionadaMillis = date.toMillis();
+                const hoyMillis = DateTime.now().startOf('day').toMillis();
+                
+                if (fechaSeleccionadaMillis < hoyMillis) {
+                    if (!confirm("Has seleccionado una fecha en el pasado. ¿Estás seguro de que quieres continuar?")) {
+                        picker.clearSelection(); 
+                    }
+                }
+            }
+        });
+    }
 // --- ¡¡¡FIN DEL BLOQUE A REEMPLAZAR!!! ---
 
 function activarLogicaBilingue(visibleGroup) {
