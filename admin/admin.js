@@ -528,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Reactivamos el botón y detenemos el envío
                 btnSubmit.disabled = false;
-                btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
+                btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Producto";
                 return; // ¡IMPORTANTE! Detiene la función
             }
             try {
