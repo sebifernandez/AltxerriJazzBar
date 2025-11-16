@@ -448,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // (El resto de inicializadores no cambia)
         const formAlta = document.getElementById('form-alta-evento');
-        if (formAlta) { inicializarFormularioAlta(); } // Se llama una vez al cargar
+        //if (formAlta) { inicializarFormularioAlta(); } // Se llama una vez al cargar
         fetchEventosData(); 
         inicializarPanelesBusquedaEventos();
         
