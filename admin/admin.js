@@ -448,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // (El resto de inicializadores no cambia)
         const formAlta = document.getElementById('form-alta-evento');
-        //if (formAlta) { inicializarFormularioAlta(); } // Se llama una vez al cargar
+        if (formAlta) { inicializarFormularioAlta(); } // Se llama una vez al cargar
         fetchEventosData(); 
         inicializarPanelesBusquedaEventos();
         
@@ -749,40 +749,52 @@ function inicializarFormularioAlta() {
           return;
         }
 
-        let imagenNombre = "imgBandaGenerica.jpg";
-        if (!eventoData.usaGenerica) {
-            if (eventoData.archivoImagen) {
-                imagenNombre = eventoData.archivoImagen.name;
-                console.log("Simulando subida de:", imagenNombre); 
-            } else if (modoEdicion) {
-                const eventoOriginal = adminEventos.find(ev => ev._id === idEventoEdicion);
-              imagenNombre = eventoOriginal.imagen || "imgBandaGenerica.jpg";
-            }
-        }
+let imagenUrl; // La URL final
 
-        let eventoFinal = {
-            fecha: eventoData.fecha,
-            tipoEvento: eventoData.tipoEvento,
-            imagen: imagenNombre,
-            imgReferencia: eventoData.imgReferencia,
-          titulo: eventoData.titulo,
-            live: eventoData.live,
-            concierto: eventoData.concierto
-        };
+        if (eventoData.tipoEvento === 'Cerrado') {
+            imagenUrl = "cerrado.jpg";
+        } else if (eventoData.tipoEvento === 'Privado') {
+            imagenUrl = "eventoPrivado.jpg";
+        } else if (eventoData.usaGenerica) {
+            imagenUrl = "imgBandaGenerica.jpg";
+        } else if (eventoData.archivoImagen) {
+            // 1. Hay un archivo nuevo, lo subimos
+            console.log("Subiendo imagen de evento a Cloudinary...");
+            btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Subiendo imagen...";
+            
+            const base64Image = await toBase64(eventoData.archivoImagen);
+            const uploadRes = await fetch('/api/imagenes/subir', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
+                body: JSON.stringify({ data: base64Image })
+            });
+            const uploadData = await uploadRes.json();
+            if (!uploadData.success) {
+                throw new Error(uploadData.message || "Falló la subida de imagen a Cloudinary");
+            }
+            imagenUrl = uploadData.url; // 2. Usamos la URL de Cloudinary
+            console.log("Imagen subida:", imagenUrl);
+            
+            btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando..."; // Volvemos al texto de guardado
+            
+        } else if (modoEdicion) {
+            // 3. No hay archivo nuevo (y no es genérica), pero estamos editando: conservamos la original
+            const eventoOriginal = adminEventos.find(ev => ev._id === idEventoEdicion);
+            imagenUrl = eventoOriginal.imagen || "imgBandaGenerica.jpg";
+        } else {
+            // 4. Modo alta, sin archivo y sin "genérica". Asignamos la genérica.
+            imagenUrl = "imgBandaGenerica.jpg";
+        }
 
-        if (eventoFinal.tipoEvento === 'Cerrado') {
-            eventoFinal.titulo = "";
-            eventoFinal.imagen = "cerrado.jpg";
-            eventoFinal.live = "";
-            eventoFinal.concierto = "";
-          eventoFinal.imgReferencia = [];
-        } else if (eventoFinal.tipoEvento === 'Privado') {
-            eventoFinal.titulo = "";
-            eventoFinal.imagen = "eventoPrivado.jpg";
-            eventoFinal.live = "";
-            eventoFinal.concierto = "";
-            eventoFinal.imgReferencia = [];
-        }
+        let eventoFinal = {
+            fecha: eventoData.fecha,
+            tipoEvento: eventoData.tipoEvento,
+            imagen: imagenUrl, // <-- URL de Cloudinary o fallback
+            imgReferencia: eventoData.imgReferencia,
+            titulo: eventoData.titulo,
+            live: eventoData.live,
+            concierto: eventoData.concierto
+        };
 
         try {
             if (modoEdicion) {
@@ -1524,18 +1536,21 @@ function recolectarDatosProducto(formGroup, tipo) {
         tituloUnico: (formGroup.querySelector('#producto-titulo') || {}).value || null
     };
 
-    // --- Lógica de Imagen (Corregida) ---
-    const inputFile = formGroup.querySelector('#producto-imagen-upload');
-    
-    // ¡ARREGLO! inputFile.files puede ser null
+// --- Lógica de Imagen (MODIFICADA PARA CLOUDINARY) ---
+        const inputFile = formGroup.querySelector('#producto-imagen-upload');
+
     if (inputFile && inputFile.files && inputFile.files.length > 0) {
-        // Si el input existe y tiene un archivo, guardamos el nombre
-        datosUnicos.imagen = inputFile.files[0].name;
-    } else if (tipo === 'coctel' || tipo.startsWith('vino')) {
-        // Si no, y es un tipo que requiere imagen, ponemos la de por defecto
-        datosUnicos.imagen = 'bebidaSinFoto.jpg';
+        datosUnicos.archivoImagen = inputFile.files[0]; // <-- Pasamos el objeto File
+        datosUnicos.imagen = null; // Lo ponemos en null por ahora
+    } else {
+        datosUnicos.archivoImagen = null;
+            // Fallback si no hay archivo
+        if (tipo === 'coctel' || tipo.startsWith('vino')) {
+            datosUnicos.imagen = 'bebidaSinFoto.jpg';
+        } else {
+            datosUnicos.imagen = null;
+        }
     }
-    // Si no es ninguno de esos (ej. Cerveza), 'imagen' se queda en 'null'
 
     // --- 2. DATOS TRADUCIBLES (ES) ---
     const datosES = {
@@ -1577,4 +1592,13 @@ function recolectarDatosProducto(formGroup, tipo) {
 }
 });
 
-//ACA ESTÁ LA PALABRA CLAVE SECRETA: CONEJO
+// --- FUNCIÓN AYUDANTE PARA CLOUDINARY ---
+// Convierte un objeto File (de un input) a un string Base64
+function toBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}
