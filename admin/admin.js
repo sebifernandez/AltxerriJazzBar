@@ -1038,9 +1038,16 @@ function crearTarjetaResultadoEvento(evento, tipoAccion) {
         : `<button class="btn btn-card btn-card-eliminar" data-id="${evento._id}"><i class='bx bxs-trash'></i> Eliminar</button>`;
 
     let tituloMostrar = evento.titulo;
-    let imagenMostrar = (evento.imagen && evento.imagen !== "imgBandaGenerica.jpg") 
-        ? `../img/${evento.imagen}` 
-        : `../img/imgBandaGenerica.jpg`;
+    let imagenMostrar;
+
+    // Comprueba si la imagen es una URL completa (de Cloudinary)
+    if (evento.imagen && (evento.imagen.startsWith('http') || evento.imagen.startsWith('https'))) {
+        imagenMostrar = evento.imagen; // Ya es una URL, la usamos directamente
+    } else if (evento.imagen) {
+        imagenMostrar = `../img/${evento.imagen}`; // Es un archivo local (ej: imgBandaGenerica.jpg)
+    } else {
+        imagenMostrar = `../img/imgBandaGenerica.jpg`; // Fallback por si acaso
+    }
     
     if (evento.tipoEvento === 'Cerrado') {
         tituloMostrar = "CERRADO";
@@ -1464,7 +1471,14 @@ function renderizarResultadosProductos() {
 }
 
 function crearTarjetaResultadoProducto(prod) {
-    const imgRuta = (prod.imagen) ? `../img/${prod.imagen}` : `../img/bebidaSinFoto.jpg`;
+    let imgRuta;
+    if (prod.imagen && (prod.imagen.startsWith('http') || prod.imagen.startsWith('https'))) {
+        imgRuta = prod.imagen; // URL de Cloudinary
+    } else if (prod.imagen) {
+        imgRuta = `../img/${prod.imagen}`; // Archivo local (ej: bebidaSinFoto.jpg)
+    } else {
+        imgRuta = `../img/bebidaSinFoto.jpg`; // Fallback
+    }
     const precio = formatarPrecio(prod.precioCopa || prod.precioBotella || prod.precioPinta);
     
     const estaHabilitado = (prod.visualizacion === undefined) ? true : prod.visualizacion; 
