@@ -602,233 +602,239 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- FASE 2: LÓGICA DEL FORMULARIO DE ALTA (EVENTOS) ---
 // (Corregido con _id y Bugfix de UX v4.5)
 // -----------------------------------------------------------------
-
 // --- ¡CAMBIO! REEMPLAZA ESTA FUNCIÓN ENTERA ---
 function inicializarFormularioAlta() {
-    
-    const form = document.getElementById('form-alta-evento');
-    const inputFecha = document.getElementById('evento-fecha');
-    const checkGenerica = document.getElementById('evento-img-generica');
-    const fieldsetImagen = document.getElementById('fieldset-imagen');
-    const inputTag = document.getElementById('evento-tags');
-    const tagContainer = document.getElementById('tag-container');
-    
-    // --- ¡ARREGLO PARA BUG 1 (Fecha Pasada)! ---
-    // Destruimos el calendario anterior (el "fantasma") si existe
-    // antes de crear uno nuevo. Esto asegura que 'onselected' funcione.
+    
+    const form = document.getElementById('form-alta-evento');
+    // const inputFecha = document.getElementById('evento-fecha'); // <-- Ya no la definimos aquí
+    const checkGenerica = document.getElementById('evento-img-generica');
+    const fieldsetImagen = document.getElementById('fieldset-imagen');
+    const inputTag = document.getElementById('evento-tags');
+    const tagContainer = document.getElementById('tag-container');
+    
+    // --- (El bloque del calendario Litepicker que estaba aquí AHORA SE MOVIÓ MÁS ABAJO) ---
 
+    // (Listeners de tags y checkbox no cambian)
+    const newCheckGenerica = checkGenerica.cloneNode(true);
+    checkGenerica.parentNode.replaceChild(newCheckGenerica, checkGenerica);
+    newCheckGenerica.addEventListener('change', () => {
+        fieldsetImagen.disabled = newCheckGenerica.checked;
+        if (newCheckGenerica.checked) {
+            tags = [];
+            renderizarTags();
+            document.getElementById('evento-imagen-upload').value = '';
+        }
+    });
 
-    // Volvemos a crear el picker con la lógica de 'onselected'
-    picker = new Litepicker({
-        element: inputFecha,
-        format: 'YYYY-MM-DD',
-        lang: 'es-ES',
-        buttonText: {
-            previousMonth: '<i class="bx bx-chevron-left"></i>',
-            nextMonth: '<i class="bx bx-chevron-right"></i>',
-            reset: '<i class="bx bx-refresh"></i>',
-            apply: 'Aplicar'
-        },
-        onselected: (date) => {
-            // Esta es la lógica que AHORA SÍ va a funcionar
-            const fechaSeleccionadaMillis = date.toMillis();
-            // Comparamos con el inicio del día de hoy
-            const hoyMillis = DateTime.now().startOf('day').toMillis();
-            
-            if (fechaSeleccionadaMillis < hoyMillis) {
-                if (!confirm("Has seleccionado una fecha en el pasado. ¿Estás seguro de que quieres continuar?")) {
-                    picker.clearSelection(); 
-                }
-            }
-        }
-    });
+    const newInputTag = inputTag.cloneNode(true);
+    inputTag.parentNode.replaceChild(newInputTag, inputTag);
+    newInputTag.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault(); 
+            const tagTexto = newInputTag.value.trim();
+            if (tagTexto.length > 0 && !tags.includes(tagTexto)) {
+                tags.push(tagTexto);
+                renderizarTags();
+            }
+            newInputTag.value = ''; 
+        }
+    });
 
-    // (Listeners de tags y checkbox no cambian)
-    // (Usamos .replaceWith(clone) para limpiar listeners viejos)
-    const newCheckGenerica = checkGenerica.cloneNode(true);
-    checkGenerica.parentNode.replaceChild(newCheckGenerica, checkGenerica);
-    newCheckGenerica.addEventListener('change', () => {
-        fieldsetImagen.disabled = newCheckGenerica.checked;
-        if (newCheckGenerica.checked) {
-            tags = [];
-            renderizarTags();
-            document.getElementById('evento-imagen-upload').value = '';
-        }
-    });
+    const newTagContainer = tagContainer.cloneNode(true);
+    tagContainer.parentNode.replaceChild(newTagContainer, tagContainer);
+    newTagContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-tag-btn')) {
+            const tagTexto = e.target.getAttribute('data-tag');
+            tags = tags.filter(t => t !== tagTexto);
+            renderizarTags();
+        }
+    });
+    
+    // (Bugfix de UX "Privado/Cerrado" no cambia)
+    const tipoEventoSelect = document.getElementById('evento-tipo');
+    const newTipoEventoSelect = tipoEventoSelect.cloneNode(true);
+    tipoEventoSelect.parentNode.replaceChild(newTipoEventoSelect, tipoEventoSelect);
+    
+    const tituloInput = document.getElementById('evento-titulo');
+    const liveInput = document.getElementById('evento-live');
+    const conciertoInput = document.getElementById('evento-concierto');
+    newTipoEventoSelect.addEventListener('change', () => {
+        const tipo = newTipoEventoSelect.value;
+        const esEspecial = (tipo === 'Privado' || tipo === 'Cerrado');
+        tituloInput.disabled = esEspecial;
+        liveInput.disabled = esEspecial;
+        conciertoInput.disabled = esEspecial;
+        newCheckGenerica.disabled = esEspecial;
+        fieldsetImagen.disabled = esEspecial;
+        if (esEspecial) {
+            tituloInput.value = '';
+            liveInput.value = '';
+            conciertoInput.value = '';
+            newCheckGenerica.checked = false; 
+            document.getElementById('evento-imagen-upload').value = '';
+            tags = [];
+            renderizarTags();
+        }
+    });
+    
+    // --- Lógica de SUBMIT (guardado) ---
+    // (Limpiamos el listener anterior)
+    const newForm = form.cloneNode(true);
+    form.parentNode.replaceChild(newForm, form);
+    
+    // --- ¡¡INICIO DEL CÓDIGO MOVIDO Y CORREGIDO!! ---
+    // El calendario AHORA se crea DESPUÉS de clonar el formulario.
+    // --- ¡ARREGLO PARA BUG 1 (Fecha Pasada)! ---
+    if (picker) {
+        picker.destroy();
+        picker = null;
+    }
 
-    const newInputTag = inputTag.cloneNode(true);
-    inputTag.parentNode.replaceChild(newInputTag, inputTag);
-    newInputTag.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ',') {
-            e.preventDefault(); 
-            const tagTexto = newInputTag.value.trim();
-            if (tagTexto.length > 0 && !tags.includes(tagTexto)) {
-                tags.push(tagTexto);
-                renderizarTags();
-            }
-            newInputTag.value = ''; 
-        }
-    });
+    // ¡ARREGLO! Buscamos el input de fecha DENTRO del 'newForm' clonado.
+    const newFormInputFecha = newForm.querySelector('#evento-fecha'); 
 
-    const newTagContainer = tagContainer.cloneNode(true);
-    tagContainer.parentNode.replaceChild(newTagContainer, tagContainer);
-    newTagContainer.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-tag-btn')) {
-            const tagTexto = e.target.getAttribute('data-tag');
-            tags = tags.filter(t => t !== tagTexto);
-            renderizarTags();
-        }
-    });
-    
-    // (Bugfix de UX "Privado/Cerrado" no cambia)
-    const tipoEventoSelect = document.getElementById('evento-tipo');
-    const newTipoEventoSelect = tipoEventoSelect.cloneNode(true);
-    tipoEventoSelect.parentNode.replaceChild(newTipoEventoSelect, tipoEventoSelect);
-    
-    const tituloInput = document.getElementById('evento-titulo');
-    const liveInput = document.getElementById('evento-live');
-    const conciertoInput = document.getElementById('evento-concierto');
-    newTipoEventoSelect.addEventListener('change', () => {
-        const tipo = newTipoEventoSelect.value;
-        const esEspecial = (tipo === 'Privado' || tipo === 'Cerrado');
-        tituloInput.disabled = esEspecial;
-        liveInput.disabled = esEspecial;
-        conciertoInput.disabled = esEspecial;
-        newCheckGenerica.disabled = esEspecial;
-        fieldsetImagen.disabled = esEspecial;
-        if (esEspecial) {
-            tituloInput.value = '';
-            liveInput.value = '';
-            conciertoInput.value = '';
-            newCheckGenerica.checked = false; 
-            document.getElementById('evento-imagen-upload').value = '';
-            tags = [];
-            renderizarTags();
-        }
-    });
-    
-    // --- Lógica de SUBMIT (guardado) ---
-    // (Limpiamos el listener anterior)
-    const newForm = form.cloneNode(true);
-    form.parentNode.replaceChild(newForm, form);
-        if (picker) {
-        picker.destroy();
-        picker = null;
-    }
-    newForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); 
-        const btnSubmit = newForm.querySelector('.btn-primary');
-        btnSubmit.disabled = true;
-        btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
-        
-        const eventoData = {
-            fecha: document.getElementById('evento-fecha').value,
-            tipoEvento: document.getElementById('evento-tipo').value,
-            titulo: document.getElementById('evento-titulo').value.trim(),
-            live: document.getElementById('evento-live').value.trim(),
-            concierto: document.getElementById('evento-concierto').value.trim(),
-            usaGenerica: document.getElementById('evento-img-generica').checked,
-            archivoImagen: document.getElementById('evento-imagen-upload').files[0],
-            imgReferencia: tags
-        };
+    // Volvemos a crear el picker con la lógica de 'onselected'
+    picker = new Litepicker({
+        element: newFormInputFecha, // <-- ¡ARREGLO! Usamos el input correcto
+        format: 'YYYY-MM-DD',
+        lang: 'es-ES',
+        buttonText: {
+            previousMonth: '<i class="bx bx-chevron-left"></i>',
+            nextMonth: '<i class="bx bx-chevron-right"></i>',
+            reset: '<i class="bx bx-refresh"></i>',
+            apply: 'Aplicar'
+        },
+        onselected: (date) => {
+            // Esta es la lógica que AHORA SÍ va a funcionar
+            const fechaSeleccionadaMillis = date.toMillis();
+            // Comparamos con el inicio del día de hoy
+            const hoyMillis = DateTime.now().startOf('day').toMillis();
+            
+            if (fechaSeleccionadaMillis < hoyMillis) {
+                if (!confirm("Has seleccionado una fecha en el pasado. ¿Estás seguro de que quieres continuar?")) {
+                    picker.clearSelection(); 
+                }
+            }
+        }
+    });
+    // --- ¡¡FIN DEL CÓDIGO MOVIDO Y CORREGIDO!! ---
 
-        if (eventoData.tipoEvento === 'Regular' && !eventoData.titulo) {
-            alert("Error: 'Título' es obligatorio para eventos Regulares.");
-            btnSubmit.disabled = false;
-            btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-            return;
-        }
-        if (!eventoData.fecha) {
-             alert("Error: 'Fecha' es un campo obligatorio.");
-            btnSubmit.disabled = false;
-            btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-            return;
-        }
+    newForm.addEventListener('submit', async (e) => {
+        e.preventDefault(); 
+        const btnSubmit = newForm.querySelector('.btn-primary');
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
+        
+        const eventoData = {
+            fecha: newFormInputFecha.value, // <-- ¡ARREGLO! Usamos la referencia al input correcto
+            tipoEvento: document.getElementById('evento-tipo').value,
+            titulo: document.getElementById('evento-titulo').value.trim(),
+            live: document.getElementById('evento-live').value.trim(),
+            concierto: document.getElementById('evento-concierto').value.trim(),
+          usaGenerica: document.getElementById('evento-img-generica').checked,
+            archivoImagen: document.getElementById('evento-imagen-upload').files[0],
+            imgReferencia: tags
+        };
 
-        let imagenNombre = "imgBandaGenerica.jpg";
-        if (!eventoData.usaGenerica) {
-            if (eventoData.archivoImagen) {
-                imagenNombre = eventoData.archivoImagen.name;
-                console.log("Simulando subida de:", imagenNombre); 
-            } else if (modoEdicion) {
-                const eventoOriginal = adminEventos.find(ev => ev._id === idEventoEdicion);
-                imagenNombre = eventoOriginal.imagen || "imgBandaGenerica.jpg";
-            }
-        }
+        if (eventoData.tipoEvento === 'Regular' && !eventoData.titulo) {
+            alert("Error: 'Título' es obligatorio para eventos Regulares.");
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
+            return;
+        }
+        if (!eventoData.fecha) {
+             alert("Error: 'Fecha' es un campo obligatorio.");
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
+          return;
+        }
 
-        let eventoFinal = {
-            fecha: eventoData.fecha,
-            tipoEvento: eventoData.tipoEvento,
-            imagen: imagenNombre,
-            imgReferencia: eventoData.imgReferencia,
-            titulo: eventoData.titulo,
-            live: eventoData.live,
-            concierto: eventoData.concierto
-        };
+        let imagenNombre = "imgBandaGenerica.jpg";
+        if (!eventoData.usaGenerica) {
+            if (eventoData.archivoImagen) {
+                imagenNombre = eventoData.archivoImagen.name;
+                console.log("Simulando subida de:", imagenNombre); 
+            } else if (modoEdicion) {
+                const eventoOriginal = adminEventos.find(ev => ev._id === idEventoEdicion);
+              imagenNombre = eventoOriginal.imagen || "imgBandaGenerica.jpg";
+            }
+        }
 
-        if (eventoFinal.tipoEvento === 'Cerrado') {
-            eventoFinal.titulo = "";
-            eventoFinal.imagen = "cerrado.jpg";
-            eventoFinal.live = "";
-            eventoFinal.concierto = "";
-            eventoFinal.imgReferencia = [];
-        } else if (eventoFinal.tipoEvento === 'Privado') {
-            eventoFinal.titulo = "";
-            eventoFinal.imagen = "eventoPrivado.jpg";
-            eventoFinal.live = "";
-            eventoFinal.concierto = "";
-            eventoFinal.imgReferencia = [];
-        }
+        let eventoFinal = {
+            fecha: eventoData.fecha,
+            tipoEvento: eventoData.tipoEvento,
+            imagen: imagenNombre,
+            imgReferencia: eventoData.imgReferencia,
+          titulo: eventoData.titulo,
+            live: eventoData.live,
+            concierto: eventoData.concierto
+        };
 
-        try {
-            if (modoEdicion) {
-                const response = await fetch(`/api/eventos/modificar/${idEventoEdicion}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': getAuthToken()
-                    },
-                    body: JSON.stringify(eventoFinal)
-                });
-                if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
-                alert("¡Evento Modificado con Éxito!");
+        if (eventoFinal.tipoEvento === 'Cerrado') {
+            eventoFinal.titulo = "";
+            eventoFinal.imagen = "cerrado.jpg";
+            eventoFinal.live = "";
+            eventoFinal.concierto = "";
+          eventoFinal.imgReferencia = [];
+        } else if (eventoFinal.tipoEvento === 'Privado') {
+            eventoFinal.titulo = "";
+            eventoFinal.imagen = "eventoPrivado.jpg";
+            eventoFinal.live = "";
+            eventoFinal.concierto = "";
+            eventoFinal.imgReferencia = [];
+        }
 
-            } else {
-                
-                // --- ¡ARREGLO PARA BUG 2 (Conflicto de Fecha)! ---
-                if (adminEventos.some(ev => ev.fecha === eventoFinal.fecha)) {
-                    if (!confirm("¡Atención! Ya existe otro evento en esta fecha. ¿Deseas crearlo igualmente?")) {
-                        btnSubmit.disabled = false;
-                        btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
-                        return;
-                    }
-                }
-                
-                const response = await fetch('/api/eventos/crear', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': getAuthToken()
-                    },
-                    body: JSON.stringify(eventoFinal)
-                });
-                if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
-                alert("¡Evento Creado con Éxito!");
-            }
-            
-            fetchEventosData(); 
-            resetearFormularioAlta(); 
+        try {
+            if (modoEdicion) {
+                const response = await fetch(`/api/eventos/modificar/${idEventoEdicion}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': getAuthToken()
+                    },
+                    body: JSON.stringify(eventoFinal)
+                });
+                if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
+            alert("¡Evento Modificado con Éxito!");
 
-        } catch (error) {
-            console.error("Error al guardar evento:", error);
-            alert(`Error: ${error.message}`);
-        } finally {
-            btnSubmit.disabled = false;
-            btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-            if (modoEdicion) resetearFormularioAlta(); 
-        }
-    });
+            } else {
+                
+                // --- ¡ARREGLO PARA BUG 2 (Conflicto de Fecha)! ---
+              if (adminEventos.some(ev => ev.fecha === eventoFinal.fecha)) {
+                    if (!confirm("¡Atención! Ya existe otro evento en esta fecha. ¿Deseas crearlo igualmente?")) {
+                        btnSubmit.disabled = false;
+                       btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
+                        return;
+                    }
+                }
+                
+                const response = await fetch('/api/eventos/crear', {
+                  method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': getAuthToken()
+                   },
+                    body: JSON.stringify(eventoFinal)
+                });
+                if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
+              alert("¡Evento Creado con Éxito!");
+            }
+            
+            fetchEventosData();s
+          resetearFormularioAlta(); 
+
+        } catch (error) {
+            console.error("Error al guardar evento:", error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
+          if (modoEdicion) resetearFormularioAlta(); 
+        }
+    });
 }
+// --- FIN DE LA FUNCIÓN REEMPLAZADA ---
+
 // --- FIN DE LA FUNCIÓN REEMPLAZADA ---
 
 
