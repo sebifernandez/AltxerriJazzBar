@@ -1301,6 +1301,7 @@ async function fetchProductosData() {
 // (inicializarPanelesBusquedaProductos no cambia)
 function inicializarPanelesBusquedaProductos() {
     const inputs = document.querySelectorAll('#form-busqueda-producto .form-input');
+    const container = document.getElementById('prod-resultados-container');
     inputs.forEach(input => {
         const eventType = (input.tagName === 'SELECT') ? 'change' : 'input';
         input.addEventListener(eventType, renderizarResultadosProductos);
