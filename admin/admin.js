@@ -1305,25 +1305,25 @@ function inicializarPanelesBusquedaProductos() {
         const eventType = (input.tagName === 'SELECT') ? 'change' : 'input';
         input.addEventListener(eventType, renderizarResultadosProductos);
     });
-    const btnToggle = document.getElementById('btn-toggle-visibility');
-    const btnConfirm = document.getElementById('btn-confirm-visibility');
-    const container = document.getElementById('prod-resultados-container');
-    btnToggle.addEventListener('click', () => {
-        modoVisibilidad = !modoVisibilidad;
-        container.classList.toggle('visibility-mode', modoVisibilidad);
-        if (modoVisibilidad) {
-            btnToggle.innerHTML = "<i class='bx bx-pencil'></i> Salir de Modo Visibilidad";
-            btnToggle.classList.replace('btn-secondary', 'btn-primary');
-            btnConfirm.style.display = 'inline-flex';
-        } else {
-            btnToggle.innerHTML = "<i class='bx bx-toggle-left'></i> Activar Modo Visibilidad";
-            btnToggle.classList.replace('btn-primary', 'btn-secondary');
-            btnConfirm.style.display = 'none';
-        }
-    });
-    btnConfirm.addEventListener('click', () => {
-        alert("¡'Confirmar Visibilidad' aún está en modo simulación!");
-    });
+    //const btnToggle = document.getElementById('btn-toggle-visibility');
+    // const btnConfirm = document.getElementById('btn-confirm-visibility');
+    // const container = document.getElementById('prod-resultados-container');
+    // btnToggle.addEventListener('click', () => {
+    //     modoVisibilidad = !modoVisibilidad;
+    //     container.classList.toggle('visibility-mode', modoVisibilidad);
+    //     if (modoVisibilidad) {
+    //         btnToggle.innerHTML = "<i class='bx bx-pencil'></i> Salir de Modo Visibilidad";
+    //         btnToggle.classList.replace('btn-secondary', 'btn-primary');
+    //         btnConfirm.style.display = 'inline-flex';
+    //     } else {
+    //         btnToggle.innerHTML = "<i class='bx bx-toggle-left'></i> Activar Modo Visibilidad";
+    //         btnToggle.classList.replace('btn-primary', 'btn-secondary');
+    //         btnConfirm.style.display = 'none';
+    //     }
+    // });
+    // btnConfirm.addEventListener('click', () => {
+    //     alert("¡'Confirmar Visibilidad' aún está en modo simulación!");
+    // });
     container.addEventListener('click', (e) => {
         const botonMod = e.target.closest('.btn-card-modificar');
         if (botonMod) {
@@ -1331,6 +1331,52 @@ function inicializarPanelesBusquedaProductos() {
             const producto = adminProductos.find(p => p._id === idMongo);
             if (producto) {
                 prellenarFormularioCarta(producto);
+            }
+        }
+    });
+    // --- ¡¡INICIO NUEVO BLOQUE!! (Listener para Smart Switch) ---
+    container.addEventListener('change', async (e) => {
+        // Verificamos que sea el switch (el input checkbox)
+        if (e.target.matches('.visibility-switch input[type="checkbox"]')) {
+            const switchInput = e.target;
+            const idMongo = switchInput.dataset.id;
+            const nuevoEstado = switchInput.checked;
+            const card = switchInput.closest('.card-resultado');
+
+            // 1. Deshabilitamos el switch y damos feedback visual
+            switchInput.disabled = true;
+            card.style.opacity = '0.5';
+
+            try {
+                const response = await fetch(`/api/productos/visibilidad/${idMongo}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': getAuthToken()
+                    },
+                    body: JSON.stringify({ visualizacion: nuevoEstado })
+                });
+                
+                if (!response.ok) throw new Error('Error de red al actualizar');
+                
+                // 2. Éxito: Actualizamos el estado visual de la card
+                card.classList.toggle('deshabilitado', !nuevoEstado);
+
+                // 3. (CRÍTICO) Actualizamos el dato local
+                const productoEnCache = adminProductos.find(p => p._id === idMongo);
+                if (productoEnCache) {
+                    productoEnCache.visualizacion = nuevoEstado;
+                }
+                
+            } catch (error) {
+                console.error(error);
+                alert("Error al guardar la visibilidad. Revirtiendo.");
+                // 4. Error: Revertimos el switch
+                switchInput.checked = !nuevoEstado;
+            } finally {
+                // 5. Siempre rehabilitamos el switch y la opacidad
+                switchInput.disabled = false;
+                card.style.opacity = '1';
             }
         }
     });

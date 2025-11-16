@@ -294,6 +294,35 @@ router.put('/productos/modificar/:_id', checkAuth, async (req, res) => {
     }
 });
 
+// --- RUTA PARA ACTUALIZAR VISIBILIDAD (Smart Switch) ---
+router.put('/productos/visibilidad/:_id', checkAuth, async (req, res) => {
+    try {
+        const db = await connectToDb();
+        const idMongo = new ObjectId(req.params._id);
+        const { visualizacion } = req.body; // Esperamos { visualizacion: true/false }
+
+        // Actualizamos ambas colecciones
+        const resES = await db.collection('productos_es').updateOne(
+            { _id: idMongo },
+            { $set: { visualizacion: visualizacion } }
+        );
+        await db.collection('productos_en').updateOne(
+            { _id: idMongo },
+            { $set: { visualizacion: visualizacion } }
+        );
+
+        if (resES.matchedCount === 0) {
+            return res.status(404).json({ success: false, message: 'Producto no encontrado' });
+        }
+        
+        res.json({ success: true, message: 'Visibilidad actualizada' });
+
+    } catch (error) {
+        console.error("Error en PUT /productos/visibilidad:", error);
+        res.status(500).json({ success: false, message: 'Error interno' });
+    }
+});
+
 // --- FIN LÓGICA DE CARTA ---
 
 // Conectamos el libro de recetas a la app
