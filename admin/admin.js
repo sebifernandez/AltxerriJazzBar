@@ -531,61 +531,98 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Producto";
                 return; // ¡IMPORTANTE! Detiene la función
             }
-            try {
-                const tipo = selectorTipoCarta.value; 
-                const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
+try {
+                const tipo = selectorTipoCarta.value; 
+                const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
 
+                // 1. Recolectamos los datos (esto nos da 'archivoImagen' si existe)
+                let { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
 
-                const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
+                // 2. LÓGICA DE CLOUDINARY
+                let imagenUrl;
+                if (producto_es.archivoImagen) { // 'archivoImagen' es el File
+                    console.log("Subiendo imagen de producto a Cloudinary...");
+                    btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Subiendo imagen...";
+                    
+                    const base64Image = await toBase64(producto_es.archivoImagen);
+                    const uploadRes = await fetch('/api/imagenes/subir', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
+                        body: JSON.stringify({ data: base64Image })
+                    });
+                    const uploadData = await uploadRes.json();
+                    if (!uploadData.success) {
+                        throw new Error(uploadData.message || "Falló la subida de imagen a Cloudinary");
+                    }
+                    imagenUrl = uploadData.url;
+                    console.log("Imagen de producto subida:", imagenUrl);
+                    
+                    btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
+                
+                } else if (modoEdicion) {
+                    // Conservamos la imagen original si no se sube una nueva
+                    const productoOriginal = adminProductos.find(p => p._id === idEventoEdicion);
+                    imagenUrl = productoOriginal.imagen || 'bebidaSinFoto.jpg';
+                } else {
+                    // Fallback si no hay archivo y no es edición
+                    imagenUrl = producto_es.imagen; // (ya trae 'bebidaSinFoto.jpg' desde recolectarDatos)
+                }
 
-                if ((!producto_es.titulo || producto_es.titulo === '')) {
-                     throw new Error("El Título (ES o Marca) es obligatorio.");
-                }
+                // 3. Asignamos la URL final y borramos datos temporales
+                producto_es.imagen = imagenUrl;
+                producto_en.imagen = imagenUrl;
+                delete producto_es.archivoImagen;
+                delete producto_en.archivoImagen;
 
-                if (modoEdicion) {
-                    const response = await fetch(`/api/productos/modificar/${idEventoEdicion}`, { // Usamos el ID guardado
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': getAuthToken()
-                            },
-                            body: JSON.stringify({ producto_es, producto_en })
-                        });
+                // 4. Continuamos con la validación y el guardado (como antes)
+              if ((!producto_es.titulo || producto_es.titulo === '')) {
+                     throw new Error("El Título (ES o Marca) es obligatorio.");
+                }
 
-                        if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
-                        
-                        alert("¡Producto Modificado con Éxito!");
-                        
-                        // Reseteamos y volvemos a la pestaña de modificación
-                        resetearFormularioCarta();
-                        fetchProductosData(); // ¡Actualizamos la lista!
-                        document.querySelector('.tab-link[data-tab="mod-producto"]').click();
+                if (modoEdicion) {
+                    // --- MODO MODIFICAR (PUT) ---
+                    const response = await fetch(`/api/productos/modificar/${idEventoEdicion}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': getAuthToken()
+                            },
+                            body: JSON.stringify({ producto_es, producto_en })
+                        });
 
-                } else {
-                    // --- MODO CREAR (POST) ---
-                    const response = await fetch('/api/productos/crear', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': getAuthToken()
-                        },
-                        body: JSON.stringify({ producto_es, producto_en })
-                    });
+                        if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
+                        
+                     alert("¡Producto Modificado con Éxito!");
+                        
+                        resetearFormularioCarta();
+                        fetchProductosData();
+                        document.querySelector('.tab-link[data-tab="mod-producto"]').click();
 
-                    if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
-                    alert("¡Producto Creado con Éxito!");
-                    btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Producto";
-                    resetearFormularioCarta();
-                    fetchProductosData(); 
-                }
+              } else {
+                    // --- MODO CREAR (POST) ---
+                    const response = await fetch('/api/productos/crear', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': getAuthToken()
+                        },
+                        body: JSON.stringify({ producto_es, producto_en })
+                    });
 
-            } catch (error) {
-                console.error("Error al guardar producto:", error);
-                alert(`Error: ${error.message}`);
-                btnSubmit.disabled = false; 
-                btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-            }
+                    if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
+                    alert("¡Producto Creado con Éxito!");
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Producto";
+                    resetearFormularioCarta();
+                    fetchProductosData(); 
+                }
+
+            } catch (error) {
+                console.error("Error al guardar producto:", error);
+                alert(`Error: ${error.message}`);
+               btnSubmit.disabled = false;
+                btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
+            }
         }); 
     }
         
