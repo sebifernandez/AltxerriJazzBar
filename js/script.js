@@ -158,8 +158,8 @@ function createEventCard(evento) {
                     <p>${specialText}</p>
                     <div class="special-links">
                         Sigue en ambiente: 
-                        <a href="https://instagram.com" target="_blank">Instagram</a> | 
-                        <a href="https://youtube.com" target="_blank">YouTube</a>
+                        <a href="https://instagram.com/altxerribar" target="_blank">Instagram</a> | 
+                        <!-- <a href="https://youtube.com" target="_blank">YouTube</a> -->
                     </div>
                 </div>
             </div>

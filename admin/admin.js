@@ -655,10 +655,12 @@ function inicializarFormularioAlta() {
     const newTipoEventoSelect = tipoEventoSelect.cloneNode(true);
     tipoEventoSelect.parentNode.replaceChild(newTipoEventoSelect, tipoEventoSelect);
     
-    const tituloInput = document.getElementById('evento-titulo');
-    const liveInput = document.getElementById('evento-live');
-    const conciertoInput = document.getElementById('evento-concierto');
     newTipoEventoSelect.addEventListener('change', () => {
+    const tituloInput = document.getElementById('evento-titulo');
+        const liveInput = document.getElementById('evento-live');
+        const conciertoInput = document.getElementById('evento-concierto');
+        const newCheckGenerica = document.getElementById('evento-img-generica'); 
+        const fieldsetImagen = document.getElementById('fieldset-imagen');
         const tipo = newTipoEventoSelect.value;
         const esEspecial = (tipo === 'Privado' || tipo === 'Cerrado');
         tituloInput.disabled = esEspecial;
@@ -832,7 +834,7 @@ let imagenUrl; // La URL final
               alert("¡Evento Creado con Éxito!");
             }
             
-            fetchEventosData();s
+            fetchEventosData();
           resetearFormularioAlta(); 
 
         } catch (error) {
@@ -903,6 +905,7 @@ function resetearFormularioAlta() {
     form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
     const infoImg = document.getElementById('info-img-actual');
     if (infoImg) infoImg.remove();
+    inicializarFormularioAlta();
 }
 
 // -----------------------------------------------------------------
