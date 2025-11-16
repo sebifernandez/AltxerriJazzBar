@@ -616,10 +616,7 @@ function inicializarFormularioAlta() {
     // --- ¡ARREGLO PARA BUG 1 (Fecha Pasada)! ---
     // Destruimos el calendario anterior (el "fantasma") si existe
     // antes de crear uno nuevo. Esto asegura que 'onselected' funcione.
-    if (picker) {
-        picker.destroy();
-        picker = null;
-    }
+
 
     // Volvemos a crear el picker con la lógica de 'onselected'
     picker = new Litepicker({
@@ -714,7 +711,10 @@ function inicializarFormularioAlta() {
     // (Limpiamos el listener anterior)
     const newForm = form.cloneNode(true);
     form.parentNode.replaceChild(newForm, form);
-    
+        if (picker) {
+        picker.destroy();
+        picker = null;
+    }
     newForm.addEventListener('submit', async (e) => {
         e.preventDefault(); 
         const btnSubmit = newForm.querySelector('.btn-primary');
