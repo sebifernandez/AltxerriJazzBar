@@ -244,6 +244,56 @@ router.post('/productos/crear', checkAuth, async (req, res) => {
     }
 });
 
+// --- RUTA PARA MODIFICAR PRODUCTO (con Backup) ---
+router.put('/productos/modificar/:_id', checkAuth, async (req, res) => {
+    try {
+        const db = await connectToDb();
+        const idMongo = new ObjectId(req.params._id);
+        const { producto_es, producto_en } = req.body;
+
+        // 1. BACKUP: Buscamos los productos originales
+        const original_es = await db.collection('productos_es').findOne({ _id: idMongo });
+        const original_en = await db.collection('productos_en').findOne({ _id: idMongo });
+
+        if (original_es) {
+            const backupDoc = {
+                ...original_es, // Usamos la versión ES como base
+                traduccion_en: original_en, // Anidamos la de EN
+                fechaModificacion: new Date().toISOString()
+            };
+            await db.collection('productosModificados').insertOne(backupDoc);
+            console.log("BACKUP DE PRODUCTO CREADO:", idMongo);
+        } else {
+            console.log("No se encontró producto original para backup:", idMongo);
+        }
+
+        // 2. ACTUALIZACIÓN: Borramos los _id del body para evitar conflictos
+        delete producto_es._id;
+        delete producto_en._id;
+        
+        // Actualizamos ambos documentos
+        const resES = await db.collection('productos_es').updateOne(
+            { _id: idMongo },
+            { $set: producto_es }
+        );
+        const resEN = await db.collection('productos_en').updateOne(
+            { _id: idMongo },
+            { $set: producto_en }
+        );
+
+        if (resES.matchedCount === 0 || resEN.matchedCount === 0) {
+            return res.status(404).json({ success: false, message: 'Producto no encontrado' });
+        }
+        
+        console.log("PRODUCTO MODIFICADO (ES/EN):", idMongo);
+        res.json({ success: true, message: 'Producto modificado con éxito' });
+
+    } catch (error) {
+        console.error("Error en PUT /productos/modificar:", error);
+        res.status(500).json({ success: false, message: 'Error interno al modificar el producto' });
+    }
+});
+
 // --- FIN LÓGICA DE CARTA ---
 
 // Conectamos el libro de recetas a la app

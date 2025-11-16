@@ -543,16 +543,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (modoEdicion) {
-                    // --- MODO EDICIÓN (Aún no implementado) ---
-                    console.log("Datos listos para MODIFICAR (ES):", producto_es);
-                    console.log("Datos listos para MODIFICAR (EN):", producto_en);
-                    alert("¡El modo MODIFICAR producto aún está en simulación!");
+                    const response = await fetch(`/api/productos/modificar/${idEventoEdicion}`, { // Usamos el ID guardado
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': getAuthToken()
+                            },
+                            body: JSON.stringify({ producto_es, producto_en })
+                        });
 
-                    btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
-
-                    resetearFormularioCarta(); 
-                    document.querySelector('.tab-link[data-tab="mod-producto"]').click();
+                        if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
+                        
+                        alert("¡Producto Modificado con Éxito!");
+                        
+                        // Reseteamos y volvemos a la pestaña de modificación
+                        resetearFormularioCarta();
+                        fetchProductosData(); // ¡Actualizamos la lista!
+                        document.querySelector('.tab-link[data-tab="mod-producto"]').click();
 
                 } else {
                     // --- MODO CREAR (POST) ---
