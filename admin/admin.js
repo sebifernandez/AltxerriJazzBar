@@ -602,47 +602,42 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- FASE 2: LÓGICA DEL FORMULARIO DE ALTA (EVENTOS) ---
 // (Corregido con _id y Bugfix de UX v4.5)
 // -----------------------------------------------------------------
-// --- ¡CAMBIO! REEMPLAZA ESTA FUNCIÓN ENTERA ---
+
 function inicializarFormularioAlta() {
     
+    // 1. Obtenemos referencias a los elementos PERMANENTES
     const form = document.getElementById('form-alta-evento');
-    // const inputFecha = document.getElementById('evento-fecha'); // <-- Ya no la definimos aquí
     const checkGenerica = document.getElementById('evento-img-generica');
     const fieldsetImagen = document.getElementById('fieldset-imagen');
     const inputTag = document.getElementById('evento-tags');
     const tagContainer = document.getElementById('tag-container');
-    
-    // --- (El bloque del calendario Litepicker que estaba aquí AHORA SE MOVIÓ MÁS ABAJO) ---
+    const tipoEventoSelect = document.getElementById('evento-tipo');
+    const inputFecha = form.querySelector('#evento-fecha'); // Buscamos dentro del form
 
-    // (Listeners de tags y checkbox no cambian)
-    const newCheckGenerica = checkGenerica.cloneNode(true);
-    checkGenerica.parentNode.replaceChild(newCheckGenerica, checkGenerica);
-    newCheckGenerica.addEventListener('change', () => {
-        fieldsetImagen.disabled = newCheckGenerica.checked;
-        if (newCheckGenerica.checked) {
+    // 2. Listener del Checkbox (sin clonar)
+    checkGenerica.addEventListener('change', () => {
+        fieldsetImagen.disabled = checkGenerica.checked;
+        if (checkGenerica.checked) {
             tags = [];
             renderizarTags();
             document.getElementById('evento-imagen-upload').value = '';
         }
     });
 
-    const newInputTag = inputTag.cloneNode(true);
-    inputTag.parentNode.replaceChild(newInputTag, inputTag);
-    newInputTag.addEventListener('keydown', (e) => {
+    // 3. Listener de Tags (sin clonar)
+    inputTag.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ',') {
             e.preventDefault(); 
-            const tagTexto = newInputTag.value.trim();
+            const tagTexto = inputTag.value.trim();
             if (tagTexto.length > 0 && !tags.includes(tagTexto)) {
                 tags.push(tagTexto);
                 renderizarTags();
             }
-            newInputTag.value = ''; 
+            inputTag.value = ''; 
         }
     });
 
-    const newTagContainer = tagContainer.cloneNode(true);
-    tagContainer.parentNode.replaceChild(newTagContainer, tagContainer);
-    newTagContainer.addEventListener('click', (e) => {
+    tagContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('remove-tag-btn')) {
             const tagTexto = e.target.getAttribute('data-tag');
             tags = tags.filter(t => t !== tagTexto);
@@ -650,54 +645,43 @@ function inicializarFormularioAlta() {
         }
     });
     
-    // (Bugfix de UX "Privado/Cerrado" no cambia)
-    const tipoEventoSelect = document.getElementById('evento-tipo');
-    const newTipoEventoSelect = tipoEventoSelect.cloneNode(true);
-    tipoEventoSelect.parentNode.replaceChild(newTipoEventoSelect, tipoEventoSelect);
-    
-    newTipoEventoSelect.addEventListener('change', () => {
-    const tituloInput = document.getElementById('evento-titulo');
-        const liveInput = document.getElementById('evento-live');
-        const conciertoInput = document.getElementById('evento-concierto');
-        const newCheckGenerica = document.getElementById('evento-img-generica'); 
-        const fieldsetImagen = document.getElementById('fieldset-imagen');
-        const tipo = newTipoEventoSelect.value;
+    // 4. Listener de "Privado/Cerrado" (sin clonar)
+    // ¡ESTO ARREGLA EL BUG DE DESHABILITAR CAMPOS!
+    tipoEventoSelect.addEventListener('change', () => {
+        // Obtenemos los inputs en el momento del click
+        const tituloInput = document.getElementById('evento-titulo');
+        const liveInput = document.getElementById('evento-live');
+        const conciertoInput = document.getElementById('evento-concierto');
+        const currentCheckGenerica = document.getElementById('evento-img-generica');
+        const currentFieldsetImagen = document.getElementById('fieldset-imagen');
+        
+        const tipo = tipoEventoSelect.value;
         const esEspecial = (tipo === 'Privado' || tipo === 'Cerrado');
+        
         tituloInput.disabled = esEspecial;
         liveInput.disabled = esEspecial;
         conciertoInput.disabled = esEspecial;
-        newCheckGenerica.disabled = esEspecial;
-        fieldsetImagen.disabled = esEspecial;
+        currentCheckGenerica.disabled = esEspecial;
+        currentFieldsetImagen.disabled = esEspecial;
+
         if (esEspecial) {
             tituloInput.value = '';
             liveInput.value = '';
             conciertoInput.value = '';
-            newCheckGenerica.checked = false; 
+            currentCheckGenerica.checked = false;
             document.getElementById('evento-imagen-upload').value = '';
             tags = [];
             renderizarTags();
         }
     });
     
-    // --- Lógica de SUBMIT (guardado) ---
-    // (Limpiamos el listener anterior)
-    const newForm = form.cloneNode(true);
-    form.parentNode.replaceChild(newForm, form);
-    
-    // --- ¡¡INICIO DEL CÓDIGO MOVIDO Y CORREGIDO!! ---
-    // El calendario AHORA se crea DESPUÉS de clonar el formulario.
-    // --- ¡ARREGLO PARA BUG 1 (Fecha Pasada)! ---
+    // 5. Creación del Calendario
     if (picker) {
         picker.destroy();
         picker = null;
     }
-
-    // ¡ARREGLO! Buscamos el input de fecha DENTRO del 'newForm' clonado.
-    const newFormInputFecha = newForm.querySelector('#evento-fecha'); 
-
-    // Volvemos a crear el picker con la lógica de 'onselected'
     picker = new Litepicker({
-        element: newFormInputFecha, // <-- ¡ARREGLO! Usamos el input correcto
+        element: inputFecha, // Usamos la referencia directa
         format: 'YYYY-MM-DD',
         lang: 'es-ES',
         buttonText: {
@@ -707,9 +691,7 @@ function inicializarFormularioAlta() {
             apply: 'Aplicar'
         },
         onselected: (date) => {
-            // Esta es la lógica que AHORA SÍ va a funcionar
             const fechaSeleccionadaMillis = date.toMillis();
-            // Comparamos con el inicio del día de hoy
             const hoyMillis = DateTime.now().startOf('day').toMillis();
             
             if (fechaSeleccionadaMillis < hoyMillis) {
@@ -719,25 +701,28 @@ function inicializarFormularioAlta() {
             }
         }
     });
-    // --- ¡¡FIN DEL CÓDIGO MOVIDO Y CORREGIDO!! ---
 
-    newForm.addEventListener('submit', async (e) => {
+    // 6. Listener de SUBMIT (sin clonar)
+    // Este único listener manejará tanto CREAR como MODIFICAR
+    // gracias a la variable global 'modoEdicion'
+    form.addEventListener('submit', async (e) => {
         e.preventDefault(); 
-        const btnSubmit = newForm.querySelector('.btn-primary');
+        const btnSubmit = form.querySelector('.btn-primary');
         btnSubmit.disabled = true;
         btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
         
         const eventoData = {
-            fecha: newFormInputFecha.value, // <-- ¡ARREGLO! Usamos la referencia al input correcto
+            fecha: inputFecha.value, // Usamos la referencia directa
             tipoEvento: document.getElementById('evento-tipo').value,
             titulo: document.getElementById('evento-titulo').value.trim(),
             live: document.getElementById('evento-live').value.trim(),
             concierto: document.getElementById('evento-concierto').value.trim(),
-          usaGenerica: document.getElementById('evento-img-generica').checked,
+            usaGenerica: document.getElementById('evento-img-generica').checked,
             archivoImagen: document.getElementById('evento-imagen-upload').files[0],
             imgReferencia: tags
         };
 
+        // ... (El resto de la lógica de validación y subida de imagen NO CAMBIA) ...
         if (eventoData.tipoEvento === 'Regular' && !eventoData.titulo) {
             alert("Error: 'Título' es obligatorio para eventos Regulares.");
             btnSubmit.disabled = false;
@@ -748,58 +733,57 @@ function inicializarFormularioAlta() {
              alert("Error: 'Fecha' es un campo obligatorio.");
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-          return;
+            return;
         }
 
-let imagenUrl; // La URL final
+        let imagenUrl;
 
-        if (eventoData.tipoEvento === 'Cerrado') {
-            imagenUrl = "cerrado.jpg";
-        } else if (eventoData.tipoEvento === 'Privado') {
-            imagenUrl = "eventoPrivado.jpg";
-        } else if (eventoData.usaGenerica) {
-            imagenUrl = "imgBandaGenerica.jpg";
-        } else if (eventoData.archivoImagen) {
-            // 1. Hay un archivo nuevo, lo subimos
-            console.log("Subiendo imagen de evento a Cloudinary...");
-            btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Subiendo imagen...";
-            
-            const base64Image = await toBase64(eventoData.archivoImagen);
-            const uploadRes = await fetch('/api/imagenes/subir', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
-                body: JSON.stringify({ data: base64Image })
-            });
-            const uploadData = await uploadRes.json();
-            if (!uploadData.success) {
-                throw new Error(uploadData.message || "Falló la subida de imagen a Cloudinary");
-            }
-            imagenUrl = uploadData.url; // 2. Usamos la URL de Cloudinary
-            console.log("Imagen subida:", imagenUrl);
-            
-            btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando..."; // Volvemos al texto de guardado
-            
-        } else if (modoEdicion) {
-            // 3. No hay archivo nuevo (y no es genérica), pero estamos editando: conservamos la original
-            const eventoOriginal = adminEventos.find(ev => ev._id === idEventoEdicion);
-            imagenUrl = eventoOriginal.imagen || "imgBandaGenerica.jpg";
-        } else {
-            // 4. Modo alta, sin archivo y sin "genérica". Asignamos la genérica.
-            imagenUrl = "imgBandaGenerica.jpg";
-        }
+        if (eventoData.tipoEvento === 'Cerrado') {
+            imagenUrl = "cerrado.jpg";
+        } else if (eventoData.tipoEvento === 'Privado') {
+            imagenUrl = "eventoPrivado.jpg";
+        } else if (eventoData.usaGenerica) {
+            imagenUrl = "imgBandaGenerica.jpg";
+        } else if (eventoData.archivoImagen) {
+            console.log("Subiendo imagen de evento a Cloudinary...");
+            btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Subiendo imagen...";
+            
+            const base64Image = await toBase64(eventoData.archivoImagen);
+            const uploadRes = await fetch('/api/imagenes/subir', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
+                body: JSON.stringify({ data: base64Image })
+            });
+            const uploadData = await uploadRes.json();
+            if (!uploadData.success) {
+                throw new Error(uploadData.message || "Falló la subida de imagen a Cloudinary");
+            }
+            imagenUrl = uploadData.url; 
+            console.log("Imagen subida:", imagenUrl);
+            
+            btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
+            
+        } else if (modoEdicion) {
+            const eventoOriginal = adminEventos.find(ev => ev._id === idEventoEdicion);
+            imagenUrl = eventoOriginal.imagen || "imgBandaGenerica.jpg";
+        } else {
+            imagenUrl = "imgBandaGenerica.jpg";
+        }
 
-        let eventoFinal = {
-            fecha: eventoData.fecha,
-            tipoEvento: eventoData.tipoEvento,
-            imagen: imagenUrl, // <-- URL de Cloudinary o fallback
-            imgReferencia: eventoData.imgReferencia,
-            titulo: eventoData.titulo,
-            live: eventoData.live,
-            concierto: eventoData.concierto
-        };
+        let eventoFinal = {
+            fecha: eventoData.fecha,
+            tipoEvento: eventoData.tipoEvento,
+            imagen: imagenUrl,
+            imgReferencia: eventoData.imgReferencia,
+            titulo: eventoData.titulo,
+            live: eventoData.live,
+            concierto: eventoData.concierto
+        };
 
+        // ... (El bloque try/catch/finally NO CAMBIA) ...
         try {
             if (modoEdicion) {
+                // --- MODO MODIFICAR (PUT) ---
                 const response = await fetch(`/api/eventos/modificar/${idEventoEdicion}`, {
                     method: 'PUT',
                     headers: {
@@ -809,33 +793,32 @@ let imagenUrl; // La URL final
                     body: JSON.stringify(eventoFinal)
                 });
                 if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
-            alert("¡Evento Modificado con Éxito!");
+                alert("¡Evento Modificado con Éxito!");
 
             } else {
-                
-                // --- ¡ARREGLO PARA BUG 2 (Conflicto de Fecha)! ---
-              if (adminEventos.some(ev => ev.fecha === eventoFinal.fecha)) {
+                // --- MODO CREAR (POST) ---
+                if (adminEventos.some(ev => ev.fecha === eventoFinal.fecha)) {
                     if (!confirm("¡Atención! Ya existe otro evento en esta fecha. ¿Deseas crearlo igualmente?")) {
                         btnSubmit.disabled = false;
-                       btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
+                        btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
                         return;
                     }
                 }
                 
                 const response = await fetch('/api/eventos/crear', {
-                  method: 'POST',
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': getAuthToken()
-                   },
+                    },
                     body: JSON.stringify(eventoFinal)
                 });
                 if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
-              alert("¡Evento Creado con Éxito!");
+                alert("¡Evento Creado con Éxito!");
             }
             
             fetchEventosData();
-          resetearFormularioAlta(); 
+            resetearFormularioAlta(); 
 
         } catch (error) {
             console.error("Error al guardar evento:", error);
@@ -843,13 +826,11 @@ let imagenUrl; // La URL final
         } finally {
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-          if (modoEdicion) resetearFormularioAlta(); 
+            if (modoEdicion) resetearFormularioAlta(); 
         }
     });
 }
-// --- FIN DE LA FUNCIÓN REEMPLAZADA ---
 
-// --- FIN DE LA FUNCIÓN REEMPLAZADA ---
 
 
 // (renderizarTags, esURLValida no cambian)
@@ -905,7 +886,7 @@ function resetearFormularioAlta() {
     form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
     const infoImg = document.getElementById('info-img-actual');
     if (infoImg) infoImg.remove();
-    inicializarFormularioAlta();
+    //inicializarFormularioAlta();
 }
 
 // -----------------------------------------------------------------

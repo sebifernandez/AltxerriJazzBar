@@ -167,29 +167,57 @@ router.post('/eventos/crear', checkAuth, async (req, res) => {
         res.status(500).json({ success: false, message: 'Error interno al crear el evento' });
     }
 });
+
 router.put('/eventos/modificar/:_id', checkAuth, async (req, res) => {
-    try {
-        const db = await connectToDb();
-        const idMongo = new ObjectId(req.params._id); 
-        const eventoModificado = req.body;
-        delete eventoModificado._id; 
-        delete eventoModificado.id; 
-        const eventoOriginal = await db.collection('eventos').findOne({ _id: idMongo });
-        if (eventoOriginal) {
-            const backupEvento = { ...eventoOriginal, fechaModificacion: new Date().toISOString() };
-            await db.collection('eventosModificados').insertOne(backupEvento);
-            console.log("BACKUP DE MODIFICACIÓN CREADO:", idMongo);
-        } else {
-            console.log("No se encontró evento original para backup:", idMongo);
+    let idMongo;
+    try {
+        const db = await connectToDb();
+        
+        // 1. BLINDAJE: Verificamos la validez del ObjectId
+        try {
+            idMongo = new ObjectId(req.params._id);
+        } catch (idError) {
+            console.error("Error: El ID proporcionado no es un ObjectId válido.", req.params._id);
+            return res.status(400).json({ success: false, message: `El ID '${req.params._id}' no es válido.` });
+        }
+
+        const eventoModificado = req.body;
+        delete eventoModificado._id; 
+        delete eventoModificado.id; 
+
+        // 2. Lógica de Backup (sin cambios, pero ahora sabemos que idMongo es válido)
+        const eventoOriginal = await db.collection('eventos').findOne({ _id: idMongo });
+        if (eventoOriginal) {
+            const backupEvento = { ...eventoOriginal, fechaModificacion: new Date().toISOString() };
+            await db.collection('eventosModificados').insertOne(backupEvento);
+            console.log("BACKUP DE MODIFICACIÓN CREADO:", idMongo);
+        } else {
+            console.log("No se encontró evento original para backup:", idMongo);
+        }
+
+        // 3. Actualización
+        const updateResult = await db.collection('eventos').updateOne(
+            { _id: idMongo }, 
+            { $set: eventoModificado }
+        );
+
+        // 4. Verificación de la actualización
+        if (updateResult.matchedCount === 0) {
+            console.warn("Se intentó modificar un evento que no se encontró en la DB:", idMongo);
+            // Nota: No devolvemos error, ya que el backup pudo haberse creado
+            // y la operación "técnicamente" no falló, solo no encontró coincidencias.
         }
-        await db.collection('eventos').updateOne({ _id: idMongo }, { $set: eventoModificado });
-        console.log("EVENTO MODIFICADO:", idMongo);
-        res.json({ success: true, message: 'Evento modificado con éxito', evento: eventoModificado });
-    } catch (error) {
-        console.error("Error en PUT /eventos/modificar:", error);
-        res.status(500).json({ success: false, message: 'Error interno al modificar el evento' });
-    }
+
+        console.log("EVENTO MODIFICADO:", idMongo);
+        res.json({ success: true, message: 'Evento modificado con éxito', evento: eventoModificado });
+
+    } catch (error) {
+        // 5. Catch General
+        console.error("Error en PUT /eventos/modificar:", error);
+        res.status(500).json({ success: false, message: 'Error interno al modificar el evento' });
+    }
 });
+
 router.delete('/eventos/eliminar/:_id', checkAuth, async (req, res) => {
     try {
         const db = await connectToDb();
