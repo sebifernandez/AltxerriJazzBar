@@ -356,6 +356,7 @@ img {
 .card-coctel-imagen {
     flex-basis: 30%; /* 30% de ancho */
     flex-shrink: 0; /* No se encoge */
+    overflow: hidden;
 }
 
 .card-coctel-imagen img {
