@@ -1143,6 +1143,10 @@ body {
     align-self: flex-start;
   }
 
+  .btn-adicional {
+    margin-top: 0;
+  }
+
   .contenido-modal {
     flex-direction: row;
     gap: 2rem;
