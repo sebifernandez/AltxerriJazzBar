@@ -497,7 +497,7 @@ body {
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  justify-content: start;
+  justify-content: space-between;
   height: 40%;
 }
 
@@ -1122,7 +1122,7 @@ body {
     height: 40%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: start;
   }
 
   .event-card.special {
