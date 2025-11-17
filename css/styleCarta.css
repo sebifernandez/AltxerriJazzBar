@@ -366,8 +366,6 @@ img {
     width: 100%;
     height: 100%;
     object-fit: cover; /* Evita que la imagen se deforme */
-    min-height: 180px; /* Altura mínima para centrado vertical */
-    max-height: 220px;
 }
 
 .card-coctel-textos {
@@ -588,10 +586,7 @@ img {
     margin-left: -15%; /* Superposición de 15% */
 }
 
-/* Lógica de Alternancia: Texto-Img */
-.banner-destacado.layout-texto-img {
-    /* Reordenamos */
-}
+
 .banner-destacado.layout-texto-img .banner-imagen { 
     order: 2;
     margin-right: -15%; /* Superposición */
@@ -653,9 +648,7 @@ img {
     .card-coctel {
         flex-direction: column; /* Apilado vertical */
     }
-    .card-coctel.layout-texto-img {
-        /* Reseteamos el re-ordenamiento */
-    }
+
     .card-coctel.layout-texto-img .card-coctel-imagen { order: 1; }
     .card-coctel.layout-texto-img .card-coctel-textos { order: 2; }
     .card-coctel.layout-texto-img .card-coctel-precio { order: 3; }

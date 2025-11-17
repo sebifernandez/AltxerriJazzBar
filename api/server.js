@@ -273,7 +273,7 @@ router.post('/productos/crear', checkAuth, async (req, res) => {
 });
 
 // --- INICIO DEL BLOQUE REEMPLAZADO ---
-router.put('/api/productos/modificar/:_id', checkAuth, async (req, res) => {
+router.put('/productos/modificar/:_id', checkAuth, async (req, res) => {
     let idMongo; // La definimos aquí para que esté en el scope
     try {
         const db = await connectToDb();
@@ -289,7 +289,7 @@ router.put('/api/productos/modificar/:_id', checkAuth, async (req, res) => {
 
         const { producto_es, producto_en } = req.body;
 
-        // 2. BACKUP: Buscamos los productos originales
+        // 2. BACKUP: (Esta lógica es la tuya original)
         const original_es = await db.collection('productos_es').findOne({ _id: idMongo });
         const original_en = await db.collection('productos_en').findOne({ _id: idMongo });
 
@@ -305,10 +305,10 @@ router.put('/api/productos/modificar/:_id', checkAuth, async (req, res) => {
             console.log("No se encontró producto original para backup:", idMongo);
         }
 
-        // 3. ACTUALIZACIÓN
+        // 3. ACTUALIZACIÓN: (Lógica tuya original)
         delete producto_es._id;
         delete producto_en._id;
-        
+        
         const resES = await db.collection('productos_es').updateOne(
             { _id: idMongo },
             { $set: producto_es }
@@ -319,10 +319,9 @@ router.put('/api/productos/modificar/:_id', checkAuth, async (req, res) => {
         );
 
         if (resES.matchedCount === 0 || resEN.matchedCount === 0) {
-            // Esto no debería pasar si el backup funcionó, pero por si acaso
-            return res.status(404).json({ success: false, message: 'Producto no encontrado para actualizar' });
+            return res.status(404).json({ success: false, message: 'Producto no encontrado' });
         }
-        
+        
         console.log("PRODUCTO MODIFICADO (ES/EN):", idMongo);
         res.json({ success: true, message: 'Producto modificado con éxito' });
 
