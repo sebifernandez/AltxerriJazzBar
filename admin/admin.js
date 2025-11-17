@@ -602,7 +602,7 @@ try {
                         
                         resetearFormularioCarta();
                         fetchProductosData();
-                      d ocument.querySelector('.tab-link[data-tab="mod-producto"]').click();
+                      document.querySelector('.tab-link[data-tab="mod-producto"]').click();
 
                 } else {
                     // --- MODO CREAR (POST) ---
