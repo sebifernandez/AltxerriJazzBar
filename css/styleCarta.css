@@ -391,16 +391,16 @@ img {
     padding-right: 1rem;
 }
 
-/* Lógica de Alternancia: Imagen-Texto */
-.card-coctel.layout-img-texto {
-    /* (img - texto - precio) - Este es el orden por defecto en el HTML */
-    /* No necesita cambios */
+/* Layout: Imagen a la Izquierda (degradé a la derecha) */
+.card-coctel.layout-img-texto .card-coctel-imagen img {
+    mask-image: linear-gradient(to right, black 60%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 60%, transparent 100%); /* Para Safari */
 }
 
-/* Lógica de Alternancia: Texto-Imagen */
-.card-coctel.layout-texto-img {
-    /* (texto - precio - img) */
-    /* Usamos 'order' de Flexbox para reordenar visualmente */
+/* Layout: Imagen a la Derecha (degradé a la izquierda) */
+.card-coctel.layout-texto-img .card-coctel-imagen img {
+    mask-image: linear-gradient(to left, black 60%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to left, black 60%, transparent 100%); /* Para Safari */
 }
 
 .card-coctel.layout-texto-img .card-coctel-imagen { order: 3; }

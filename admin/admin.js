@@ -1336,6 +1336,14 @@ function resetearFormularioCarta() {
     }
     const infoImg = document.getElementById('info-img-actual-prod');
     if (infoImg) infoImg.remove();
+
+    // Reseteamos el botón de submit, que se quedaba "tildado"
+    const btnSubmit = form.querySelector('.btn-primary');
+    if (btnSubmit) {
+        btnSubmit.disabled = false;
+        // ¡Cuidado! Tuve que escapar las comillas de 'bx bxs-save'
+        btnSubmit.innerHTML = "<i class=\'bx bxs-save\'></i> Guardar Producto";
+    }
     
     // ¡IMPORTANTE!
     // Volvemos a inicializar el formulario para re-adjuntar los listeners
