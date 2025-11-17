@@ -357,7 +357,8 @@ img {
     flex-basis: 30%; /* 30% de ancho */
     flex-shrink: 0; /* No se encoge */
     overflow: hidden;
-    height: 100%;
+    min-height: 180px; 
+    max-height: 220px;
     display: flex;
 }
 

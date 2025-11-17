@@ -561,8 +561,10 @@ try {
                     btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
                 
                 } else if (modoEdicion) {
-                    // Conservamos la imagen original si no se sube una nueva
-                    const productoOriginal = adminProductos.find(p => p._id === idEventoEdicion);
+                    // --- INICIO DEL ARREGLO ---
+                    // Usamos la variable 'idProductoEdicion' que sí tiene el ID
+                    const productoOriginal = adminProductos.find(p => p._id === idProductoEdicion);
+                    // --- FIN DEL ARREGLO ---
                     imagenUrl = productoOriginal.imagen || 'bebidaSinFoto.jpg';
                 } else {
                     // Fallback si no hay archivo y no es edición
@@ -575,14 +577,17 @@ try {
                 delete producto_es.archivoImagen;
                 delete producto_en.archivoImagen;
 
-                // 4. Continuamos con la validación y el guardado (como antes)
-              if ((!producto_es.titulo || producto_es.titulo === '')) {
+                // 4. Continuamos con la validación y el guardado
+                if ((!producto_es.titulo || producto_es.titulo === '')) {
                      throw new Error("El Título (ES o Marca) es obligatorio.");
                 }
 
                 if (modoEdicion) {
                     // --- MODO MODIFICAR (PUT) ---
+                    // --- INICIO DEL ARREGLO ---
+                    // Usamos la variable 'idProductoEdicion'
                     const response = await fetch(`/api/productos/modificar/${idProductoEdicion}`, {
+                    // --- FIN DEL ARREGLO ---
                             method: 'PUT',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -593,13 +598,13 @@ try {
 
                         if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
                         
-                     alert("¡Producto Modificado con Éxito!");
+                        alert("¡Producto Modificado con Éxito!");
                         
                         resetearFormularioCarta();
                         fetchProductosData();
-                        document.querySelector('.tab-link[data-tab="mod-producto"]').click();
+                      d ocument.querySelector('.tab-link[data-tab="mod-producto"]').click();
 
-              } else {
+                } else {
                     // --- MODO CREAR (POST) ---
                     const response = await fetch('/api/productos/crear', {
                         method: 'POST',
@@ -614,13 +619,13 @@ try {
                     alert("¡Producto Creado con Éxito!");
                     btnSubmit.disabled = false;
                     btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Producto";
-                    resetearFormularioCarta();
+                    resetearFormularioCarta();
                     fetchProductosData(); 
                 }
 
             } catch (error) {
                 console.error("Error al guardar producto:", error);
-                alert(`Error: ${error.message}`);
+                alert(`Error al guardar producto: ${error.message}`);
                btnSubmit.disabled = false;
                 btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
             }
