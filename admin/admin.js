@@ -582,7 +582,7 @@ try {
 
                 if (modoEdicion) {
                     // --- MODO MODIFICAR (PUT) ---
-                    const response = await fetch(`/api/productos/modificar/${idEventoEdicion}`, {
+                    const response = await fetch(`/api/productos/modificar/${idProductoEdicion}`, {
                             method: 'PUT',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -1356,38 +1356,42 @@ function resetearFormularioCarta() {
 // (Corregido con _id)
 
 async function fetchProductosData() {
-    try {
-        const response = await fetch(`/api/productos/modificar/${idProductoEdicion}`, {
-             headers: {
-                'Authorization': getAuthToken()
-            }
-        });
-        if (!response.ok) {
-            if (response.status === 401 || response.status === 403) {
-                 alert("Error de autenticación. Saliendo...");
-                 document.getElementById('logout-btn').click();
-                 return;
-            }
-            throw new Error('No se pudo cargar los archivos de carta desde la API.');
-        }
-        
-        const data = await response.json(); 
-        
-        // ¡CAMBIO! La API ahora nos da la estructura completa
-        // y nuestro backend la arma correctamente
-        if (!data.es || !data.es.productos) {
-            console.log("Datos recibidos de /api/productos:", data);
-            throw new Error("La API no devolvió 'productos' para ES");
-        }
-        adminProductos = data.es.productos; 
-        adminProductos_EN = data.en.productos; 
-        
-        renderizarResultadosProductos();
-        
-    } catch (error) {
-        console.error(error);
-        alert("Error fatal: No se pudieron cargar los datos de la carta.");
-    }
+    try {
+        // --- INICIO DEL ARREGLO ---
+        // Esta es la ruta correcta para OBTENER productos
+        const response = await fetch('/api/productos', { 
+             headers: {
+                'Authorization': getAuthToken()
+            }
+        });
+        // --- FIN DEL ARREGLO ---
+
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                 alert("Error de autenticación. Saliendo...");
+                 document.getElementById('logout-btn').click();
+                 return;
+            }
+            // Usamos el texto de la respuesta si está disponible
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'No se pudo cargar los archivos de carta desde la API.');
+        }
+        
+        const data = await response.json(); 
+        
+        if (!data.es || !data.es.productos) {
+            console.log("Datos recibidos de /api/productos:", data);
+            throw new Error("La API no devolvió 'productos' para ES");
+        }
+        adminProductos = data.es.productos; 
+        adminProductos_EN = data.en.productos; 
+        
+        renderizarResultadosProductos();
+        
+    } catch (error) {
+        console.error(error);
+        alert(`Error fatal: ${error.message}`); // Mostramos el mensaje de error real
+    }
 }
 
 function inicializarPanelesBusquedaProductos() {
