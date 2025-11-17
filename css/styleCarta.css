@@ -357,7 +357,7 @@ img {
     flex-basis: 30%; /* 30% de ancho */
     flex-shrink: 0; /* No se encoge */
     overflow: hidden;
-    height: 220px;
+    height: 100%;
     display: flex;
 }
 
