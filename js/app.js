@@ -213,8 +213,12 @@ function renderizarSeccionCocteles(productos, textosUI) {
         const claseLayout = esPar ? 'layout-img-texto' : 'layout-texto-img';
         
         // IMPORTANTE: Asumimos que las imágenes están en 'img/'
-        const rutaImagen = `img/${coctel.imagen}`; 
-
+        let rutaImagen = `img/${coctel.imagen}`; 
+        if (coctel.imagen && (coctel.imagen.startsWith('http') || coctel.imagen.startsWith('https'))) {
+            rutaImagen = coctel.imagen; // Ya es una URL de Cloudinary, la usamos directamente
+        } else {
+            rutaImagen = `img/${coctel.imagen || 'bebidaSinFoto.jpg'}`; // Es un archivo local, agregamos 'img/'
+        }
         return `
             <div class="card-coctel ${claseLayout}">
                 <div class="card-coctel-imagen">
@@ -519,7 +523,12 @@ function renderizarVinosDestacados(productos, textosUI) {
         const esPar = index % 2 === 0;
         const claseLayout = esPar ? 'layout-img-texto' : 'layout-texto-img';
         
-        const rutaImagen = `img/${vino.imagen}`;
+        let rutaImagen = `img/${vino.imagen}`;
+        if (vino.imagen && (vino.imagen.startsWith('http') || vino.imagen.startsWith('https'))) {
+            rutaImagen = vino.imagen; // URL de Cloudinary
+        } else {
+            rutaImagen = `img/${vino.imagen || 'bebidaSinFoto.jpg'}`; // Archivo local
+        }
         
         // Formateo de datos del vino (igual que en el listado)
         const datosVino = [
