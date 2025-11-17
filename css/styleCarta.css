@@ -460,7 +460,6 @@ img {
     padding-left: 0; /* Anula el padding de desktop */
 
     /* La línea punteada que separa del texto */
-    *border-top: 1px dashed var(--color-texto-secundario);
     padding-top: 1rem;
 }
 
@@ -561,7 +560,6 @@ img {
     background-color: #000;
     overflow: hidden;
     border-radius: 8px;
-    *border: 1px solid var(--color-primario-rojo);
 }
 
 .banner-imagen {
