@@ -9,6 +9,7 @@ let idEventoEdicion = null; // Guardará el _id de Mongo
 let adminProductos = []; 
 let adminProductos_EN = []; 
 let modoVisibilidad = false; 
+let idProductoEdicion = null;
 
 // --- ¡ARREGLO! Movido al ámbito global
 
@@ -1328,7 +1329,7 @@ function resetearFormularioCarta() {
     document.getElementById('form-actions-producto').style.display = 'none';
     document.getElementById('producto-tipo').value = "";
     modoEdicion = false;
-    idEventoEdicion = null; 
+    idProductoEdicion = null; 
     form.classList.remove('modo-edicion');
     const tabContent = document.getElementById('alta-producto');
     if (tabContent) {
@@ -1356,7 +1357,7 @@ function resetearFormularioCarta() {
 
 async function fetchProductosData() {
     try {
-        const response = await fetch('/api/productos', {
+        const response = await fetch(`/api/productos/modificar/${idProductoEdicion}`, {
              headers: {
                 'Authorization': getAuthToken()
             }
@@ -1523,7 +1524,7 @@ function crearTarjetaResultadoProducto(prod) {
 function prellenarFormularioCarta(prod) {
     //inicializarFormularioCarta();
     modoEdicion = true;
-    idEventoEdicion = prod._id; 
+    idProductoEdicion = prod._id; 
     
     const form = document.getElementById('form-alta-producto');
     form.classList.add('modo-edicion');
