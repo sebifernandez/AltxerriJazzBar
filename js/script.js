@@ -196,28 +196,37 @@ function createEventCard(evento) {
         }
     }
     
-    // 3. Renderizado de Card Regular
-    const isLiveActive = botonAdicionalHTML.indexOf('btn-live') !== -1;
-    const finalizadoClass = (esPasado && !isLiveActive) ? 'past' : '';
-    const finalizadoDisabled = (esPasado && !isLiveActive) ? "disabled" : "";
-    const finalizadoText = (esPasado && !isLiveActive) ? "Finalizado" : "Reservar";
+// 3. Renderizado de Card Regular
+    const isLiveActive = botonAdicionalHTML.indexOf('btn-live') !== -1;
+    const finalizadoClass = (esPasado && !isLiveActive) ? 'past' : '';
+    const finalizadoDisabled = (esPasado && !isLiveActive) ? "disabled" : "";
+    const finalizadoText = (esPasado && !isLiveActive) ? "Finalizado" : "Reservar";
+    
+    // --- INICIO DEL ARREGLO ---
+    let imagenMostrar;
+    if (evento.imagen && (evento.imagen.startsWith('http') || evento.imagen.startsWith('https'))) {
+        imagenMostrar = evento.imagen; // Es una URL de Cloudinary
+    } else {
+        imagenMostrar = `img/${evento.imagen || 'imgBandaGenerica.jpg'}`; // Es local o fallback
+    }
+    // --- FIN DEL ARREGLO ---
 
-    return `
-      <div class="event-card ${finalizadoClass}">
-        <div class="card-image">
-          <img src="img/${evento.imagen}" alt="${evento.titulo}">
-          <div class="event-date">${luxonFecha.toFormat("dd LLLL")}</div>
-        </div>
-        <div class="card-content">
-          <h3>${evento.titulo}</h3>
+    return `
+      <div class="event-card ${finalizadoClass}">
+        <div class="card-image">
+          <img src="${imagenMostrar}" alt="${evento.titulo}">
+          <div class="event-date">${luxonFecha.toFormat("dd LLLL")}</div>
+        </div>
+        <div class="card-content">
+          <h3>${evento.titulo}</h3>
 
-          <button class="btn-reservar" ${finalizadoDisabled}>
-            ${finalizadoText}
-          </button>
-          ${botonAdicionalHTML}
-        </div>
-      </div>
-    `;
+          <button class="btn-reservar" ${finalizadoDisabled}>
+            ${finalizadoText}
+          </button>
+          ${botonAdicionalHTML}
+        </div>
+      </div>
+    `;
 }
 
 // Carga los eventos y renderiza el carrusel
@@ -373,28 +382,37 @@ function mostrarEvento(fecha) {
       return;
   }
 
-  // Lógica de Evento Regular para el Modal
-  // (La lógica de botones aquí ya era correcta, priorizando 'concierto')
-  let botonAdicionalHTML = '';
-  if (evento.concierto && evento.concierto.trim() !== '') {
-      botonAdicionalHTML = `<a href="${evento.concierto}" target="_blank" class="btn-adicional btn-archive">Reviví el concierto</a>`;
-  }
+// Lógica de Evento Regular para el Modal
+  // (La lógica de botones aquí ya era correcta, priorizando 'concierto')
+  let botonAdicionalHTML = '';
+  if (evento.concierto && evento.concierto.trim() !== '') {
+      botonAdicionalHTML = `<a href="${evento.concierto}" target="_blank" class="btn-adicional btn-archive">Reviví el concierto</a>`;
+  }
 
-  detalleEvento.innerHTML = `
-    <div class="event-card ${esPasado ? 'past' : ''}">
-      <div class="card-image">
-        <img src="img/${evento.imagen}" alt="Evento ${evento.fecha}">
-        <div class="event-date">${DateTimeLuxon.fromISO(evento.fecha).toFormat("dd LLLL")}</div>
-      </div>
-      <div class="card-content">
-        <h3>${evento.titulo}</h3>
+  // --- INICIO DEL ARREGLO ---
+  let imagenMostrarModal;
+  if (evento.imagen && (evento.imagen.startsWith('http') || evento.imagen.startsWith('https'))) {
+      imagenMostrarModal = evento.imagen; // Es una URL de Cloudinary
+  } else {
+      imagenMostrarModal = `img/${evento.imagen || 'imgBandaGenerica.jpg'}`; // Es local o fallback
+  }
+  // --- FIN DEL ARREGLO ---
 
-        <button class="btn-reservar" ${esPasado ? "disabled" : ""}>
-          ${esPasado ? "Finalizado" : "Reservar"}
-        </button>
-        ${botonAdicionalHTML}
-      </div>
-    </div>`;
+  detalleEvento.innerHTML = `
+    <div class="event-card ${esPasado ? 'past' : ''}">
+      <div class="card-image">
+        <img src="${imagenMostrarModal}" alt="Evento ${evento.fecha}">
+        <div class="event-date">${DateTimeLuxon.fromISO(evento.fecha).toFormat("dd LLLL")}</div>
+      </div>
+      <div class="card-content">
+        <h3>${evento.titulo}</h3>
+
+        <button class="btn-reservar" ${esPasado ? "disabled" : ""}>
+          ${esPasado ? "Finalizado" : "Reservar"}
+        </button>
+        ${botonAdicionalHTML}
+      </div>
+    </div>`;
 }
 
 // 🔍 Filtrar eventos por texto y estado
