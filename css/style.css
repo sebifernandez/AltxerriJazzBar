@@ -1143,9 +1143,32 @@ body {
     align-self: flex-start;
   }
 
-  .btn-adicional {
-    margin-top: 0;
-  }
+  /* INICIO PRUEBA DE FIJAR BOTÓN */
+
+.btn-adicional {
+    position: absolute;
+    bottom: 10px;  /* ajustá a gusto */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;  /* opcional: que quede prolijo */
+    text-align: center;
+
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    border-radius: 6px;
+    z-index: 5;
+}
+
+.card-content {
+    padding: 1rem;
+    padding-bottom: 4rem; /* espacio reservado para el botón */
+    display: flex;
+    flex-direction: column;
+    height: 40%;
+    overflow: hidden;
+}
+
+ /* FIN PRUEBA DE FIJAR BOTÓN */
 
   .contenido-modal {
     flex-direction: row;
