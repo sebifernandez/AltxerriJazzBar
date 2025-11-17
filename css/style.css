@@ -1143,8 +1143,6 @@ body {
     align-self: flex-start;
   }
 
-  /* INICIO PRUEBA DE FIJAR BOTÓN */
-
 .btn-adicional {
     position: absolute;
     bottom: 10px;  /* ajustá a gusto */
@@ -1153,7 +1151,7 @@ body {
     width: 80%;  /* opcional: que quede prolijo */
     text-align: center;
 
-    padding: 0.6rem 1rem;
+    padding: 0.2rem;
     font-size: 0.9rem;
     border-radius: 6px;
     z-index: 5;
@@ -1167,8 +1165,6 @@ body {
     height: 40%;
     overflow: hidden;
 }
-
- /* FIN PRUEBA DE FIJAR BOTÓN */
 
   .contenido-modal {
     flex-direction: row;
