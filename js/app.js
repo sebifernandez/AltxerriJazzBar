@@ -531,7 +531,7 @@ function renderizarVinosDestacados(productos, textosUI) {
 
     // 1. Filtrar productos
     const vinosDestacados = productos.filter(p =>
-        ['vinoTinto', 'vinoBlanco', 'vinoOtros'].includes(p.tipo) &&
+        ['vinoTinto', 'vinoBlanco', 'vinoOtro'].includes(p.tipo) &&
         p.destacado &&
         p.visualizacion
     );
@@ -635,27 +635,6 @@ function renderizarSeccionSinAlcohol(productos, textosUI) {
             </div>
         </section>
     `;
-}
-
-
-/**
- * Re-escribimos la función 'iniciarAplicacion' para que llame a 
- * renderizarContenido.
- * IMPORTANTE: Esta función REEMPLAZA la 'iniciarAplicacion' de la Fase 2.
- */
-async function iniciarAplicacion(lang) {
-    const datos = await cargarDatos(lang);
-    if (!datos) {
-        console.error('Error: No se pudieron cargar los datos de la carta.');
-        return;
-    }
-
-    // FASE 2
-    renderizarNavbar(datos.textosUI);
-    configurarEventosNavbar();
-
-    // FASE 3 (NUEVO)
-    renderizarContenido(datos);
 }
 
 /**
