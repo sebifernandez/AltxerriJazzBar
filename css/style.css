@@ -547,6 +547,14 @@ body {
   margin-bottom: 0.5rem;
 }
 
+.card-descripcion-precio {
+  font-size: 0.95rem;
+  color: #ccc;
+  margin-bottom: 1rem; /* Separa del botón de reservar */
+  font-style: italic;
+  /* El flex-start del paso 1 se encargará de alinearlo arriba */
+}
+
 .card-content p {
   font-size: 0.9rem;
   margin-bottom: 1rem;

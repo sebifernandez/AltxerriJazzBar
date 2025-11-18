@@ -730,7 +730,8 @@ function inicializarFormularioAlta() {
             fecha: document.getElementById('evento-fecha').value,
             tipoEvento: document.getElementById('evento-tipo').value,
             titulo: document.getElementById('evento-titulo').value.trim(),
-            live: document.getElementById('evento-live').value.trim(),
+            descripcion: document.getElementById('evento-descripcion').value.trim(),
+            live: document.getElementById('evento-live').value.trim(),
             concierto: document.getElementById('evento-concierto').value.trim(),
             usaGenerica: document.getElementById('evento-img-generica').checked,
             archivoImagen: document.getElementById('evento-imagen-upload').files[0],
@@ -791,7 +792,8 @@ function inicializarFormularioAlta() {
             imagen: imagenUrl,
             imgReferencia: eventoData.imgReferencia,
             titulo: eventoData.titulo,
-            live: eventoData.live,
+            descripcion: eventoData.descripcion,
+            live: eventoData.live,
             concierto: eventoData.concierto
         };
 
@@ -1182,6 +1184,7 @@ function prellenarFormularioModEvento(evento) {
     
     document.getElementById('evento-tipo').value = evento.tipoEvento;
     document.getElementById('evento-titulo').value = evento.titulo;
+    document.getElementById('evento-descripcion').value = evento.descripcion || '';
     document.getElementById('evento-live').value = evento.live || '';
     document.getElementById('evento-concierto').value = evento.concierto || '';
     document.getElementById('evento-tipo').dispatchEvent(new Event('change'));
