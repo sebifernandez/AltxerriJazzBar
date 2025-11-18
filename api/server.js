@@ -289,7 +289,7 @@ router.put('/productos/modificar/:_id', checkAuth, async (req, res) => {
 
         const { producto_es, producto_en } = req.body;
 
-        // 2. BACKUP: (Esta lógica es la tuya original)
+        // 2. BACKUP:
         const original_es = await db.collection('productos_es').findOne({ _id: idMongo });
         const original_en = await db.collection('productos_en').findOne({ _id: idMongo });
 
@@ -305,7 +305,7 @@ router.put('/productos/modificar/:_id', checkAuth, async (req, res) => {
             console.log("No se encontró producto original para backup:", idMongo);
         }
 
-        // 3. ACTUALIZACIÓN: (Lógica tuya original)
+        // 3. ACTUALIZACIÓN:
         delete producto_es._id;
         delete producto_en._id;
         
