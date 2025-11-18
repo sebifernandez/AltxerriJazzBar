@@ -545,6 +545,7 @@ body {
 .card-content h3 {
   font-size: 1.3rem;
   margin-bottom: 0.5rem;
+  text-align: center;
 }
 
 .card-descripcion-precio {
@@ -552,6 +553,7 @@ body {
   color: #ccc;
   margin-bottom: 1rem; /* Separa del botón de reservar */
   font-style: italic;
+  text-align: center;
   /* El flex-start del paso 1 se encargará de alinearlo arriba */
 }
 
@@ -1264,4 +1266,23 @@ body {
   .contenido-modal {
     flex-direction: column;
   }
+}
+
+@media (max-width: 900px) {
+
+    .event-card.special .card-content {
+        /* 1. Reseteamos el padding que hereda de la regla móvil de .card-content */
+        padding: 1rem; 
+        
+        /* 2. Nos aseguramos de que el contenido (título y p) esté centrado */
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    /* Opcional: Ajustamos el tamaño del título de las cards especiales en móvil */
+    .event-card.special h3 {
+        font-size: 1.5rem;
+        line-height: 1.2;
+    }
 }
