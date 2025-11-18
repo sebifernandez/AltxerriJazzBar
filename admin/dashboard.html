@@ -307,6 +307,31 @@
             
         </main>
     </div>
+
+    <div id="modal-imagenes" class="modal-buscador-imagenes">
+    <div class="modal-contenido">
+        <div class="modal-header">
+            <h3>Buscador de Imágenes Guardadas</h3>
+            <span class="cerrar-modal" id="cerrar-modal-imagenes">&times;</span>
+        </div>
+        
+        <form id="form-buscador-imagenes" class="form-busqueda" style="margin-top: 1rem;">
+            <div class="form-group">
+                <label for="search-tags-modal">Buscar por Tags (Ej: Pedro, Saxofón)</label>
+                <input type="text" id="search-tags-modal" class="form-input" placeholder="Escribe tags para buscar...">
+            </div>
+        </form>
+        
+        <div class="resultados-container" id="resultados-imagenes">
+            <p style="text-align: center; color: #9E9E9E; margin-top: 2rem;">Escribe en el campo de búsqueda para empezar.</p>
+        </div>
+        
+        <div id="loading-spinner-img" style="text-align: center; color: #E0E0E0; margin-top: 2rem; display: none;">
+            <i class='bx bx-loader-alt bx-spin' style="font-size: 2rem;"></i> Cargando...
+        </div>
+
+    </div>
+</div>
     
     <script src="admin.js"></script>
 </body>

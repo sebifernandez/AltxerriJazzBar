@@ -449,6 +449,39 @@ router.post('/imagenes/guardar', checkAuth, async (req, res) => {
     }
 });
 
+// --- NUEVA RUTA: BUSCAR IMÁGENES POR TAGS ---
+router.get('/imagenes', checkAuth, async (req, res) => {
+    try {
+        const db = await connectToDb();
+        // Capturamos el query string 'q' (ej: /api/imagenes?q=pedro)
+        const busqueda = req.query.q; 
+        
+        let queryMongo = {};
+        
+        if (busqueda) {
+            // Buscamos la expresión de búsqueda dentro del array 'tags'
+            queryMongo.tags = { 
+                $elemMatch: { 
+                    $regex: busqueda, 
+                    $options: 'i' // 'i' para que no distinga mayúsculas/minúsculas
+                } 
+            };
+        }
+        
+        const imagenes = await db.collection('imagenes')
+            .find(queryMongo)
+            .sort({ fecha_creacion: -1 }) // Ordena por más reciente
+            .limit(50) // Limita resultados
+            .toArray();
+
+        res.json({ success: true, imagenes });
+
+    } catch (error) {
+        console.error("Error en GET /imagenes:", error);
+        res.status(500).json({ success: false, message: 'Error interno al buscar imágenes' });
+    }
+});
+
 app.use('/api', router);
 
 // Exportamos el "enchufe" final

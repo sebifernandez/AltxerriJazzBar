@@ -634,6 +634,7 @@ try {
         
         fetchProductosData(); 
         inicializarPanelesBusquedaProductos();
+        inicializarModalImagenes();
     }
 // --- ¡ARREGLO DE SINTAXIS! ---
 // Esta es la llave que cierra el 'DOMContentLoaded'
@@ -1496,6 +1497,121 @@ function inicializarPanelesBusquedaProductos() {
     });
     // --- FIN DEL CÓDIGO NUEVO ---
 }
+
+// --- INICIO DE LA NUEVA FUNCIÓN ---
+function inicializarModalImagenes() {
+    const modal = document.getElementById('modal-imagenes');
+    const abrirBtn = document.getElementById('btn-elegir-img');
+    const cerrarBtn = document.getElementById('cerrar-modal-imagenes');
+    const searchInput = document.getElementById('search-tags-modal');
+    const formBuscador = document.getElementById('form-buscador-imagenes');
+    const resultadosContainer = document.getElementById('resultados-imagenes');
+    const spinner = document.getElementById('loading-spinner-img');
+
+    // Abre el modal al hacer clic en el botón
+    if (abrirBtn) {
+        abrirBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            modal.style.display = 'flex';
+            // Cargamos todas las imágenes al abrir el modal (búsqueda vacía)
+            buscarImagenes(''); 
+        });
+    }
+
+    // Cierra el modal
+    if (cerrarBtn) {
+        cerrarBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+    }
+    
+    // Lógica de búsqueda al escribir
+    if (searchInput) {
+        let timeout = null;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                buscarImagenes(searchInput.value.trim());
+            }, 500); // 500ms de debounce
+        });
+        
+        // Prevenir submit del formulario de búsqueda
+        formBuscador.addEventListener('submit', (e) => e.preventDefault());
+    }
+
+    // Maneja la selección de una imagen
+    if (resultadosContainer) {
+        resultadosContainer.addEventListener('click', (e) => {
+            const imgElement = e.target.closest('.card-imagen-preexistente img');
+            if (imgElement) {
+                const urlSeleccionada = imgElement.getAttribute('data-url');
+                
+                // 1. Asigna la URL al campo de entrada de texto
+                const liveInput = document.getElementById('evento-live');
+                if (liveInput) liveInput.value = urlSeleccionada;
+                
+                // 2. Opcional: Notificar al usuario (podrías mostrar el texto en el info-img-actual)
+                const infoImg = document.getElementById('info-img-actual');
+                if (infoImg) infoImg.remove();
+                
+                const fieldsetImagen = document.getElementById('fieldset-imagen');
+                const infoHtml = `
+                    <div id="info-img-actual" class="info-imagen-actual">
+                        <strong>Imagen Seleccionada:</strong> ${urlSeleccionada}
+                        <br>
+                        <small>La URL se ha copiado al campo Live. No olvides hacer click en Guardar Modificaciones.</small>
+                    </div>
+                `;
+                fieldsetImagen.insertAdjacentHTML('afterbegin', infoHtml);
+
+                // 3. Cierra el modal
+                modal.style.display = 'none';
+            }
+        });
+    }
+}
+
+// Función que realiza el fetch a la nueva API
+async function buscarImagenes(query) {
+    const resultadosContainer = document.getElementById('resultados-imagenes');
+    const spinner = document.getElementById('loading-spinner-img');
+    
+    spinner.style.display = 'block';
+    resultadosContainer.innerHTML = '';
+    
+    try {
+        const response = await fetch(`/api/imagenes?q=${encodeURIComponent(query)}`, {
+            headers: { 'Authorization': getAuthToken() }
+        });
+        
+        if (!response.ok) throw new Error('Error al buscar en la API de imágenes.');
+        
+        const data = await response.json();
+        
+        if (data.imagenes.length === 0) {
+            resultadosContainer.innerHTML = `<p style="text-align: center; color: #9E9E9E; margin-top: 2rem;">No se encontraron imágenes con los tags: "${query}".</p>`;
+            return;
+        }
+
+        const cardsHtml = data.imagenes.map(img => `
+            <div class="card-imagen-preexistente" style="text-align: center; cursor: pointer;">
+                <img src="${img.url}" alt="Imagen guardada" data-url="${img.url}" 
+                    style="width: 100px; height: 100px; object-fit: cover; border-radius: 5px; margin-bottom: 0.5rem; border: 2px solid #353535;">
+                <p style="font-size: 0.8rem; color: #E0E0E0;">Tags: ${img.tags.join(', ')}</p>
+            </div>
+        `).join('');
+        
+        resultadosContainer.innerHTML = `<div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">${cardsHtml}</div>`;
+
+    } catch (error) {
+        console.error("Error al cargar imágenes:", error);
+        resultadosContainer.innerHTML = `<p style="text-align: center; color: #B71C1C; margin-top: 2rem;">Error al conectar con el servidor.</p>`;
+    } finally {
+        spinner.style.display = 'none';
+    }
+}
+// --- FIN DE LA NUEVA FUNCIÓN ---
+
 // (renderizarResultadosProductos no cambia)
 function renderizarResultadosProductos() {
     const contenedor = document.getElementById('prod-resultados-container');
