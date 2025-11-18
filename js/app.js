@@ -423,7 +423,7 @@ function renderizarItemLista(item, etiquetas, tipoPlantilla) {
             </div>
         `;
     } else {
-        const datosGenerales = [item.region, item.pais, item.abv ? `${item.abv}% ABV` : '', item.ibu ? `${item.ibu} IBU` : '']
+        const datosGenerales = [item.abv ? `${item.abv}% ABV` : '', item.ibu ? `${item.ibu} IBU` : '']
             .filter(Boolean).join(' | ');
 
         descripcionHtml = `
