@@ -119,6 +119,7 @@ function updateCarousel() {
 
 // Genera el HTML de una card de evento
 // --- REEMPLAZAR FUNCIÓN ENTERA ---
+// Genera el HTML de una card de evento
 function createEventCard(evento) {
     const luxonFecha = DateTimeLuxon.fromISO(evento.fecha);
     const ahoraMadrid = DateTimeLuxon.now().setZone("Europe/Madrid");
@@ -131,35 +132,35 @@ function createEventCard(evento) {
     
     // 2. Lógica de "Cerrado/Privado" (SIN CAMBIOS)
     if (evento.tipoEvento === "Cerrado" || evento.tipoEvento === "Privado") {
-        // ... (Tu código para cards especiales no cambia) ...
-            const isClosed = evento.tipoEvento === "Cerrado";
-            const specialImage = isClosed ? "eventoPrivado.jpg" : "cerrado.jpg";
-            const specialClass = isClosed ? "closed" : "private";
-            const specialTitle = isClosed ? "Cerrado por Descanso" : "Evento Privado";
-            const specialText = isClosed 
-            ? "¡Volvemos pronto con más Jazz!"
-            : "Lo sentimos... ¡Te esperamos el resto de la semana!";
-            const finalizadoClass = esPasado ? 'past' : '';
-            return `
-            <div class="event-card special ${specialClass} ${finalizadoClass}">
-                <div class="card-image special">
-                    <img src="img/${specialImage}" alt="${specialTitle}">
-                    <div class="event-date">${luxonFecha.toFormat("dd LLLL")}</div>
-                </div>
-                <div class="card-content">
-                    <h3>${specialTitle}</h3>
-                    <p>${specialText}</p>
-                    <div class="special-links"> 
-                        Sigue en ambiente: <a href="https://instagram.com/altxerribar" target="_blank">Instagram</a>
-                    </div>
+        const isClosed = evento.tipoEvento === "Cerrado";
+        const specialImage = isClosed ? "eventoPrivado.jpg" : "cerrado.jpg";
+        const specialClass = isClosed ? "closed" : "private";
+        const specialTitle = isClosed ? "Cerrado por Descanso" : "Evento Privado";
+        const specialText = isClosed 
+            ? "¡Volvemos pronto con más Jazz!"
+            : "Lo sentimos... ¡Te esperamos el resto de la semana!";
+        const finalizadoClass = esPasado ? 'past' : '';
+
+    return `
+        <div class="event-card special ${specialClass} ${finalizadoClass}">
+            <div class="card-image special">
+                img src="img/${specialImage}" alt="${specialTitle}">
+                <div class="event-date">${luxonFecha.toFormat("dd LLLL")}</div>
+            </div>
+            <div class="card-content">
+                <h3>${specialTitle}</h3>
+                <p>${specialText}</p>
+                <div class="special-links">
+                    Sigue en ambiente: <a href="https://instagram.com/altxerribar" target="_blank">Instagram</a>
                 </div>
             </div>
-        `;
+        </div>
+    `;
     }
     
     // 3. LÓGICA DE EVENTOS REGULARES (Con Descripción)
     let botonAdicionalHTML = '';
-    let descripcionHTML = ''; // <-- NUEVA VARIABLE
+    let descripcionHTML = '';
 
     // Calculamos la hora de caducidad (3AM del día siguiente)
     const fechaCorteLive = DateTimeLuxon.fromISO(evento.fecha, { zone: "Europe/Madrid" })
@@ -174,7 +175,7 @@ function createEventCard(evento) {
     } else {
         // Criterio 2: Mostrar Live y Descripción si NO han caducado
         if (!liveCaducado) { 
-            // Mostrar "Ver en vivo"
+            // Mostrar "Ver en vivo"
             if (evento.live && evento.live.trim() !== '') {
                 botonAdicionalHTML = `<a href="${evento.live}" target="_blank" class="btn-adicional btn-live">Ver en vivo</a>`;
             }
@@ -191,7 +192,6 @@ function createEventCard(evento) {
     const finalizadoDisabled = (esPasado && !isLiveActive) ? "disabled" : "";
     const finalizadoText = (esPasado && !isLiveActive) ? "Finalizado" : "Reservar";
 
-    // Lógica de imagen que ya arreglamos
     let imagenMostrar;
     if (evento.imagen && (evento.imagen.startsWith('http') || evento.imagen.startsWith('https'))) {
         imagenMostrar = evento.imagen; 
@@ -199,21 +199,22 @@ function createEventCard(evento) {
         imagenMostrar = `img/${evento.imagen || 'imgBandaGenerica.jpg'}`; 
     }
 
-    return `
-      <div class="event-card ${finalizadoClass}">
-        <div class="card-image">
-          <img src="${imagenMostrar}" alt="${evento.titulo}">
-          <div class="event-date">${luxonFecha.toFormat("dd LLLL")}</div>
-        </div>
-        <div class="card-content">
-          <h3>${evento.titulo}</h3>
-          ${descripcionHTML}           <button class="btn-reservar" ${finalizadoDisabled}>
-            ${finalizadoText}
-          </button>
-          ${botonAdicionalHTML}
-        </div>
-      </div>
-    `;
+    return `
+        <div class="event-card ${finalizadoClass}">
+            <div class="card-image">
+                <img src="${imagenMostrar}" alt="${evento.titulo}">
+                <div class="event-date">${luxonFecha.toFormat("dd LLLL")}</div>
+            </div>
+            <div class="card-content">
+                <h3>${evento.titulo}</h3>
+                ${descripcionHTML}
+                <button class="btn-reservar" ${finalizadoDisabled}>
+                    ${finalizadoText}
+                </button>
+                ${botonAdicionalHTML}
+            </div>
+        </div>
+    `;
 }
 
 // Carga los eventos y renderiza el carrusel

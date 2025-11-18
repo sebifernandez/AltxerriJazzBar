@@ -194,8 +194,8 @@ img {
     font-family: var(--fuente-titulos);
     font-weight: 700;
     font-size: 0.9rem;
-    color: #ffffff;
-    background-color: var(--color-primario-rojo);
+    color: #121212;
+    background-color: #cdc29e;
     border: none;
     border-radius: 4px;
     padding: 0.6rem 1rem;
@@ -205,7 +205,7 @@ img {
 }
 
 .lang-btn:hover {
-    background-color: #D32F2F; /* Un rojo un poco más brillante */
+    background-color: #d0ba71; /* Un rojo un poco más brillante */
 }
 
 /* 3. Botón Hamburguesa (oculto en desktop) */
@@ -360,7 +360,7 @@ img {
     text-transform: uppercase;
     letter-spacing: 2px;
     padding: 2rem 0;
-    border-bottom: 2px solid var(--color-primario-rojo);
+    border-bottom: 2px solid #cdc29e;
     margin-bottom: 3rem;
 }
 
@@ -372,7 +372,7 @@ img {
     color: var(--color-texto-principal);
     margin-top: 3rem;
     margin-bottom: 2rem;
-    border-left: 5px solid var(--color-primario-rojo);
+    border-left: 5px solid #cdc29eS;
     padding-left: 1rem;
 }
 
@@ -559,7 +559,7 @@ img {
 .datos-generales {
     font-size: 0.8rem;
     font-style: italic;
-    color: var(--color-primario-rojo);
+    color: #cdc29e;
     margin-bottom: 0.3rem;
 }
 
@@ -647,7 +647,7 @@ img {
 }
 .banner-region {
     font-size: 1rem;
-    color: var(--color-primario-rojo);
+    color: #cdc29e;
     font-weight: 600;
     margin-bottom: 1rem;
 }
