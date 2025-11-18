@@ -211,10 +211,15 @@ router.put('/eventos/modificar/:_id', checkAuth, async (req, res) => {
         console.log("EVENTO MODIFICADO:", idMongo);
         res.json({ success: true, message: 'Evento modificado con éxito', evento: eventoModificado });
 
-    } catch (error) {
-        // 5. Catch General
-        console.error("Error en PUT /eventos/modificar:", error);
-        res.status(500).json({ success: false, message: 'Error interno al modificar el evento' });
+} catch (error) {
+        // --- INICIO DEL ARREGLO DE DEBUG ---
+        console.error("--- ERROR REAL EN PUT /productos/modificar ---:", error);
+        // Devolvemos el mensaje de error real de MongoDB al frontend
+        res.status(500).json({ 
+            success: false, 
+            message: error.message || 'Error interno desconocido en el servidor' 
+        });
+        // --- FIN DEL ARREGLO DE DEBUG ---
     }
 });
 

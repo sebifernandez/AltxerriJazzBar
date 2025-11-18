@@ -317,7 +317,7 @@ img {
     margin-top: -70px; /* Truco para compensar el padding */
     
     /* Damos espacio inferior grande entre secciones */
-    padding-bottom: 4rem; 
+    padding-bottom: 6rem; 
 }
 
 .seccion-con-fondo {
