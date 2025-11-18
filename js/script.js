@@ -303,30 +303,48 @@ window.addEventListener("click", e => {
 });
 
 // ✅ Cargar JSON desde la API e Inicializar (VERSIÓN CORREGIDA)
-fetch("/api/eventos") // CAMBIO: Llamamos a nuestra nueva API
-  .then(res => {
-      if (!res.ok) {
-          throw new Error('Error al cargar la API de eventos');
-      }
-      return res.json();
-  })
-  .then(data => {
-    // 1. Recibimos los datos
-    eventos = data;
-    
-    // 2. ¡AQUÍ VA EL ARREGLO! Los ordenamos por fecha
-    eventos.sort((a, b) => a.fecha.localeCompare(b.fecha));
+// --- INICIO LÓGICA PRELOADER ---
+const preloader = document.getElementById('preloader');
 
-    // 3. (Y solo ahora) Inicializamos todo con los datos ordenados
-    inicializarEventos(); 
-    inicializarCalendario();
-    aplicarFiltros(); 
-  })
-  .catch(error => {
-      console.error(error);
-      // Opcional: Mostrar un error en el carrusel
-      if (track) track.innerHTML = "<p style='color: white; text-align: center;'>Error al cargar eventos.</p>";
-  });
+function ocultarPreloader() {
+  if (preloader) {
+    preloader.classList.add('preloader-hidden');
+  }
+}
+// --- FIN LÓGICA PRELOADER ---
+
+
+// ✅ Cargar JSON desde la API e Inicializar (VERSIÓN CORREGIDA)
+fetch("/api/eventos") // CAMBIO: Llamamos a nuestra nueva API
+  .then(res => {
+      if (!res.ok) {
+          throw new Error('Error al cargar la API de eventos');
+      }
+      return res.json();
+  })
+  .then(data => {
+    // 1. Recibimos los datos
+    eventos = data;
+    
+    // 2. ¡AQUÍ VA EL ARREGLO! Los ordenamos por fecha
+    eventos.sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+    // 3. (Y solo ahora) Inicializamos todo con los datos ordenados
+    inicializarEventos(); 
+    inicializarCalendario();
+    aplicarFiltros(); 
+    
+    // 4. OCULTAMOS EL PRELOADER (ÉXITO)
+    ocultarPreloader();
+  })
+  .catch(error => {
+      console.error(error);
+      // Opcional: Mostrar un error en el carrusel
+      if (track) track.innerHTML = "<p style='color: white; text-align: center;'>Error al cargar eventos.</p>";
+
+      // 5. OCULTAMOS EL PRELOADER (FALLO)
+      ocultarPreloader();
+  });
 
 function inicializarCalendario() {
   const picker = new Litepicker({

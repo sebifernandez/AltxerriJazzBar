@@ -14,6 +14,46 @@ body {
     max-width: 100vw;
 }
 
+/* ===== ESTILOS DEL PRELOADER ===== */
+#preloader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000; /* Fondo negro sólido */
+  z-index: 9999; /* Por encima de todo */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Transición para el fade-out */
+  opacity: 1;
+  transition: opacity 0.75s ease;
+}
+
+.preloader-logo {
+  width: 100px; /* Ajusta el tamaño del logo */
+  animation: spin 2s linear infinite;
+}
+
+/* Clase que usará JS para ocultarlo */
+#preloader.preloader-hidden {
+  opacity: 0;
+  pointer-events: none; /* Impide clics */
+}
+
+/* Animación de giro ("dando vueltas") */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* ================================== */
+
 /* Ocultar botones de reserva antiguos temporalmente */
 .btn-reservar, .btn-reservar2 {
     display: none !important;

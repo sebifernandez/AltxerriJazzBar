@@ -145,6 +145,14 @@ function configurarEventosNavbar() {
     });
 }
 
+const preloader = document.getElementById('preloader');
+
+function ocultarPreloader() {
+  if (preloader) {
+    preloader.classList.add('preloader-hidden');
+  }
+}
+
 /* --- FASE 3: RENDERIZADO DE CONTENIDO (SECCIONES Y PRODUCTOS) --- */
 
 /**
@@ -152,18 +160,31 @@ function configurarEventosNavbar() {
  * renderizarContenido después de renderizar el navbar.
  */
 async function iniciarAplicacion(lang) {
-    const datos = await cargarDatos(lang);
-    if (!datos) {
-        console.error('Error: No se pudieron cargar los datos de la carta.');
-        return;
+    try {
+        const datos = await cargarDatos(lang);
+        if (!datos) {
+            throw new Error('No se pudieron cargar los datos de la carta.');
+        }
+
+        // FASE 2
+        renderizarNavbar(datos.textosUI);
+        configurarEventosNavbar();
+
+        // FASE 3 (NUEVO)
+        renderizarContenido(datos);
+
+    } catch (error) {
+        console.error(error);
+        // Opcional: Mostrar un error al usuario en el main-container
+        const mainContainer = document.getElementById('main-container');
+        if (mainContainer) {
+            mainContainer.innerHTML = 
+                '<h2 style="text-align: center; padding-top: 100px;">Error al cargar la carta. Intente más tarde.</h2>';
+        }
+    } finally {
+        // OCULTAMOS EL PRELOADER (SIEMPRE)
+        ocultarPreloader();
     }
-
-    // FASE 2 (Ya existente)
-    renderizarNavbar(datos.textosUI);
-    configurarEventosNavbar();
-
-    // FASE 3 (Nueva llamada)
-    renderizarContenido(datos);
 }
 
 /**
@@ -481,7 +502,7 @@ function renderizarSeccionVinos(productos, textosUI) {
         .filter(p => p.tipo === 'vinoBlanco' && p.visualizacion)
         .sort((a, b) => a.titulo.localeCompare(b.titulo));
     const vinosOtros = productos
-        .filter(p => p.tipo === 'vinoOtros' && p.visualizacion)
+        .filter(p => p.tipo === 'vinoOtro' && p.visualizacion)
         .sort((a, b) => a.titulo.localeCompare(b.titulo));
 
     const htmlTintos = renderizarListado(vinosTinto, subtitulos.vinosTintos, etiquetas, 'vino');
