@@ -309,7 +309,12 @@ router.put('/productos/modificar/:_id', checkAuth, async (req, res) => {
                 traduccion_en: original_en,
                 fechaModificacion: new Date().toISOString()
             };
-            await db.collection('productosModificados').insertOne(backupDoc);
+            // Usamos updateOne + upsert para sobreescribir el backup en lugar de duplicarlo
+            await db.collection('productosModificados').updateOne(
+                { _id: idMongo }, // El filtro (busca por el _id)
+                { $set: backupDoc }, // Los datos a guardar
+                { upsert: true } // La opción mágica: si no existe, lo crea.
+            );
             console.log("BACKUP DE PRODUCTO CREADO:", idMongo);
         } else {
             console.log("No se encontró producto original para backup:", idMongo);
