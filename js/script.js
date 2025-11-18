@@ -142,7 +142,7 @@ function createEventCard(evento) {
     return `
         <div class="event-card special ${specialClass} ${finalizadoClass}">
             <div class="card-image special">
-                img src="img/${specialImage}" alt="${specialTitle}">
+                <img src="img/${specialImage}" alt="${specialTitle}">
                 <div class="event-date">${luxonFecha.toFormat("dd LLLL")}</div>
             </div>
             <div class="card-content">
