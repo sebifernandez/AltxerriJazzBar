@@ -419,6 +419,36 @@ router.post('/imagenes/subir', checkAuth, async (req, res) => {
         });
     }
 });
+
+// --- NUEVA RUTA: GUARDAR URL Y TAGS DE IMAGEN ---
+router.post('/imagenes/guardar', checkAuth, async (req, res) => {
+    try {
+        const db = await connectToDb();
+        const { url, tags } = req.body;
+
+        if (!url || tags.length === 0) {
+             return res.status(400).json({ success: false, message: 'Faltan datos (URL o tags).' });
+        }
+        
+        // Creamos el documento de imagen
+        const imagenDoc = {
+            _id: new ObjectId(), // Generamos un nuevo ID único para el documento de imagen
+            url: url,
+            tags: tags,
+            fecha_creacion: new Date().toISOString()
+        };
+
+        // Insertamos en la colección 'imagenes'
+        await db.collection('imagenes').insertOne(imagenDoc); 
+        
+        res.json({ success: true, message: 'Imagen y tags guardados', id: imagenDoc._id });
+
+    } catch (error) {
+        console.error("Error en POST /imagenes/guardar:", error);
+        res.status(500).json({ success: false, message: 'Error interno al guardar los datos de imagen' });
+    }
+});
+
 app.use('/api', router);
 
 // Exportamos el "enchufe" final

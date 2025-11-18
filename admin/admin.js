@@ -752,6 +752,16 @@ function inicializarFormularioAlta() {
             return;
         }
 
+        // --- INICIO: VALIDACIÓN DE TAGS OBLIGATORIOS ---
+        if (!eventoData.usaGenerica) {
+            if (eventoData.archivoImagen && eventoData.imgReferencia.length === 0) {
+                alert("Error: Las 'Referencias de Imagen (Tags)' son obligatorias si subes un archivo nuevo.");
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
+                return; // Detiene el proceso de submit
+            }
+        }
+
         let imagenUrl; 
 
         if (eventoData.tipoEvento === 'Cerrado') {
@@ -760,7 +770,8 @@ function inicializarFormularioAlta() {
             imagenUrl = "eventoPrivado.jpg";
         } else if (eventoData.usaGenerica) {
             imagenUrl = "imgBandaGenerica.jpg";
-        } else if (eventoData.archivoImagen) {
+        } else if (eventoData.archivoImagen) { // 
+            // 1. Hay un archivo nuevo, lo subimos
             console.log("Subiendo imagen de evento a Cloudinary...");
             btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Subiendo imagen...";
             
@@ -774,10 +785,20 @@ function inicializarFormularioAlta() {
             if (!uploadData.success) {
                 throw new Error(uploadData.message || "Falló la subida de imagen a Cloudinary");
             }
-            imagenUrl = uploadData.url;
+            imagenUrl = uploadData.url; // 2. Usamos la URL de Cloudinary
             console.log("Imagen subida:", imagenUrl);
             
-            btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
+            btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando..."; // Volvemos al texto de guardado
+            
+            // --- INICIO DEL ARREGLO PARA GUARDAR TAGS EN MONGO ---
+            if (eventoData.imgReferencia && eventoData.imgReferencia.length > 0) {
+                console.log("Guardando tags en la colección de imágenes...");
+                await fetch('/api/imagenes/guardar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
+                    body: JSON.stringify({ url: imagenUrl, tags: eventoData.imgReferencia })
+                });
+            }
             
         } else if (modoEdicion) {
             const eventoOriginal = adminEventos.find(ev => ev._id === idEventoEdicion);
