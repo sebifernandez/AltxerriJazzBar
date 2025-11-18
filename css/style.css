@@ -730,9 +730,9 @@ body {
 }
 
 /* Estilo para el fondo de la imagen de evento especial */
-.card-image.special {
+/* .card-image.special {
   filter: grayscale(100%) brightness(0.5); /* Oscurece y desatura la imagen especial */
-}
+/*} */
 
 /* Estilo específico para "Cerrado" */
 .event-card.closed {
@@ -1072,10 +1072,6 @@ body {
     display: flex;
   }
 
-  .logo img {
-    width: 55px;
-  }
-
   .hamburger {
     display: block;
   }
@@ -1171,7 +1167,7 @@ body {
   }
 
   .event-card {
-    flex: 0 0 85%;
+    flex: 0 0 90%;
   }
   .card-content {
     height: 40%;
@@ -1181,7 +1177,11 @@ body {
   }
 
   .event-card.special {
-      flex: 0 0 85%;
+      flex: 0 0 90%;
+  }
+
+  .event-card.special .card-content p {
+    margin-bottom: 0rem;
   }
 
   /* .card-content p {
