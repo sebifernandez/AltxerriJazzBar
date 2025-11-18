@@ -149,10 +149,9 @@ function createEventCard(evento) {
                 <div class="card-content">
                     <h3>${specialTitle}</h3>
                     <p>${specialText}</p>
-                    <div class="special-links">
-                        Sigue en ambiente: 
-                        <a href="https://instagram.com/altxerribar" target="_blank">Instagram</a> | 
-                    </div>
+                    <div class="special-links"> 
+                        Sigue en ambiente: <a href="https://instagram.com/altxerribar" target="_blank">Instagram</a>
+                    </div>
                 </div>
             </div>
         `;
