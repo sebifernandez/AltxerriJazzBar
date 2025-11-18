@@ -319,8 +319,6 @@ router.put('/productos/modificar/:_id', checkAuth, async (req, res) => {
         delete producto_es._id;
         delete producto_en._id;
         
-delete producto_es._id;
-        delete producto_en._id;
         
         const resES = await db.collection('productos_es').updateOne(
             { _id: idMongo },
@@ -338,9 +336,15 @@ delete producto_es._id;
         console.log("PRODUCTO MODIFICADO (ES/EN):", idMongo);
         res.json({ success: true, message: 'Producto modificado con éxito' });
 
-    } catch (error) {
-        console.error("Error en PUT /productos/modificar:", error);
-        res.status(500).json({ success: false, message: 'Error interno al modificar el producto' });
+} catch (error) {
+        // --- INICIO DEL ARREGLO DE DEBUG ---
+        console.error("--- ERROR REAL EN PUT /productos/modificar ---:", error);
+        // Devolvemos el mensaje de error real de MongoDB al frontend
+        res.status(500).json({ 
+            success: false, 
+            message: error.message || 'Error interno desconocido en el servidor' 
+        });
+        // --- FIN DEL ARREGLO DE DEBUG ---
     }
 });
 // --- FIN DEL BLOQUE REEMPLAZADO ---
