@@ -132,29 +132,29 @@ function createEventCard(evento) {
     // 2. Lógica de "Cerrado/Privado" (SIN CAMBIOS)
     if (evento.tipoEvento === "Cerrado" || evento.tipoEvento === "Privado") {
         // ... (Tu código para cards especiales no cambia) ...
-        const isClosed = evento.tipoEvento === "Cerrado";
-        const specialImage = isClosed ? "eventoPrivado.jpg" : "cerrado.jpg";
-        const specialClass = isClosed ? "closed" : "private";
-        const specialTitle = isClosed ? "Cerrado por Descanso" : "Evento Privado";
-        const specialText = isClosed 
-            ? "¡Volvemos pronto con más Jazz!"
-            : "Lo sentimos... ¡Te esperamos el resto de la semana!";
-        const finalizadoClass = esPasado ? 'past' : '';
-        return `
-            <div class="event-card special ${specialClass} ${finalizadoClass}">
-                <div class="card-image special">
-                    <img src="img/${specialImage}" alt="${specialTitle}">
-                    <div class="event-date">${luxonFecha.toFormat("dd LLLL")}</div>
-                </div>
-                <div class="card-content">
-                    <h3>${specialTitle}</h3>
-                    <p>${specialText}</p>
-                    <div class="special-links"> 
+            const isClosed = evento.tipoEvento === "Cerrado";
+            const specialImage = isClosed ? "eventoPrivado.jpg" : "cerrado.jpg";
+            const specialClass = isClosed ? "closed" : "private";
+            const specialTitle = isClosed ? "Cerrado por Descanso" : "Evento Privado";
+            const specialText = isClosed 
+            ? "¡Volvemos pronto con más Jazz!"
+            : "Lo sentimos... ¡Te esperamos el resto de la semana!";
+            const finalizadoClass = esPasado ? 'past' : '';
+            return `
+            <div class="event-card special ${specialClass} ${finalizadoClass}">
+                <div class="card-image special">
+                    <img src="img/${specialImage}" alt="${specialTitle}">
+                    <div class="event-date">${luxonFecha.toFormat("dd LLLL")}</div>
+                </div>
+                <div class="card-content">
+                    <h3>${specialTitle}</h3>
+                    <p>${specialText}</p>
+                    <div class="special-links"> 
                         Sigue en ambiente: <a href="https://instagram.com/altxerribar" target="_blank">Instagram</a>
                     </div>
-                </div>
-            </div>
-        `;
+                </div>
+            </div>
+        `;
     }
     
     // 3. LÓGICA DE EVENTOS REGULARES (Con Descripción)
