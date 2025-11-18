@@ -143,7 +143,7 @@ img {
 
 /* 1. Logo */
 .nav-logo img {
-    height: 40px; /* Ajusta esto a la altura deseada de tu logo */
+    height: 70px; /* Ajusta esto a la altura deseada de tu logo */
     width: auto;
     /* 'object-fit' asegura que el logo no se deforme */
     object-fit: contain; 
@@ -372,7 +372,7 @@ img {
     color: var(--color-texto-principal);
     margin-top: 3rem;
     margin-bottom: 2rem;
-    border-left: 5px solid #cdc29eS;
+    border-left: 5px solid #cdc29e;
     padding-left: 1rem;
 }
 

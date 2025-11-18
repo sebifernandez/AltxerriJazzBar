@@ -81,7 +81,7 @@ body {
 }
 
 .logo img {
-  height: 40px;
+  height: 70px;
   transition: 0.3s;
 }
 
@@ -1072,6 +1072,10 @@ body {
     display: flex;
   }
 
+  .logo img {
+    width: 55px;
+  }
+
   .hamburger {
     display: block;
   }
@@ -1167,7 +1171,7 @@ body {
   }
 
   .event-card {
-    flex: 0 0 80%;
+    flex: 0 0 85%;
   }
   .card-content {
     height: 40%;
@@ -1177,7 +1181,7 @@ body {
   }
 
   .event-card.special {
-      flex: 0 0 80%;
+      flex: 0 0 85%;
   }
 
   /* .card-content p {
@@ -1272,7 +1276,7 @@ body {
 
     .event-card.special .card-content {
         /* 1. Reseteamos el padding que hereda de la regla móvil de .card-content */
-        padding: 1rem; 
+        padding: 0rem; 
         
         /* 2. Nos aseguramos de que el contenido (título y p) esté centrado */
         justify-content: center;
