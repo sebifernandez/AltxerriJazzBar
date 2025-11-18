@@ -189,7 +189,12 @@ router.put('/eventos/modificar/:_id', checkAuth, async (req, res) => {
         const eventoOriginal = await db.collection('eventos').findOne({ _id: idMongo });
         if (eventoOriginal) {
             const backupEvento = { ...eventoOriginal, fechaModificacion: new Date().toISOString() };
-            await db.collection('eventosModificados').insertOne(backupEvento);
+            // Usamos updateOne + upsert para sobreescribir el backup en lugar de duplicarlo
+            await db.collection('eventosModificados').updateOne(
+                { _id: idMongo }, // El filtro (busca por el _id)
+                { $set: backupEvento }, // Los datos a guardar
+                { upsert: true } // La opción mágica: si no existe, lo crea.
+            );
             console.log("BACKUP DE MODIFICACIÓN CREADO:", idMongo);
         } else {
             console.log("No se encontró evento original para backup:", idMongo);
