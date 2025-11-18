@@ -289,6 +289,11 @@ router.put('/productos/modificar/:_id', checkAuth, async (req, res) => {
 
         const { producto_es, producto_en } = req.body;
 
+// --- INICIO DE LÍNEAS DE DEBUG ---
+        console.log("--- DEBUG: Objeto producto_es RECIBIDO POR EL SERVER ---");
+        console.log(JSON.stringify(producto_es, null, 2));
+        // --- FIN DE LÍNEAS DE DEBUG ---
+
         // 2. BACKUP:
         const original_es = await db.collection('productos_es').findOne({ _id: idMongo });
         const original_en = await db.collection('productos_en').findOne({ _id: idMongo });
@@ -309,13 +314,16 @@ router.put('/productos/modificar/:_id', checkAuth, async (req, res) => {
         delete producto_es._id;
         delete producto_en._id;
         
+delete producto_es._id;
+        delete producto_en._id;
+        
         const resES = await db.collection('productos_es').updateOne(
             { _id: idMongo },
-            { $set: producto_es }
+            { $set: producto_es } // 'producto_es' ya no tiene _id
         );
         const resEN = await db.collection('productos_en').updateOne(
             { _id: idMongo },
-            { $set: producto_en }
+            { $set: producto_en } // 'producto_en' ya no tiene _id
         );
 
         if (resES.matchedCount === 0 || resEN.matchedCount === 0) {
