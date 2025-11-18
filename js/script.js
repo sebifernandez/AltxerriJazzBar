@@ -218,42 +218,58 @@ function createEventCard(evento) {
 
 // Carga los eventos y renderiza el carrusel
 function inicializarEventos() {
-    if (!eventos || eventos.length === 0) return; 
+    if (!eventos || eventos.length === 0) return; 
 
-    track.innerHTML = ''; // Limpiar el contenido estático
+    track.innerHTML = ''; // Limpiar el contenido estático
 
-    const ahoraMadrid = DateTimeLuxon.now().setZone("Europe/Madrid");
-    // 1. OBTENEMOS EL INICIO DE "HOY" (Ej: 18/11 a las 00:00)
-    const hoy = ahoraMadrid.startOf('day'); 
-    let primerEventoProximoIndex = -1;
+    const ahoraMadrid = DateTimeLuxon.now().setZone("Europe/Madrid");
+    let primerEventoProximoIndex = -1;
 
-    eventos.forEach((evento, index) => {
-        // Generar el HTML de la card
-        const cardHTML = createEventCard(evento);
-        track.insertAdjacentHTML('beforeend', cardHTML);
+    eventos.forEach((evento, index) => {
+        // Generar el HTML de la card
+        const cardHTML = createEventCard(evento);
+        track.insertAdjacentHTML('beforeend', cardHTML);
 
-        // 2. LÓGICA DE DETECCIÓN (MODIFICADA)
-        // Obtenemos el inicio del día del evento (Ej: 15/11 a las 00:00)
-        const fechaEvento = DateTimeLuxon.fromISO(evento.fecha, { zone: "Europe/Madrid" }).startOf('day');
+        // LÓGICA DE DETECCIÓN DEL EVENTO ACTUAL/PRÓXIMO:
+        
+        // 1. Obtener la fecha de corte para el evento (Día del evento + 1 a las 10:00 AM Madrid)
+        const fechaCorteFinalizado = DateTimeLuxon.fromISO(evento.fecha, { zone: "Europe/Madrid" })
+            .plus({ days: 1 })
+            .set({ hour: HORA_LIMITE, minute: 0, second: 0, millisecond: 0 });
+            
+        // 2. Determinar si YA pasó el tiempo de caducidad
+        const esPasado = ahoraMadrid >= fechaCorteFinalizado;
 
-        // 3. Comprobar si este evento es HOY o en el FUTURO
-        const esHoyOFuturo = fechaEvento >= hoy;
+        // 3. Encontrar el primer evento que AÚN NO HA CADUCADO (no es pasado)
+        if (!esPasado && primerEventoProximoIndex === -1) {
+            primerEventoProximoIndex = index;
+        }
+    });
 
-        // 4. Encontrar el primer evento que sea Hoy o en el Futuro
-        if (esHoyOFuturo && primerEventoProximoIndex === -1) {
-            primerEventoProximoIndex = index;
-        }
-    });
+    cards = Array.from(document.querySelectorAll('.carousel-track .event-card'));
 
-    cards = Array.from(document.querySelectorAll('.carousel-track .event-card'));
+    // 1. Establecemos activeIndex al primer evento no finalizado (ej: 16/10/2025)
+    activeIndex = (primerEventoProximoIndex !== -1) 
+                    ? primerEventoProximoIndex 
+                    : Math.max(0, cards.length - 1); 
+    
+    // 2. ¡ELIMINAMOS EL BLOQUE DE CÓDIGO QUE CAUSABA EL DESFASE!
+    // La función updateCarousel ya se encarga de centrar el índice activo correctamente.
+    
+    updateCarousel();
+    setupCarouselControls();
+}
 
-    // 5. Establecemos el activeIndex
-    activeIndex = (primerEventoProximoIndex !== -1) 
-                    ? primerEventoProximoIndex // Si encontramos un evento (ej: 18/11), lo centramos
-                    : Math.max(0, cards.length - 1); // Si no (todos son pasados), centramos el último
-    
-    updateCarousel();
-    setupCarouselControls();
+function setupCarouselControls() {
+    leftBtn.addEventListener('click', () => {
+        activeIndex = Math.max(0, activeIndex - 1);
+        updateCarousel();
+    });
+
+    rightBtn.addEventListener('click', () => {
+        activeIndex = Math.min(cards.length - 1, activeIndex + 1);
+        updateCarousel();
+    });
 }
 
 
