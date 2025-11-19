@@ -1,3 +1,15 @@
+// --- BANCO DE PALABRAS (GLOSARIO DE TÉRMINOS CLAVE) ---
+const BANCO_PALABRAS = {
+    // Clave (ES): Sustitución (EN)
+    // Usado para evitar la traducción literal de términos propios.
+    'Caña': 'Small Beer', 
+    'Pinta': 'Pint Beer',
+    'Chupito': 'Shot',
+    'Mojito': 'Mojito', 
+    'Ribera del Duero': 'Ribera del Duero', 
+    'Tempranillo': 'Tempranillo', 
+};
+
 // --- API/SERVER.JS (Versión 4.3 - Arreglo Bug Carta Pública) ---
 
 const express = require('express');
@@ -446,6 +458,56 @@ router.post('/imagenes/guardar', checkAuth, async (req, res) => {
     } catch (error) {
         console.error("Error en POST /imagenes/guardar:", error);
         res.status(500).json({ success: false, message: 'Error interno al guardar los datos de imagen' });
+    }
+});
+
+// --- RUTA: TRADUCTOR INTELIGENTE CON BANCO DE PALABRAS ---
+router.post('/traducir', checkAuth, async (req, res) => {
+    try {
+        const { texto, targetLang = 'en' } = req.body;
+        if (!texto) {
+            return res.status(400).json({ success: false, message: 'El campo de texto es obligatorio.' });
+        }
+
+        // 1. APLICAR REEMPLAZOS DEL BANCO DE PALABRAS (PRE-TRADUCCIÓN)
+        let textoPretraducido = texto;
+        
+        // Creamos un mapa de reemplazos temporales para los placeholders
+        const reemplazosTemporales = {};
+        let contador = 0;
+
+        for (const [palabraES, palabraEN] of Object.entries(BANCO_PALABRAS)) {
+            // Buscamos la palabra completa para no reemplazar "caña" dentro de "cáñamo"
+            const regex = new RegExp(`\\b${palabraES}\\b`, 'gi'); 
+            if (textoPretraducido.match(regex)) {
+                // Generamos un placeholder único (ej: __PLACEHOLDER_0__)
+                const placeholder = `__PLACEHOLDER_${contador++}__`;
+                reemplazosTemporales[placeholder] = palabraEN;
+                textoPretraducido = textoPretraducido.replace(regex, placeholder);
+            }
+        }
+        
+        // 2. SIMULACIÓN DE LLAMADA A LA API DE TRADUCCIÓN EXTERNA
+        
+        // NOTA: Si esta fuera una API real (DeepL), harías la llamada fetch aquí:
+        // const response = await fetch('https://api.deepl.com/...', { method: 'POST', body: JSON.stringify({ text: textoPretraducido, ... }) });
+        // let textoTraducidoAPI = await response.json(); 
+
+        // Como es una SIMULACIÓN, simplemente invertimos las palabras.
+        let textoTraducidoAPI = textoPretraducido.split(' ').reverse().join(' '); 
+
+        // 3. APLICAR REEMPLAZOS DEL BANCO DE PALABRAS (POST-TRADUCCIÓN)
+        // Reemplazamos los placeholders por las palabras finales en inglés.
+        for (const [placeholder, palabraEN] of Object.entries(reemplazosTemporales)) {
+             const regex = new RegExp(placeholder, 'g'); 
+             textoTraducidoAPI = textoTraducidoAPI.replace(regex, palabraEN);
+        }
+        
+        res.json({ success: true, translatedText: textoTraducidoAPI });
+
+    } catch (error) {
+        console.error("Error en POST /traducir:", error);
+        res.status(500).json({ success: false, message: 'Error en el servicio de traducción' });
     }
 });
 

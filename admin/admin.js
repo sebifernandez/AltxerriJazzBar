@@ -324,11 +324,7 @@ function formatarPrecio(precio) {
     }
     return `${precio}€`;
 }
-function sugerirTraduccion(texto) {
-    if (!texto) return "";
-    console.log("Simulando traducción...");
-    return texto; 
-}
+
 function getAuthToken() {
     return localStorage.getItem('altxerri_token') || '';
 }
@@ -1334,24 +1330,58 @@ function activarLogicaBilingue(visibleGroup) {
     const translateBtn = visibleGroup.querySelector('.btn-translate[data-lang-group="en"]');
     if (translateBtn) {
         // Limpiamos listener
+const translateBtn = visibleGroup.querySelector('.btn-translate[data-lang-group="en"]');
+    if (translateBtn) {
+        // Limpiamos listener
         const newTranslateBtn = translateBtn.cloneNode(true);
         translateBtn.parentNode.replaceChild(newTranslateBtn, translateBtn);
         
-        newTranslateBtn.addEventListener('click', (e) => {
+        newTranslateBtn.addEventListener('click', async (e) => { // <-- AGREGAMOS 'async'
             e.preventDefault();
             const langGroupES = visibleGroup.querySelector('.lang-content[data-lang-content="es"]');
             const langGroupEN = visibleGroup.querySelector('.lang-content[data-lang-content="en"]');
             const campos = ['titulo', 'descripcion', 'region', 'pais', 'varietal', 'crianza'];
-            campos.forEach(campo => {
+            
+            // 1. Deshabilitar botón mientras traduce
+            newTranslateBtn.disabled = true;
+            newTranslateBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Traduciendo...";
+
+            for (const campo of campos) {
                 const inputES = langGroupES.querySelector(`[id$="-${campo}-es"]`); 
                 const inputEN = langGroupEN.querySelector(`[id$="-${campo}-en"]`); 
-                if (inputES && inputEN && inputES.value) {
-                    if (inputEN.value.trim() === '') {
-                        inputEN.value = sugerirTraduccion(inputES.value); 
+                
+                // 2. Solo traducir si existe el campo en ES y está vacío en EN
+                if (inputES && inputEN && inputES.value && inputEN.value.trim() === '') {
+                    const textoES = inputES.value;
+                    
+                    try {
+                        // LLAMADA A LA RUTA DE TRADUCCIÓN INTELIGENTE
+                        const response = await fetch('/api/traducir', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
+                            body: JSON.stringify({ texto: textoES, targetLang: 'en' })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success && data.translatedText) {
+                            inputEN.value = data.translatedText;
+                        } else {
+                            console.error(`Error al traducir ${campo}:`, data.message || 'Fallo desconocido');
+                            inputEN.value = `[ERROR: ${textoES}]`; // Deja un indicador de fallo
+                        }
+                    } catch (error) {
+                        console.error(`Error de red al traducir ${campo}:`, error);
+                        inputEN.value = `[ERROR DE CONEXIÓN: ${textoES}]`; 
                     }
                 }
-            });
+            }
+            
+            // 3. Re-habilitar botón
+            newTranslateBtn.disabled = false;
+            newTranslateBtn.innerHTML = "<i class='bx bxs-magic-wand'></i> Sugerir traducción para todos los campos";
         });
+    }
     }
 }
 function resetearFormularioCarta() {
