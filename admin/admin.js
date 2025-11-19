@@ -763,13 +763,18 @@ function inicializarFormularioAlta() {
             }
         }
 
+        // Capturamos el campo oculto
+        const urlSeleccionada = document.getElementById('evento-imagen-url-seleccionada')?.value || '';
+
         let imagenUrl; 
 
-        if (eventoData.tipoEvento === 'Cerrado') {
-            imagenUrl = "cerrado.jpg";
-        } else if (eventoData.tipoEvento === 'Privado') {
-            imagenUrl = "eventoPrivado.jpg";
-        } else if (eventoData.usaGenerica) {
+        if (eventoData.tipoEvento === 'Cerrado') {
+            imagenUrl = "cerrado.jpg";
+        } else if (eventoData.tipoEvento === 'Privado') {
+            imagenUrl = "eventoPrivado.jpg";
+        } else if (urlSeleccionada) { // 1. Se seleccionó una imagen preexistente (URL)
+            imagenUrl = urlSeleccionada;
+        } else if (eventoData.usaGenerica) { // 2. Se marcó la genérica        
             imagenUrl = "imgBandaGenerica.jpg";
         } else if (eventoData.archivoImagen) { // 
             // 1. Hay un archivo nuevo, lo subimos
@@ -1545,26 +1550,35 @@ function inicializarModalImagenes() {
             const imgElement = e.target.closest('.card-imagen-preexistente img');
             if (imgElement) {
                 const urlSeleccionada = imgElement.getAttribute('data-url');
-                
-                // 1. Asigna la URL al campo de entrada de texto
-                const liveInput = document.getElementById('evento-live');
-                if (liveInput) liveInput.value = urlSeleccionada;
-                
-                // 2. Opcional: Notificar al usuario (podrías mostrar el texto en el info-img-actual)
+                const tagsSeleccionados = imgElement.getAttribute('data-tags'); // Capturar tags
+
+                // 1. Asigna la URL al campo OCULTO
+                const urlInput = document.getElementById('evento-imagen-url-seleccionada');
+                const tagsInput = document.getElementById('evento-tags'); 
+                const fileInput = document.getElementById('evento-imagen-upload');
+
+                if (urlInput) urlInput.value = urlSeleccionada;
+                if (fileInput) fileInput.value = ''; // Limpia el campo de archivo subido
+
+                // 2. PEGAR LOS TAGS Y ELIMINAR LOS VIEJOS (¡Tu solicitud!)
+                tags = tagsSeleccionados ? tagsSeleccionados.split(',') : [];
+                renderizarTags();
+
+                // 3. Notificar al usuario (muestra el texto informativo)
                 const infoImg = document.getElementById('info-img-actual');
                 if (infoImg) infoImg.remove();
-                
+
                 const fieldsetImagen = document.getElementById('fieldset-imagen');
                 const infoHtml = `
                     <div id="info-img-actual" class="info-imagen-actual">
-                        <strong>Imagen Seleccionada:</strong> ${urlSeleccionada}
+                        <strong>Imagen Seleccionada:</strong> ${urlSeleccionada.substring(0, 40)}...
                         <br>
-                        <small>La URL se ha copiado al campo Live. No olvides hacer click en Guardar Modificaciones.</small>
+                        <small>La URL se ha guardado internamente. Tags cargados. Haz clic en Guardar Modificaciones.</small>
                     </div>
                 `;
                 fieldsetImagen.insertAdjacentHTML('afterbegin', infoHtml);
 
-                // 3. Cierra el modal
+                // 4. Cierra el modal
                 modal.style.display = 'none';
             }
         });
@@ -1595,8 +1609,8 @@ async function buscarImagenes(query) {
 
         const cardsHtml = data.imagenes.map(img => `
             <div class="card-imagen-preexistente" style="text-align: center; cursor: pointer;">
-                <img src="${img.url}" alt="Imagen guardada" data-url="${img.url}" 
-                    style="width: 100px; height: 100px; object-fit: cover; border-radius: 5px; margin-bottom: 0.5rem; border: 2px solid #353535;">
+                <img src="${img.url}" alt="Imagen guardada" data-url="${img.url}" data-tags="${img.tags.join(',')}"
+                     style="width: 100px; height: 100px; object-fit: cover; border-radius: 5px; margin-bottom: 0.5rem; border: 2px solid #353535;">
                 <p style="font-size: 0.8rem; color: #E0E0E0;">Tags: ${img.tags.join(', ')}</p>
             </div>
         `).join('');

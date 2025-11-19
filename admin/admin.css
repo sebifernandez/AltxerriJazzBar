@@ -1030,3 +1030,95 @@ input:checked + .slider:before {
     margin-top: 1rem;
     height: 1.2rem; /* Le da espacio aunque esté vacío */
 }
+
+/* ===== ESTILOS DEL MODAL BUSCADOR DE IMÁGENES (P3) ===== */
+
+.modal-buscador-imagenes {
+    position: fixed;
+    z-index: 1050; 
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.85); /* Oscurece el fondo */
+    display: none; /* Por defecto OCULTO (Corregido: CSS lo oculta, JS lo muestra) */
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+}
+
+.modal-buscador-imagenes .modal-contenido {
+    background-color: var(--color-bg-dark);
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    width: 90%;
+    max-width: 800px; /* Tamaño grande para desktop */
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    /* Centrado en Desktop */
+    margin: auto; 
+}
+
+/* Header y Botón de Cerrar (Arreglo UX: Botón X más grande y visible) */
+.modal-buscador-imagenes .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--color-bg-light);
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.modal-buscador-imagenes .cerrar-modal {
+    font-size: 2.5rem; /* X más grande */
+    cursor: pointer;
+    color: var(--color-primario-rojo);
+    transition: color 0.2s;
+    line-height: 1;
+}
+
+.modal-buscador-imagenes .cerrar-modal:hover {
+    color: var(--color-texto-principal);
+}
+
+/* Fix para el contenedor de resultados */
+#resultados-imagenes {
+    min-height: 200px; /* Para que no salte al cargar */
+    display: flex;
+    flex-wrap: wrap; 
+    gap: 1rem;
+    justify-content: center;
+}
+
+/* === Fix Responsive Mobile (Móvil) === */
+@media (max-width: 600px) {
+    .modal-buscador-imagenes .modal-contenido {
+        width: 100%; /* Ocupa todo el ancho */
+        max-width: 100%;
+        margin: 0; /* Cero margen para el borde */
+        border-radius: 0;
+        min-height: 100vh;
+    }
+    
+    /* Fix para el texto de tags cortado en el input de tags */
+    .form-group:has(#evento-tags) input::placeholder {
+        content: "Escribe y presiona Enter"; /* Elimina el ejemplo */
+    }
+
+    /* Fix para el input de archivo que desborda */
+    .form-input-file {
+        /* Fuerza a que el texto interno no se muestre o se corte */
+        padding: 0.8rem 0.5rem; 
+    }
+    
+    /* El texto informativo que se sale de la pantalla */
+    .info-imagen-actual {
+        max-width: 100%;
+        font-size: 0.8rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+}
