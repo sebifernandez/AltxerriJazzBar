@@ -16,83 +16,6 @@ let idProductoEdicion = null;
 let tags = []; 
 let picker; 
 
-// (renderizarTags, esURLValida no cambian)
-function renderizarTags() {
-    const tagContainer = document.getElementById('tag-container');
-    if (!tagContainer) return; 
-    tagContainer.querySelectorAll('.tag-item').forEach(tagEl => tagEl.remove());
-    tags.slice().reverse().forEach(tagTexto => {
-        const tagEl = document.createElement('span');
-        tagEl.classList.add('tag-item');
-        tagEl.innerHTML = `${tagTexto} <span class="remove-tag-btn" data-tag="${tagTexto}">&times;</span>`;
-        tagContainer.prepend(tagEl);
-    });
-}
-function esURLValida(string) {
-    try {
-        new URL(string);
-        return (string.startsWith('http://') || string.startsWith('https://'));
-    } catch (_) {
-        return false;
-    }
-}
-// --- FUNCIÓN AYUDANTE PARA CLOUDINARY ---
-// Convierte un objeto File (de un input) a un string Base64
-function toBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-    });
-}
-function limpiarCamposImagen() {
-    // 1. Tags
-    const tagsInput = document.getElementById('evento-tags');
-    if (tagsInput) {
-        tagsInput.disabled = false;
-        tagsInput.placeholder = "Escribe y presiona Enter (Ej: Pedro Asnar)";
-    }
-    // Limpiar tags visuales
-    tags = [];
-    renderizarTags();
-
-    // 2. URL de imagen guardada (campo oculto)
-    const urlInput = document.getElementById('evento-imagen-url-seleccionada');
-    if (urlInput) urlInput.value = '';
-
-    // 3. Subida de Archivo
-    const fileInput = document.getElementById('evento-imagen-upload');
-    if (fileInput) {
-        fileInput.addEventListener('change', () => {
-            const tagsInput = document.getElementById('evento-tags');
-            const urlInput = document.getElementById('evento-imagen-url-seleccionada');
-            const genericCheckbox = document.getElementById('evento-img-generica');
-            const btnBuscar = document.getElementById('btn-elegir-img');
-
-            if (tagsInput) tagsInput.disabled = (fileInput.value !== '');
-            if (urlInput) urlInput.value = ''; // Borra cualquier URL preexistente
-            if (genericCheckbox) genericCheckbox.disabled = (fileInput.value !== '');
-            if (btnBuscar) btnBuscar.disabled = (fileInput.value !== '');
-        });
-    } 
-    
-    // 4. Checkbox Genérica
-    const genericCheckbox = document.getElementById('evento-usar-generica');
-    if (genericCheckbox) {
-        genericCheckbox.disabled = false; 
-        genericCheckbox.checked = false;
-    }
-    
-    // 5. Botón Buscar Imagen
-    const btnBuscar = document.getElementById('btn-buscar-imagen-guardada');
-    if (btnBuscar) btnBuscar.disabled = false; 
-
-    // 6. Limpiar el mensaje informativo
-    const infoImg = document.getElementById('info-img-actual');
-    if (infoImg) infoImg.remove();
-}
-
 // --- ¡ARREGLO! Movido al ámbito global ---
 const plantillasBloques = {
     unicos_titulo_marca: `
@@ -319,7 +242,52 @@ const plantillasBloques = {
         </div>`
 };
 
+function limpiarCamposImagen() {
+    // 1. Tags
+    const tagsInput = document.getElementById('evento-tags');
+    if (tagsInput) {
+        tagsInput.disabled = false;
+        tagsInput.placeholder = "Escribe y presiona Enter (Ej: Pedro Asnar)";
+    }
+    // Limpiar tags visuales
+    tags = [];
+    renderizarTags();
 
+    // 2. URL de imagen guardada (campo oculto)
+    const urlInput = document.getElementById('evento-imagen-url-seleccionada');
+    if (urlInput) urlInput.value = '';
+
+    // 3. Subida de Archivo
+    const fileInput = document.getElementById('evento-imagen-upload');
+    if (fileInput) {
+        fileInput.addEventListener('change', () => {
+            const tagsInput = document.getElementById('evento-tags');
+            const urlInput = document.getElementById('evento-imagen-url-seleccionada');
+            const genericCheckbox = document.getElementById('evento-img-generica');
+            const btnBuscar = document.getElementById('btn-elegir-img');
+
+            if (tagsInput) tagsInput.disabled = (fileInput.value !== '');
+            if (urlInput) urlInput.value = ''; // Borra cualquier URL preexistente
+            if (genericCheckbox) genericCheckbox.disabled = (fileInput.value !== '');
+            if (btnBuscar) btnBuscar.disabled = (fileInput.value !== '');
+        });
+    } 
+    
+    // 4. Checkbox Genérica
+    const genericCheckbox = document.getElementById('evento-usar-generica');
+    if (genericCheckbox) {
+        genericCheckbox.disabled = false; 
+        genericCheckbox.checked = false;
+    }
+    
+    // 5. Botón Buscar Imagen
+    const btnBuscar = document.getElementById('btn-buscar-imagen-guardada');
+    if (btnBuscar) btnBuscar.disabled = false; 
+
+    // 6. Limpiar el mensaje informativo
+    const infoImg = document.getElementById('info-img-actual');
+    if (infoImg) infoImg.remove();
+}
 
 const plantillasFormCarta = {
     coctel: `
@@ -991,7 +959,26 @@ function crearCalendarioAlta() {
 
 
 
-
+// (renderizarTags, esURLValida no cambian)
+function renderizarTags() {
+    const tagContainer = document.getElementById('tag-container');
+    if (!tagContainer) return; 
+    tagContainer.querySelectorAll('.tag-item').forEach(tagEl => tagEl.remove());
+    tags.slice().reverse().forEach(tagTexto => {
+        const tagEl = document.createElement('span');
+        tagEl.classList.add('tag-item');
+        tagEl.innerHTML = `${tagTexto} <span class="remove-tag-btn" data-tag="${tagTexto}">&times;</span>`;
+        tagContainer.prepend(tagEl);
+    });
+}
+function esURLValida(string) {
+    try {
+        new URL(string);
+        return (string.startsWith('http://') || string.startsWith('https://'));
+    } catch (_) {
+        return false;
+    }
+}
 
 function resetearFormularioAlta() {
     const form = document.getElementById('form-alta-evento');
