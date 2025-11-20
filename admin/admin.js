@@ -242,6 +242,53 @@ const plantillasBloques = {
         </div>`
 };
 
+function limpiarCamposImagen() {
+    // 1. Tags
+    const tagsInput = document.getElementById('evento-tags');
+    if (tagsInput) {
+        tagsInput.disabled = false;
+        tagsInput.placeholder = "Escribe y presiona Enter (Ej: Pedro Asnar)";
+    }
+    // Limpiar tags visuales
+    tags = [];
+    renderizarTags();
+
+    // 2. URL de imagen guardada (campo oculto)
+    const urlInput = document.getElementById('evento-imagen-url-seleccionada');
+    if (urlInput) urlInput.value = '';
+
+    // 3. Subida de Archivo
+    const fileInput = document.getElementById('evento-imagen-upload');
+    if (fileInput) {
+        fileInput.addEventListener('change', () => {
+            const tagsInput = document.getElementById('evento-tags');
+            const urlInput = document.getElementById('evento-imagen-url-seleccionada');
+            const genericCheckbox = document.getElementById('evento-img-generica');
+            const btnBuscar = document.getElementById('btn-elegir-img');
+
+            if (tagsInput) tagsInput.disabled = (fileInput.value !== '');
+            if (urlInput) urlInput.value = ''; // Borra cualquier URL preexistente
+            if (genericCheckbox) genericCheckbox.disabled = (fileInput.value !== '');
+            if (btnBuscar) btnBuscar.disabled = (fileInput.value !== '');
+        });
+    } 
+    
+    // 4. Checkbox Genérica
+    const genericCheckbox = document.getElementById('evento-usar-generica');
+    if (genericCheckbox) {
+        genericCheckbox.disabled = false; 
+        genericCheckbox.checked = false;
+    }
+    
+    // 5. Botón Buscar Imagen
+    const btnBuscar = document.getElementById('btn-buscar-imagen-guardada');
+    if (btnBuscar) btnBuscar.disabled = false; 
+
+    // 6. Limpiar el mensaje informativo
+    const infoImg = document.getElementById('info-img-actual');
+    if (infoImg) infoImg.remove();
+}
+
 const plantillasFormCarta = {
     coctel: `
         <div class="form-section">
@@ -645,7 +692,8 @@ try {
 
 // --- INICIO DE LA FUNCIÓN REEMPLAZADA ---
 function inicializarFormularioAlta() {
-    
+    limpiarCamposImagen();
+
     // 1. Obtenemos referencias a los elementos PERMANENTES
     const form = document.getElementById('form-alta-evento');
     const checkGenerica = document.getElementById('evento-img-generica');
@@ -653,6 +701,7 @@ function inicializarFormularioAlta() {
     const inputTag = document.getElementById('evento-tags');
     const tagContainer = document.getElementById('tag-container');
     const tipoEventoSelect = document.getElementById('evento-tipo');
+
 
     // 2. Listener del Checkbox
     checkGenerica.addEventListener('change', () => {
@@ -937,8 +986,8 @@ function resetearFormularioAlta() {
     
     // Reseteamos el formulario
     form.reset();
-    tags = [];
-    renderizarTags();
+
+    limpiarCamposImagen();
     
     // Destruimos el picker
     if (picker) {
@@ -1213,6 +1262,21 @@ function prellenarFormularioModEvento(evento) {
     document.getElementById('evento-tipo').dispatchEvent(new Event('change'));
     tags = evento.imgReferencia || [];
     renderizarTags();
+
+    const tagsInput = document.getElementById('evento-tags');
+    const fileInput = document.getElementById('evento-imagen-upload');
+    const urlInput = document.getElementById('evento-imagen-url-seleccionada');
+    
+    // --- LÓGICA CLAVE: DESHABILITAR TAGS Y MOSTRAR URL ---
+    if (evento.imagen && (evento.imagen.startsWith('http') || evento.imagen.startsWith('https'))) {
+        if (tagsInput) tagsInput.disabled = true;
+        if (fileInput) fileInput.disabled = true;
+        if (urlInput) urlInput.value = evento.imagen; // Precarga la URL en el campo oculto
+    } else {
+        if (tagsInput) tagsInput.disabled = false;
+        if (fileInput) fileInput.disabled = false;
+    }
+
     const checkGenerica = document.getElementById('evento-img-generica');
     const fieldsetImagen = document.getElementById('fieldset-imagen');
     const infoImg = document.getElementById('info-img-actual');
@@ -1586,15 +1650,37 @@ function inicializarModalImagenes() {
                 const urlInput = document.getElementById('evento-imagen-url-seleccionada');
                 const tagsInput = document.getElementById('evento-tags'); 
                 const fileInput = document.getElementById('evento-imagen-upload');
+                const genericCheckbox = document.getElementById('evento-usar-generica');
+                const btnBuscar = document.getElementById('btn-buscar-imagen-guardada');
 
                 if (urlInput) urlInput.value = urlSeleccionada;
-                if (fileInput) fileInput.value = ''; // Limpia el campo de archivo subido
 
-                // 2. PEGAR LOS TAGS Y ELIMINAR LOS VIEJOS (¡Tu solicitud!)
+                if (fileInput) {
+                    fileInput.value = ''; // Limpia el campo de archivo subido
+                    fileInput.disabled = true;
+                    const fileLabel = document.querySelector('label[for="evento-imagen-upload"]');
+                    if (fileLabel && fileLabel.nextElementSibling) fileLabel.nextElementSibling.textContent = 'Ningún archivo seleccionado';
+                }
+
+            // 2. PEGAR Y DESHABILITAR TAGS (¡El arreglo de estabilidad!)
                 tags = tagsSeleccionados ? tagsSeleccionados.split(',') : [];
                 renderizarTags();
 
-                // 3. Notificar al usuario (muestra el texto informativo)
+                if (tagsInput) {
+                    tagsInput.disabled = true; // <-- CLAVE: Evita que se editen tags de la imagen guardada
+                    tagsInput.placeholder = "Tags cargados (no se pueden modificar)";
+                }
+
+                // 3. Deshabilitar el checkbox de Imagen Genérica
+                if (genericCheckbox) {
+                    genericCheckbox.checked = false;
+                    genericCheckbox.disabled = true; 
+                }
+
+                // 4. Deshabilitar el botón de búsqueda para evitar re-aperturas accidentales
+                if (btnBuscar) btnBuscar.disabled = true;
+
+                // 5. Notificar al usuario (muestra el texto informativo)
                 const infoImg = document.getElementById('info-img-actual');
                 if (infoImg) infoImg.remove();
 
