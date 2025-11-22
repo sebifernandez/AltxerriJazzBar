@@ -822,6 +822,35 @@ router.get('/imagenes', checkAuth, async (req, res) => {
     }
 });
 
+// --- RUTA DE SEMILLA (EJECUTAR UNA SOLA VEZ) ---
+router.get('/semilla', async (req, res) => {
+    // Protección simple: requiere ?key=secret123 en la URL
+    if (req.query.key !== 'secret123') {
+        return res.status(403).send("Acceso denegado.");
+    }
+
+    try {
+        const db = await connectToDb();
+        const resultados = [];
+
+        for (const item of DATOS_SEMILLA) {
+            // Usamos replaceOne con upsert:true para crear o reemplazar si ya existe
+            // Usamos un campo 'uid' personalizado para encontrarlos fácil luego
+            const filtro = { uid: item.id_personalizado };
+            const update = { $set: { ...item.datos, uid: item.id_personalizado } };
+            
+            const resultado = await db.collection(item.coleccion).replaceOne(filtro, update, { upsert: true });
+            resultados.push({ id: item.id_personalizado, resultado });
+        }
+
+        res.json({ success: true, message: "Datos sembrados con éxito", detalles: resultados });
+
+    } catch (error) {
+        console.error("Error en semilla:", error);
+        res.status(500).send("Error al sembrar datos: " + error.message);
+    }
+});
+
 app.use('/api', router);
 
 // Exportamos el "enchufe" final
