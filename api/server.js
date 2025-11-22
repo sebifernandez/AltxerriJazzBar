@@ -44,6 +44,284 @@ cloudinary.config({
   secure: true,
 });
 
+// --- DATOS SEMILLA (A MEDIDA PARA ALTXERRI JAZZ BAR) ---
+const DATOS_SEMILLA = [
+    // 1. Textos UI de la Carta (ES)
+    {
+        coleccion: "contenido_web",
+        id_personalizado: "carta_ui_es",
+        datos: {
+            tipo: "carta_ui",
+            idioma: "es",
+            textos: {
+                lang: "es", langButton: "ENG",
+                navbar: [
+                  { id: "cocteles", texto: "Cocteles" }, { id: "cervezas", texto: "Cervezas" },
+                  { id: "vinos", texto: "Vinos" }, { id: "destilados", texto: "Destilados" },
+                  { id: "sinAlcohol", texto: "Sin Alcohol" }
+                ],
+                titulosSeccion: {
+                  cocteles: "Cocteles", cervezas: "Cervezas", vinos: "Nuestros Vinos",
+                  destilados: "Destilados", sinAlcohol: "Sin Alcohol"
+                },
+                subtitulos: {
+                  cervezaBarril: "Cervezas de Barril", cervezaEnvasada: "Cervezas Envasadas",
+                  vinosDestacados: "Los Destacados de la Semana", vinosTintos: "Tintos",
+                  vinosBlancos: "Blancos", vinosOtros: "Rosados y Espumantes"
+                },
+                etiquetasPrecio: {
+                  cana: "Caña", pinta: "Pinta", copa: "Copa", botella: "Botella", vaso: "Vaso", chupito: "Chupito", vasoDestilado: "Vaso"
+                },
+                etiquetasVino: {
+                  bodega: "Bodega", varietal: "Varietal", ano: "Año", crianza: "Crianza"
+                }
+            }
+        }
+    },
+    // 2. Textos UI de la Carta (EN)
+    {
+        coleccion: "contenido_web",
+        id_personalizado: "carta_ui_en",
+        datos: {
+            tipo: "carta_ui",
+            idioma: "en",
+            textos: {
+                lang: "en", langButton: "ESP",
+                navbar: [
+                  { id: "cocteles", texto: "Cocktails" }, { id: "cervezas", texto: "Beers" },
+                  { id: "vinos", texto: "Wines" }, { id: "destilados", texto: "Spirits" },
+                  { id: "sinAlcohol", texto: "Non-Alcoholic" }
+                ],
+                titulosSeccion: {
+                  cocteles: "Cocktails", cervezas: "Beers", vinos: "Our Wines",
+                  destilados: "Spirits", sinAlcohol: "Non-Alcoholic"
+                },
+                subtitulos: {
+                  cervezaBarril: "Draft Beers", cervezaEnvasada: "Bottled & Canned Beers",
+                  vinosDestacados: "Featured Wines of the Week", vinosTintos: "Red Wines",
+                  vinosBlancos: "White Wines", vinosOtros: "Rosé & Sparkling"
+                },
+                etiquetasPrecio: {
+                  cana: "Small", pinta: "Pint", copa: "Glass", botella: "Bottle", vaso: "Glass", chupito: "Shot", vasoDestilado: "Glass"
+                },
+                etiquetasVino: {
+                  bodega: "Winery", varietal: "Varietal", ano: "Year", crianza: "Aging"
+                }
+            }
+        }
+    },
+    // 3. Contenido HOME (ESPAÑOL)
+    {
+        coleccion: "contenido_web",
+        id_personalizado: "home_es",
+        datos: {
+            tipo: "home",
+            idioma: "es",
+            // Barra de Navegación
+            navbar: {
+                items: [
+                    { texto: "Inicio", link: "#hero" },
+                    { texto: "Historia", link: "#historia" },
+                    { texto: "Galería", link: "#galeria" },
+                    { texto: "Conciertos", link: "#eventos" },
+                    { texto: "Carta", link: "/carta" }, // Link externo a carta.html
+                    { texto: "Contacto", link: "#contacto" }
+                ],
+                btnExtra: "Newsletter" // El botón del final
+            },
+            // Secciones Principales
+            hero: { 
+                titulo: "El Regreso del Jazz", 
+                subtitulo: "Tras años de silencio, el mítico Altxerri Jazz Bar de San Sebastián vuelve a abrir sus puertas. <br>Un lugar donde el arte, la música y las noches mágicas cobran vida nuevamente." 
+            },
+            historia: { 
+                titulo: "Nuestra Historia", 
+                texto: "En el corazón de San Sebastián, Altxerri nació como refugio de artistas y bohemios. Desde sus primeros compases, fue más que un bar: fue un latido constante de jazz, arte y libertad. <br>Durante décadas, sus paredes vibraron con las melodías de grandes músicos nacionales e internacionales. Hoy, reabrimos con el mismo espíritu, renovados, pero fieles a nuestra esencia." 
+            },
+            galeria: { 
+                titulo: "Galería", 
+                subtitulo: "Un recorrido visual por nuestras noches de Jazz, arte y buen ambiente." 
+            },
+            parallax: { 
+                titulo: "Suscríbete a nuestras novedades y vive la experiencia Altxerri Jazz Bar", // Ejemplo para newsletter
+                btnTexto: "Newsletter"
+            },
+            eventos: { 
+                titulo: "Próximos Eventos",
+                // Textos fijos de las cards (para traducir)
+                ui: {
+                    btnVivo: "Ver en Vivo",
+                    btnArchivo: "Reviví el concierto",
+                    labelCerrado: "Cerrado por Descanso",
+                    txtCerrado: "¡Volvemos pronto con más Jazz!",
+                    labelPrivado: "Evento Privado",
+                    txtPrivado: "Lo sentimos... ¡Te esperamos el resto de la semana!",
+                    txtEspecial: "Sigue en ambiente:"
+                }
+            },
+            // Sección Contacto y Formularios Dinámicos
+            contacto: { 
+                titulo: "Contacto",
+                pestanas: {
+                    cliente: "Cliente",
+                    banda: "Banda / Solista",
+                    comercial: "Propuesta Comercial",
+                    prensa: "Prensa"
+                },
+                formularios: {
+                    cliente: {
+                        phNombre: "Tu Nombre",
+                        phMail: "Tu Correo",
+                        phAsunto: "Asunto",
+                        phMensaje: "Escribe tu Mensaje",
+                        btnEnviar: "Enviar Mensaje"
+                    },
+                    banda: {
+                        phNombreBanda: "Nombre de la Banda/solista",
+                        phContacto: "Nombre del Contacto",
+                        phMail: "Correo Electrónico",
+                        phMaterial: "Enlace a material (YouTube/Spotify...)",
+                        phMensaje: "Mensaje / Propuesta...",
+                        btnEnviar: "Enviar Propuesta"
+                    },
+                    comercial: {
+                        phEmpresa: "Nombre de la Empresa",
+                        phContacto: "Nombre del Contacto",
+                        phMail: "Correo Electrónico",
+                        phTipo: "Tipo de Propuesta",
+                        phMensaje: "Escribe tu mensaje",
+                        btnEnviar: "Enviar Propuesta"
+                    },
+                    prensa: {
+                        phMedio: "Nombre del Medio",
+                        phContacto: "Nombre del Contacto",
+                        phMail: "Correo Electrónico",
+                        phMotivo: "Motivo del contacto",
+                        phMensaje: "Escribe tu mensaje",
+                        btnEnviar: "Enviar Mensaje"
+                    }
+                }
+            },
+            // Ubicación (Octava Sección)
+            ubicacion: {
+                titulo: "Encuéntranos",
+                subtitulo: "Erregina Erregeordea kalea, 2", // Negrita
+                texto: "20003 Donostia / San Sebastián, Gipuzkoa, España" // Texto pequeño
+            },
+            // Sección Extra (Newsletter Modal)
+            newsletter: {
+                titulo: "¡Sé el primero en saberlo!",
+                subtitulo: "Ingresa tu nombre y correo y entérate de todos los conciertos, eventos privados y noticias de Altxerri.",
+                phNombre: "Tu Nombre",
+                phMail: "Tu Correo Electrónico",
+                btnSuscribir: "Suscribirme"
+            }
+        }
+    },
+    // 4. Contenido HOME (ENGLISH) - ESTRUCTURA IDÉNTICA
+    {
+        coleccion: "contenido_web",
+        id_personalizado: "home_en",
+        datos: {
+            tipo: "home",
+            idioma: "en",
+            navbar: {
+                items: [
+                    { texto: "Home", link: "#hero" },
+                    { texto: "History", link: "#historia" },
+                    { texto: "Gallery", link: "#galeria" },
+                    { texto: "Concerts", link: "#eventos" },
+                    { texto: "Menu", link: "/carta" },
+                    { texto: "Contact", link: "#contacto" }
+                ],
+                btnExtra: "Newsletter"
+            },
+            hero: { 
+                titulo: "The Return of Jazz", 
+                subtitulo: "After years of silence, the legendary Altxerri Jazz Bar in San Sebastián is opening its doors once again. <br>A place where art, music, and magical nights come back to life." 
+            },
+            historia: { 
+                titulo: "Our History", 
+                texto: "In the heart of San Sebastián, Altxerri was born as a refuge for artists and bohemians. From its very first notes, it was more than a bar: it was a steady heartbeat of jazz, art, and freedom. <br>For decades, its walls resonated with the melodies of great national and international musicians. Today, we reopen with the same spirit—renewed, yet faithful to our essence." 
+            },
+            galeria: { 
+                titulo: "Gallery", 
+                subtitulo: "A glimpse of our nights" 
+            },
+            parallax: { 
+                titulo: "Subscribe to our news", 
+                btnTexto: "Newsletter"
+            },
+            eventos: { 
+                titulo: "Upcoming Events",
+                ui: {
+                    btnVivo: "Watch Live",
+                    btnArchivo: "Watch Archive",
+                    labelCerrado: "Closed for rest",
+                    labelPrivado: "Private Event",
+                    txtCerrado: "We’ll be back soon with more jazz!",
+                    txtPrivado: "Sorry… but we’ll be waiting for you the rest of the week!",
+                    txtEspecial: "Stay in the vibe:"
+                }
+            },
+            contacto: { 
+                titulo: "Contact",
+                pestanas: {
+                    cliente: "Customer",
+                    banda: "Band / Artist",
+                    comercial: "Business Proposal",
+                    prensa: "Press"
+                },
+                formularios: {
+                    cliente: {
+                        phNombre: "Your Name",
+                        phMail: "Your Email",
+                        phAsunto: "Subject",
+                        phMensaje: "Your Message...",
+                        btnEnviar: "Send Message"
+                    },
+                    banda: {
+                        phNombreBanda: "Band/Artist Name",
+                        phContacto: "Contact Name",
+                        phMail: "Email",
+                        phMaterial: "Link to material (YouTube/Spotify...)",
+                        phMensaje: "Message / Proposal...",
+                        btnEnviar: "Send Proposal"
+                    },
+                    comercial: {
+                        phEmpresa: "Company Name",
+                        phContacto: "Contact Name",
+                        phMail: "Email",
+                        phTipo: "Proposal Type",
+                        phMensaje: "Details...",
+                        btnEnviar: "Send Proposal"
+                    },
+                    prensa: {
+                        phMedio: "Media Name",
+                        phContacto: "Contact Name",
+                        phMail: "Email",
+                        phMotivo: "Reason for contact",
+                        phMensaje: "Message...",
+                        btnEnviar: "Send Message"
+                    }
+                }
+            },
+            ubicacion: {
+                titulo: "Location",
+                subtitulo: "Erregina Erregeordea kalea, 2",
+                texto: "20003 Donostia / San Sebastián, Gipuzkoa, Spain"
+            },
+            newsletter: {
+                titulo: "Be the first to know!",
+                subtitulo: "Enter your name and email to stay informed about all Altxerri concerts, private events, and news.",
+                phNombre: "Your Name",
+                phMail: "Your Email",
+                btnSuscribir: "Subscribe"
+            }
+        }
+    }
+];
+
 // --- 2. CONFIGURACIÓN DE SEGURIDAD ---
 const API_SECRET_TOKEN = process.env.CMS_PASSWORD;
 const checkAuth = (req, res, next) => {
