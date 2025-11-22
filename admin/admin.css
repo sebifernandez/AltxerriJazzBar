@@ -1122,3 +1122,26 @@ input:checked + .slider:before {
         overflow-wrap: break-word;
     }
 }
+
+/* Estilos para Tags Deshabilitados (Fase 1 Fix) */
+.tag-container.disabled {
+    background-color: #424242; /* Un gris más oscuro/opaco */
+    pointer-events: none; /* Bloquea clics */
+    opacity: 0.7;
+    border: 1px solid var(--color-texto-secundario);
+}
+
+.tag-container.disabled input {
+    display: none; /* Oculta el cursor de escritura */
+}
+
+/* Ocultar la 'x' de eliminar cuando está deshabilitado */
+.tag-container.disabled .tag-item .remove-tag-btn {
+    display: none;
+}
+
+/* Cambiar cursor para indicar que no se puede editar */
+.tag-container.disabled .tag-item {
+    cursor: default;
+    background-color: #555; /* Un color más neutro para tags fijos */
+}

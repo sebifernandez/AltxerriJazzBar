@@ -656,6 +656,7 @@ function inicializarFormularioAlta() {
 
     // 2. Listener del Checkbox
     checkGenerica.addEventListener('change', () => {
+        habilitarEdicionTags();
         fieldsetImagen.disabled = checkGenerica.checked;
         if (checkGenerica.checked) {
             tags = [];
@@ -663,6 +664,23 @@ function inicializarFormularioAlta() {
             document.getElementById('evento-imagen-upload').value = '';
         }
     });
+
+    const inputArchivo = document.getElementById('evento-imagen-upload');
+    if (inputArchivo) {
+        inputArchivo.addEventListener('change', () => {
+            if (inputArchivo.files.length > 0) {
+                habilitarEdicionTags(); // ¡Desbloqueamos!
+                
+                 // Limpiamos la URL preseleccionada anterior para evitar conflictos
+                const urlInput = document.getElementById('evento-imagen-url-seleccionada');
+                if(urlInput) urlInput.value = '';
+                
+                 // Quitamos el cartel verde de "Imagen Vinculada"
+                const infoImg = document.getElementById('info-img-actual');
+                if (infoImg) infoImg.remove();
+            }
+        });
+    }
 
     // 3. Listener de Tags
     inputTag.addEventListener('keydown', (e) => {
@@ -922,6 +940,32 @@ function renderizarTags() {
         tagContainer.prepend(tagEl);
     });
 }
+
+// --- FUNCIONES NUEVAS PARA FASE 1 (Tags Bloqueados) ---
+
+function deshabilitarEdicionTags() {
+    const tagContainer = document.getElementById('tag-container');
+    const inputTag = document.getElementById('evento-tags');
+    
+    if (tagContainer && inputTag) {
+        tagContainer.classList.add('disabled');
+        inputTag.disabled = true;
+        inputTag.placeholder = "Tags fijos (Imagen preexistente)";
+    }
+}
+
+function habilitarEdicionTags() {
+    const tagContainer = document.getElementById('tag-container');
+    const inputTag = document.getElementById('evento-tags');
+    
+    if (tagContainer && inputTag) {
+        tagContainer.classList.remove('disabled');
+        inputTag.disabled = false;
+        inputTag.placeholder = "Escribe y presiona Enter (Ej: Pedro Asnar)...";
+    }
+}
+
+
 function esURLValida(string) {
     try {
         new URL(string);
@@ -961,9 +1005,11 @@ function resetearFormularioAlta() {
     form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
     const infoImg = document.getElementById('info-img-actual');
     if (infoImg) infoImg.remove();
-
-
+    habilitarEdicionTags();
+    const urlInput = document.getElementById('evento-imagen-url-seleccionada');
+    if(urlInput) urlInput.value = ''; // Limpia el hidden input
     crearCalendarioAlta(); 
+    
 }
 
 // -----------------------------------------------------------------
@@ -1580,35 +1626,34 @@ function inicializarModalImagenes() {
             const imgElement = e.target.closest('.card-imagen-preexistente img');
             if (imgElement) {
                 const urlSeleccionada = imgElement.getAttribute('data-url');
-                const tagsSeleccionados = imgElement.getAttribute('data-tags'); // Capturar tags
+                const tagsSeleccionados = imgElement.getAttribute('data-tags');
 
-                // 1. Asigna la URL al campo OCULTO
+                // 1. Asigna URL y limpia file input
                 const urlInput = document.getElementById('evento-imagen-url-seleccionada');
-                const tagsInput = document.getElementById('evento-tags'); 
                 const fileInput = document.getElementById('evento-imagen-upload');
-
+                
                 if (urlInput) urlInput.value = urlSeleccionada;
-                if (fileInput) fileInput.value = ''; // Limpia el campo de archivo subido
+                if (fileInput) fileInput.value = ''; 
 
-                // 2. PEGAR LOS TAGS Y ELIMINAR LOS VIEJOS (¡Tu solicitud!)
+                // 2. Cargar Tags y BLOQUEAR edición (Fase 1 Fix)
                 tags = tagsSeleccionados ? tagsSeleccionados.split(',') : [];
                 renderizarTags();
+                deshabilitarEdicionTags(); // <--- ¡AQUÍ ESTÁ LA MAGIA!
 
-                // 3. Notificar al usuario (muestra el texto informativo)
+                // 3. Feedback visual
                 const infoImg = document.getElementById('info-img-actual');
                 if (infoImg) infoImg.remove();
 
                 const fieldsetImagen = document.getElementById('fieldset-imagen');
                 const infoHtml = `
-                    <div id="info-img-actual" class="info-imagen-actual">
-                        <strong>Imagen Seleccionada:</strong> ${urlSeleccionada.substring(0, 40)}...
+                    <div id="info-img-actual" class="info-imagen-actual" style="border-color: #4CAF50;">
+                        <strong style="color: #4CAF50;">Imagen Vinculada:</strong> Visualización OK.
                         <br>
-                        <small>La URL se ha guardado internamente. Tags cargados. Haz clic en Guardar Modificaciones.</small>
+                        <small>Has seleccionado una imagen existente. Los tags son fijos.</small>
                     </div>
                 `;
                 fieldsetImagen.insertAdjacentHTML('afterbegin', infoHtml);
 
-                // 4. Cierra el modal
                 modal.style.display = 'none';
             }
         });
