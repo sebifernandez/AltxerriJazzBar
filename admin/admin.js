@@ -786,10 +786,10 @@ function inicializarFormularioAlta() {
             imagenUrl = "cerrado.jpg";
         } else if (eventoData.tipoEvento === 'Privado') {
             imagenUrl = "eventoPrivado.jpg";
-        } else if (urlSeleccionada) { // 1. Se seleccionó una imagen preexistente (URL)
-            imagenUrl = urlSeleccionada;
         } else if (eventoData.usaGenerica) { // 2. Se marcó la genérica        
             imagenUrl = "imgBandaGenerica.jpg";
+        } else if (urlSeleccionada) { // 1. Se seleccionó una imagen preexistente (URL)
+            imagenUrl = urlSeleccionada;
         } else if (eventoData.archivoImagen) { // 
             // 1. Hay un archivo nuevo, lo subimos
             console.log("Subiendo imagen de evento a Cloudinary...");
