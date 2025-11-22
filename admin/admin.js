@@ -657,6 +657,10 @@ function inicializarFormularioAlta() {
     // 2. Listener del Checkbox
     checkGenerica.addEventListener('change', () => {
         habilitarEdicionTags();
+        const infoImg = document.getElementById('info-img-actual');
+        if (infoImg) {
+            infoImg.remove(); // Solo se ejecuta si el cartel existe
+        }
         fieldsetImagen.disabled = checkGenerica.checked;
         if (checkGenerica.checked) {
             tags = [];
