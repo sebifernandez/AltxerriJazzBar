@@ -235,7 +235,7 @@ const DATOS_SEMILLA = [
                 titulo: "Contact",
                 pestanas: {
                     cliente: "Customer",
-                    banda: "Band / Soloist",
+                    banda: "Band / Solist",
                     comercial: "Business Proposal",
                     prensa: "Press"
                 },

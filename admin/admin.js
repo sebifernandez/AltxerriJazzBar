@@ -1125,57 +1125,89 @@ function inicializarPanelesBusquedaEventos() {
     if (modContainer) modContainer.addEventListener('click', (e) => manejarClickTarjetaEvento(e, 'modificar'));
     if (bajaContainer) bajaContainer.addEventListener('click', (e) => manejarClickTarjetaEvento(e, 'eliminar'));
 }
+// --- FUNCIÓN DE RENDERIZADO BLINDADA Y DETALLADA ---
 function renderizarResultadosEventos() {
+    console.log("--> INICIO RENDERIZADO <--");
+    
+    // 1. Verificar Contenedores
     const contenedorMod = document.getElementById('mod-resultados-container');
     const contenedorBaja = document.getElementById('baja-resultados-container');
-    
+
     if (!contenedorMod || !contenedorBaja) {
-        console.warn("No se encontraron los contenedores de resultados en el DOM.");
+        console.error("¡ERROR CRÍTICO! No se encontraron los contenedores en el HTML (IDs: mod-resultados-container, baja-resultados-container)");
         return;
     }
 
-    // Captura segura de inputs (usando ?.value para evitar errores si no existen)
+    // 2. Captura de Inputs (Helper seguro)
+    const getVal = (id) => document.getElementById(id)?.value || '';
+    
     const filtrosMod = {
-        fecha: document.getElementById('mod-search-fecha')?.value || '',
-        tipo: document.getElementById('mod-search-tipo')?.value || '',
-        titulo: (document.getElementById('mod-search-titulo')?.value || '').toLowerCase(),
-        tags: (document.getElementById('mod-search-tags')?.value || '').toLowerCase(),
+        fecha: getVal('mod-search-fecha'),
+        tipo: getVal('mod-search-tipo'),
+        titulo: getVal('mod-search-titulo').toLowerCase(),
+        tags: getVal('mod-search-tags').toLowerCase(),
     };
 
     const filtrosBaja = {
-        fecha: document.getElementById('baja-search-fecha')?.value || '',
-        tipo: document.getElementById('baja-search-tipo')?.value || '',
-        titulo: (document.getElementById('baja-search-titulo')?.value || '').toLowerCase(),
-        tags: (document.getElementById('baja-search-tags')?.value || '').toLowerCase(),
+        fecha: getVal('baja-search-fecha'),
+        tipo: getVal('baja-search-tipo'),
+        titulo: getVal('baja-search-titulo').toLowerCase(),
+        tags: getVal('baja-search-tags').toLowerCase(),
     };
 
-    console.log("AdminEventos cargados:", adminEventos.length);
+    console.log(`Eventos en memoria: ${adminEventos.length}`);
 
-    // Filtrado y Ordenamiento BLINDADO contra fechas nulas
-    const eventosFiltradosMod = filtrarEventos(filtrosMod)
-        .sort((a, b) => {
-            const fechaA = a.fecha || '0000-00-00';
-            const fechaB = b.fecha || '0000-00-00';
-            return fechaB.localeCompare(fechaA);
-        });
-
-    const eventosFiltradosBaja = filtrarEventos(filtrosBaja)
-        .sort((a, b) => {
-            const fechaA = a.fecha || '0000-00-00';
-            const fechaB = b.fecha || '0000-00-00';
-            return fechaB.localeCompare(fechaA);
-        });
-
-    console.log("Resultados Modificación:", eventosFiltradosMod.length);
+    // 3. Filtrado Seguro
+    // (Usamos una copia simple si filtrarEventos fallara, pero asumimos que funciona por los logs anteriores)
+    const filtradosMod = filtrarEventos(filtrosMod);
+    const filtradosBaja = filtrarEventos(filtrosBaja);
     
-    // Renderizado
-    contenedorMod.innerHTML = eventosFiltradosMod.length > 0 
-        ? eventosFiltradosMod.map(evento => crearTarjetaResultadoEvento(evento, 'modificar')).join('')
-        : '<p style="text-align:center; padding:2rem; color:#aaa;">No se encontraron eventos.</p>';
+    console.log(`Filtrados para Modificar: ${filtradosMod.length}`);
+    console.log(`Filtrados para Baja: ${filtradosBaja.length}`);
 
-    contenedorBaja.innerHTML = eventosFiltradosBaja.length > 0
-        ? eventosFiltradosBaja.map(evento => crearTarjetaResultadoEvento(evento, 'eliminar')).join('')
-        : '<p style="text-align:center; padding:2rem; color:#aaa;">No se encontraron eventos.</p>';
+    // 4. Generador de HTML Seguro (Try-Catch por elemento)
+    const generarHTML = (lista, accion) => {
+        if (lista.length === 0) {
+            return '<div style="text-align:center; padding:2rem; color:#9E9E9E; border:1px dashed #555; margin-top:1rem;">No se encontraron eventos con estos filtros.</div>';
+        }
+        
+        return lista.map(evento => {
+            try {
+                return crearTarjetaResultadoEvento(evento, accion);
+            } catch (err) {
+                console.error("Error al generar tarjeta para el evento:", evento, err);
+                return `<div style="color:red; padding:1rem; border:1px solid red;">Error visualizando evento: ${evento.titulo || 'Sin título'}</div>`;
+            }
+        }).join('');
+    };
+
+    // 5. Inyección al DOM (Aquí es donde sabremos si funciona)
+    try {
+        const htmlMod = generarHTML(filtradosMod, 'modificar');
+        // Forzamos un log del HTML generado para ver si está vacío
+        console.log("HTML generado para Modificar (primeros 50 chars):", htmlMod.substring(0, 50) + "...");
+        
+        contenedorMod.innerHTML = htmlMod;
+        // Forzamos un estilo visible por si acaso el CSS estuviera oculto
+        contenedorMod.style.display = "grid"; 
+        contenedorMod.style.minHeight = "50px";
+        
+        console.log("DOM Modificación actualizado correctamente.");
+    } catch (e) {
+        console.error("Error al inyectar HTML en Modificación:", e);
+    }
+
+    try {
+        const htmlBaja = generarHTML(filtradosBaja, 'eliminar');
+        contenedorBaja.innerHTML = htmlBaja;
+        contenedorBaja.style.display = "grid";
+        contenedorBaja.style.minHeight = "50px";
+        console.log("DOM Baja actualizado correctamente.");
+    } catch (e) {
+        console.error("Error al inyectar HTML en Baja:", e);
+    }
+    
+    console.log("--> FIN RENDERIZADO <--");
 }
 // --- FUNCIÓN DE FILTRADO SEGURA ---
 function filtrarEventos(filtros) {
