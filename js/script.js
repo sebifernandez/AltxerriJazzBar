@@ -1,201 +1,390 @@
-// EFECTO HAMBURGUESA (Consolidado)
-      document.addEventListener('DOMContentLoaded', () => {
-      const hamburger = document.getElementById('hamburger');
-      const navLinks = document.querySelector('.nav-links');
+// ======================================================
+// 1. VARIABLES GLOBALES Y ESTADO
+// ======================================================
+let contenidoWeb = { es: {}, en: {} };
+let idiomaActual = localStorage.getItem('altxerri_lang') || 'es';
+let eventos = [];
+const DateTimeLuxon = luxon.DateTime;
 
-      // Toggle para abrir/cerrar menú
-      hamburger.addEventListener('click', () => {
-        navLinks.classList.toggle('active');
-      });
-
-      // Cerrar menú al hacer clic en un enlace
-      const links = navLinks.querySelectorAll('a');
-      links.forEach(link => {
-        link.addEventListener('click', () => {
-          navLinks.classList.remove('active');
-        });
-      });
-    });
+// ======================================================
+// 2. INICIALIZACIÓN (DOM LOADED)
+// ======================================================
+document.addEventListener('DOMContentLoaded', async () => {
     
-    // EFECTO DESVANECIMIENTO
-    
-    let img1 = document.querySelector('.fondo');
-    window.addEventListener('scroll' ,function(){
-        let value = 1 + window.scrollY/ -600;
-        img1.style.opacity = value;
-    });
+    // A. Efectos Visuales (Hamburguesa, Scroll, etc.)
+    inicializarEfectosVisuales();
 
-    let img2 = document.querySelector('#containermobile .fondo');
-    window.addEventListener('scroll' ,function(){
-    let value = 1 + window.scrollY/ -600;
-    img2.style.opacity = value;
-    });
+    // B. Cargar Textos desde la API
+    await cargarContenidoDesdeAPI();
 
-    // EFECTO SCROLL REVEAL
+    // C. Aplicar el idioma guardado o por defecto
+    aplicarIdioma(idiomaActual);
 
-    ScrollReveal({
-            reset: true,
-            distance: '60px',
-            duration: 2500,
-            delay: 200
-        });
-
-        ScrollReveal().reveal('.movimientoh1', {delay: 200, origin: 'bottom'});
-        ScrollReveal().reveal('.movimientoh3', {delay: 300, origin: 'bottom'});
-        ScrollReveal().reveal('.btn-reservar2', {delay: 300, origin: 'bottom'});
-        ScrollReveal().reveal('.mockupderecha', {delay: 300, origin: 'bottom'});
-        ScrollReveal().reveal('.mockupizquierda', {delay: 300, origin: 'bottom'});
-
-    // EFECTO PARALLAX
-
-window.addEventListener('scroll', function() {
-    const parallax = document.querySelector('.parallax-section');
-    if (parallax) {
-        const rect = parallax.getBoundingClientRect();
-        const viewportCenter = window.innerHeight / 2;
-        const sectionCenter = rect.top + parallax.offsetHeight / 2;
-        const distanceToCenter = viewportCenter - sectionCenter;
-        const backgroundPositionY = (distanceToCenter * 0.5);
-        parallax.style.backgroundPositionY = `calc(50% + ${backgroundPositionY}px)`;
-    }
+    // D. Cargar Eventos (Depende del idioma para los textos de las cards)
+    cargarEventos();
 });
 
-    // EFECTO CAMBIO FORMULARIOS DE CONTACTO
+// ======================================================
+// 3. LÓGICA DE GESTIÓN DE CONTENIDOS E IDIOMA
+// ======================================================
 
+async function cargarContenidoDesdeAPI() {
+    try {
+        const response = await fetch('/api/contenido/home');
+        if (!response.ok) throw new Error('Error al cargar contenido');
+        const data = await response.json();
+        
+        contenidoWeb.es = data.es.datos;
+        contenidoWeb.en = data.en.datos;
+        
+        console.log("Textos cargados:", contenidoWeb);
+    } catch (error) {
+        console.error("Fallo crítico cargando textos:", error);
+    }
+}
+
+function aplicarIdioma(lang) {
+    const textos = contenidoWeb[lang];
+    if (!textos) return;
+
+    idiomaActual = lang;
+    localStorage.setItem('altxerri_lang', lang);
+    document.documentElement.lang = lang;
+
+    // 1. Navbar Dinámico
+    renderizarNavbar(textos.navbar, lang);
+
+    // 2. Textos Estáticos (Hero, Historia, etc.)
+    setText('hero-titulo', textos.hero.titulo);
+    setHTML('hero-subtitulo', textos.hero.subtitulo);
+    
+    setText('historia-titulo', textos.historia.titulo);
+    setHTML('historia-texto', textos.historia.texto);
+    
+    setText('galeria-titulo', textos.galeria.titulo);
+    setText('galeria-subtitulo', textos.galeria.subtitulo);
+    
+    setText('parallax-titulo', textos.parallax.titulo);
+    setText('parallax-btn', textos.parallax.btnTexto);
+    
+    setText('eventos-titulo', textos.eventos.titulo);
+    
+    setText('contacto-titulo', textos.contacto.titulo);
+    
+    // 3. Tabs de Contacto
+    setText('tab-cliente', textos.contacto.pestanas.cliente);
+    setText('tab-banda', textos.contacto.pestanas.banda);
+    setText('tab-comercial', textos.contacto.pestanas.comercial);
+    setText('tab-prensa', textos.contacto.pestanas.prensa);
+
+    // 4. Formularios
+    actualizarFormularios(textos.contacto.formularios);
+
+    // 5. Ubicación
+    setText('ubicacion-titulo', textos.ubicacion.titulo);
+    setHTML('ubicacion-subtitulo', textos.ubicacion.subtitulo);
+    setText('ubicacion-texto', textos.ubicacion.texto);
+
+    // 6. Newsletter Modal
+    setText('newsletter-modal-titulo', textos.newsletter.titulo);
+    setText('newsletter-modal-subtitulo', textos.newsletter.subtitulo);
+    setPlaceholder('newsletterName', textos.newsletter.phNombre);
+    setPlaceholder('newsletterEmail', textos.newsletter.phMail);
+    setText('newsletter-btn-enviar', textos.newsletter.btnSuscribir);
+
+    // 7. Actualizar Carrusel de Eventos (si ya se cargaron)
+    if (eventos.length > 0) {
+        inicializarEventos(); 
+    }
+}
+
+function toggleIdioma() {
+    const nuevoIdioma = idiomaActual === 'es' ? 'en' : 'es';
+    aplicarIdioma(nuevoIdioma);
+}
+
+// --- HELPERS DE RENDERIZADO ---
+
+function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+}
+function setHTML(id, html) {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+}
+function setPlaceholder(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.placeholder = text;
+}
+
+function renderizarNavbar(navData, lang) {
+    const container = document.getElementById('nav-links-container');
+    if (!container) return;
+
+    let html = '';
+    navData.items.forEach(item => {
+        html += `<a href="${item.link}">${item.texto}</a>`;
+    });
+
+    html += `
+        <div class="nav-buttons">
+            <button class="btn-newsletter" id="btn-lang-toggle" style="background:#000; color:#fff; border:1px solid #fff; margin-left:10px;">
+                ${lang === 'es' ? 'ENG' : 'ESP'}
+            </button>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+
+    // Re-asignar listener del botón de idioma
+    document.getElementById('btn-lang-toggle').addEventListener('click', toggleIdioma);
+
+    // Re-asignar listener para cerrar menú al hacer clic en enlaces (Móvil)
+    const navLinks = document.querySelector('.nav-links');
+    const links = navLinks.querySelectorAll('a');
+    links.forEach(link => {
+        link.addEventListener('click', () => {
+            navLinks.classList.remove('active');
+        });
+    });
+}
+
+function actualizarFormularios(forms) {
+    // Cliente
+    setPlaceholder('input-cliente-nombre', forms.cliente.phNombre);
+    setPlaceholder('input-cliente-mail', forms.cliente.phMail);
+    setPlaceholder('input-cliente-asunto', forms.cliente.phAsunto);
+    setPlaceholder('msg-cliente', forms.cliente.phMensaje);
+    setText('btn-cliente', forms.cliente.btnEnviar);
+
+    // Banda
+    setPlaceholder('input-banda-nombre', forms.banda.phNombreBanda);
+    setPlaceholder('input-banda-contacto', forms.banda.phContacto);
+    setPlaceholder('input-banda-mail', forms.banda.phMail);
+    setPlaceholder('input-banda-material', forms.banda.phMaterial);
+    setPlaceholder('msg-banda', forms.banda.phMensaje);
+    setText('btn-banda', forms.banda.btnEnviar);
+
+    // Comercial
+    setPlaceholder('input-comercial-empresa', forms.comercial.phEmpresa);
+    setPlaceholder('input-comercial-contacto', forms.comercial.phContacto);
+    setPlaceholder('input-comercial-mail', forms.comercial.phMail);
+    setPlaceholder('input-comercial-tipo', forms.comercial.phTipo);
+    setPlaceholder('msg-comercial', forms.comercial.phMensaje);
+    setText('btn-comercial', forms.comercial.btnEnviar);
+
+    // Prensa
+    setPlaceholder('input-prensa-medio', forms.prensa.phMedio);
+    setPlaceholder('input-prensa-contacto', forms.prensa.phContacto);
+    setPlaceholder('input-prensa-mail', forms.prensa.phMail);
+    setPlaceholder('input-prensa-motivo', forms.prensa.phMotivo);
+    setPlaceholder('msg-prensa', forms.prensa.phMensaje);
+    setText('btn-prensa', forms.prensa.btnEnviar);
+}
+
+// ======================================================
+// 4. EFECTOS VISUALES (Tus efectos originales)
+// ======================================================
+
+function inicializarEfectosVisuales() {
+    // EFECTO HAMBURGUESA
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.getElementById('nav-links-container'); // ID actualizado
+
+    if (hamburger && navLinks) {
+        hamburger.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+    }
+
+    // EFECTO DESVANECIMIENTO
+    let img1 = document.querySelector('.fondo');
+    if (img1) {
+        window.addEventListener('scroll', function() {
+            let value = 1 + window.scrollY / -600;
+            img1.style.opacity = value;
+        });
+    }
+
+    let img2 = document.querySelector('#containermobile .fondo');
+    if (img2) {
+        window.addEventListener('scroll', function() {
+            let value = 1 + window.scrollY / -600;
+            img2.style.opacity = value;
+        });
+    }
+
+    // EFECTO SCROLL REVEAL
+    ScrollReveal({
+        reset: true,
+        distance: '60px',
+        duration: 2500,
+        delay: 200
+    });
+
+    ScrollReveal().reveal('.movimientoh1', { delay: 200, origin: 'bottom' });
+    ScrollReveal().reveal('.movimientoh3', { delay: 300, origin: 'bottom' });
+    ScrollReveal().reveal('.btn-reservar2', { delay: 300, origin: 'bottom' });
+
+    // EFECTO PARALLAX
+    window.addEventListener('scroll', function() {
+        const parallax = document.querySelector('.parallax-section');
+        if (parallax) {
+            const rect = parallax.getBoundingClientRect();
+            const viewportCenter = window.innerHeight / 2;
+            const sectionCenter = rect.top + parallax.offsetHeight / 2;
+            const distanceToCenter = viewportCenter - sectionCenter;
+            const backgroundPositionY = (distanceToCenter * 0.5);
+            parallax.style.backgroundPositionY = `calc(50% + ${backgroundPositionY}px)`;
+        }
+    });
+
+    // EFECTO CAMBIO FORMULARIOS DE CONTACTO
     const tabs = document.querySelectorAll('.tab');
     const forms = document.querySelectorAll('.contact-form');
 
     tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-        tabs.forEach(t => t.classList.remove('active'));
-        forms.forEach(f => f.classList.remove('active'));
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            forms.forEach(f => f.classList.remove('active'));
 
-        tab.classList.add('active');
-        document.getElementById(tab.dataset.target).classList.add('active');
+            tab.classList.add('active');
+            const targetId = tab.dataset.target; // Usamos data-target
+            const targetForm = document.getElementById(targetId);
+            if (targetForm) targetForm.classList.add('active');
+        });
     });
-    });
+}
 
-// ------------------------------------------------------------------
-// LÓGICA DE CARGA Y CARROUSEL DE EVENTOS (DINÁMICA)
-// ------------------------------------------------------------------
-
-const DateTimeLuxon = luxon.DateTime;
+// ======================================================
+// 5. LÓGICA DE EVENTOS (Carga y Carrusel)
+// ======================================================
 
 const track = document.querySelector('.carousel-track');
 const leftBtn = document.querySelector('.carousel-btn.left');
 const rightBtn = document.querySelector('.carousel-btn.right');
-const HORA_LIMITE = 10; // 10:00 AM de San Sebastián (Madrid) para marcar como FINALIZADO
-const HORA_CADUCIDAD_LIVE = 3; // 3:00 AM de San Sebastián (Madrid) para ocultar el LIVE
+const HORA_LIMITE = 10; 
+const HORA_CADUCIDAD_LIVE = 3; 
 
-let cards = []; 
-let activeIndex = 0; 
-let eventos = []; // Declarar globalmente para que sea accesible en el modal y el carrusel
+let cards = [];
+let activeIndex = 0;
 
-// Función para actualizar la vista del carrusel
-function updateCarousel() {
-  if (cards.length === 0) return;
-
-  // Recalcular cards por si se ha modificado el DOM
-  cards = Array.from(document.querySelectorAll('.carousel-track .event-card'));
-
-  const cardWidth = cards[0].offsetWidth;
-  const cardMargin = 16; // 1rem del CSS
-  
-  // Posición de centrado (2 en desktop, 0 en mobile)
-  let offsetIndex = 2; 
-  if (window.innerWidth <= 900) {
-      offsetIndex = 0; 
-  }
-
-  // Si el índice activo es menor que el offset, no permitimos desplazamiento negativo
-  const adjustedActiveIndex = Math.max(0, activeIndex);
-  
-  const offset = -(adjustedActiveIndex - offsetIndex) * (cardWidth + cardMargin);
-  track.style.transform = `translateX(${offset}px)`;
-
-  cards.forEach(card => card.classList.remove('active'));
-  if (cards[activeIndex]) cards[activeIndex].classList.add('active');
+function cargarEventos() {
+    const preloader = document.getElementById('preloader');
+    
+    fetch("/api/eventos")
+        .then(res => {
+            if (!res.ok) throw new Error('Error API eventos');
+            return res.json();
+        })
+        .then(data => {
+            eventos = data;
+            eventos.sort((a, b) => a.fecha.localeCompare(b.fecha));
+            
+            inicializarEventos();
+            inicializarCalendario();
+            
+            if (preloader) preloader.classList.add('preloader-hidden');
+        })
+        .catch(error => {
+            console.error(error);
+            if (track) track.innerHTML = "<p style='color:white;text-align:center;'>Error cargando eventos.</p>";
+            if (preloader) preloader.classList.add('preloader-hidden');
+        });
 }
 
-// Genera el HTML de una card de evento
-// --- REEMPLAZAR FUNCIÓN ENTERA ---
-// Genera el HTML de una card de evento
 function createEventCard(evento) {
-    const luxonFecha = DateTimeLuxon.fromISO(evento.fecha);
-    const ahoraMadrid = DateTimeLuxon.now().setZone("Europe/Madrid");
+    // OBTIENE LOS TEXTOS TRADUCIDOS DE LA BD (O usa fallback si no cargó aún)
+    const textosUI = contenidoWeb[idiomaActual]?.eventos?.ui || {};
+    
+    // Textos por defecto para botones (Hardcoded fallback por si acaso)
+    const txtReservar = idiomaActual === 'en' ? 'Book' : 'Reservar';
+    const txtFinalizado = idiomaActual === 'en' ? 'Ended' : 'Finalizado';
 
-    // 1. Lógica de "Evento Pasado" (FINALIZADO)
-    const fechaCorteFinalizado = DateTimeLuxon.fromISO(evento.fecha, { zone: "Europe/Madrid" })
-        .plus({ days: 1 })
-        .set({ hour: HORA_LIMITE, minute: 0, second: 0, millisecond: 0 });
-    const esPasado = ahoraMadrid >= fechaCorteFinalizado;
-    
-    // 2. Lógica de "Cerrado/Privado" (SIN CAMBIOS)
-    if (evento.tipoEvento === "Cerrado" || evento.tipoEvento === "Privado") {
-        const isClosed = evento.tipoEvento === "Cerrado";
-        const specialImage = isClosed ? "cerrado.jpg" : "eventoPrivado.jpg";
-        const specialClass = isClosed ? "closed" : "private";
-        const specialTitle = isClosed ? "Cerrado por Descanso" : "Evento Privado";
-        const specialText = isClosed ? "¡Volvemos pronto con más Jazz!" : "Lo sentimos... ¡Te esperamos el resto de la semana!";
-        const finalizadoClass = esPasado ? 'past' : '';
+    const luxonFecha = DateTimeLuxon.fromISO(evento.fecha);
+    const ahoraMadrid = DateTimeLuxon.now().setZone("Europe/Madrid");
 
-    return `
-        <div class="event-card special ${specialClass} ${finalizadoClass}">
-            <div class="card-image special">
-                <img src="img/${specialImage}" alt="${specialTitle}">
-                <div class="event-date">${luxonFecha.toFormat("dd LLLL")}</div>
-            </div>
-            <div class="card-content">
-                <h3>${specialTitle}</h3>
-                <p>${specialText}</p>
-                <div class="special-links">
-                    Sigue en ambiente: <a href="https://instagram.com/altxerribar" target="_blank">Instagram</a>
+    // 1. Evento Pasado
+    const fechaCorteFinalizado = DateTimeLuxon.fromISO(evento.fecha, { zone: "Europe/Madrid" })
+        .plus({ days: 1 })
+        .set({ hour: HORA_LIMITE, minute: 0, second: 0, millisecond: 0 });
+    const esPasado = ahoraMadrid >= fechaCorteFinalizado;
+    
+    // 2. Especiales (Cerrado/Privado)
+    if (evento.tipoEvento === "Cerrado" || evento.tipoEvento === "Privado") {
+        const isClosed = evento.tipoEvento === "Cerrado";
+        const specialImage = isClosed ? "cerrado.jpg" : "eventoPrivado.jpg";
+        const specialClass = isClosed ? "closed" : "private";
+        
+        // TEXTOS TRADUCIDOS DESDE BD
+        const specialTitle = isClosed 
+            ? (textosUI.labelCerrado || "Cerrado") 
+            : (textosUI.labelPrivado || "Privado");
+        
+        const specialText = isClosed 
+            ? (textosUI.txtCerrado || "...") 
+            : (textosUI.txtPrivado || "...");
+            
+        const txtSigueAmbiente = textosUI.txtEspecial || "Sigue en ambiente:";
+
+        const finalizadoClass = esPasado ? 'past' : '';
+
+        return `
+            <div class="event-card special ${specialClass} ${finalizadoClass}">
+                <div class="card-image special">
+                    <img src="img/${specialImage}" alt="${specialTitle}">
+                    <div class="event-date">${luxonFecha.toFormat("dd LLLL")}</div>
+                </div>
+                <div class="card-content">
+                    <h3>${specialTitle}</h3>
+                    <p>${specialText}</p>
+                    <div class="special-links">
+                        ${txtSigueAmbiente} <a href="https://instagram.com/altxerribar" target="_blank">Instagram</a>
+                    </div>
                 </div>
             </div>
-        </div>
-    `;
-    }
-    
-    // 3. LÓGICA DE EVENTOS REGULARES (Con Descripción)
-    let botonAdicionalHTML = '';
-    let descripcionHTML = '';
+        `;
+    }
+    
+    // 3. Regular
+    let botonAdicionalHTML = '';
+    let descripcionHTML = '';
 
-    // Calculamos la hora de caducidad (3AM del día siguiente)
-    const fechaCorteLive = DateTimeLuxon.fromISO(evento.fecha, { zone: "Europe/Madrid" })
-        .plus({ days: 1 })
-        .set({ hour: HORA_CADUCIDAD_LIVE, minute: 0, second: 0, millisecond: 0 });
-    const liveCaducado = ahoraMadrid >= fechaCorteLive;
-    
-    // Criterio 1: ¿Debe aparecer "Reviví el concierto"? (Prioridad máxima)
-    if (evento.concierto && evento.concierto.trim() !== '') {
-        botonAdicionalHTML = `<a href="${evento.concierto}" target="_blank" class="btn-adicional btn-archive">Reviví el concierto</a>`;
-    
-    } else {
-        // Criterio 2: Mostrar Live y Descripción si NO han caducado
-        if (!liveCaducado) { 
-            // Mostrar "Ver en vivo"
-            if (evento.live && evento.live.trim() !== '') {
-                botonAdicionalHTML = `<a href="${evento.live}" target="_blank" class="btn-adicional btn-live">Ver en vivo</a>`;
-            }
-            // Mostrar "Descripción" (Precio)
+    const fechaCorteLive = DateTimeLuxon.fromISO(evento.fecha, { zone: "Europe/Madrid" })
+        .plus({ days: 1 })
+        .set({ hour: HORA_CADUCIDAD_LIVE, minute: 0, second: 0, millisecond: 0 });
+    const liveCaducado = ahoraMadrid >= fechaCorteLive;
+    
+    if (evento.concierto && evento.concierto.trim() !== '') {
+        // BOTÓN ARCHIVO TRADUCIDO
+        const txtArchivo = textosUI.btnArchivo || "Reviví el concierto";
+        botonAdicionalHTML = `<a href="${evento.concierto}" target="_blank" class="btn-adicional btn-archive">${txtArchivo}</a>`;
+    
+    } else {
+        if (!liveCaducado) { 
+            if (evento.live && evento.live.trim() !== '') {
+                // BOTÓN VIVO TRADUCIDO
+                const txtVivo = textosUI.btnVivo || "Ver en Vivo";
+                botonAdicionalHTML = `<a href="${evento.live}" target="_blank" class="btn-adicional btn-live">${txtVivo}</a>`;
+            }
             if (evento.descripcion && evento.descripcion.trim() !== '') {
                 descripcionHTML = `<p class="card-descripcion-precio">${evento.descripcion}</p>`;
             }
-        }
-    }
-    
-    // 4. Renderizado de Card Regular
-    const isLiveActive = botonAdicionalHTML.indexOf('btn-live') !== -1;
-    const finalizadoClass = (esPasado && !isLiveActive) ? 'past' : '';
-    const finalizadoDisabled = (esPasado && !isLiveActive) ? "disabled" : "";
-    const finalizadoText = (esPasado && !isLiveActive) ? "Finalizado" : "Reservar";
+        }
+    }
+    
+    const isLiveActive = botonAdicionalHTML.indexOf('btn-live') !== -1;
+    const finalizadoClass = (esPasado && !isLiveActive) ? 'past' : '';
+    const finalizadoDisabled = (esPasado && !isLiveActive) ? "disabled" : "";
+    const finalizadoTextStr = (esPasado && !isLiveActive) ? txtFinalizado : txtReservar;
 
-    let imagenMostrar;
-    if (evento.imagen && (evento.imagen.startsWith('http') || evento.imagen.startsWith('https'))) {
-        imagenMostrar = evento.imagen; 
-    } else {
-        imagenMostrar = `img/${evento.imagen || 'imgBandaGenerica.jpg'}`; 
-    }
+    let imagenMostrar;
+    if (evento.imagen && (evento.imagen.startsWith('http') || evento.imagen.startsWith('https'))) {
+        imagenMostrar = evento.imagen; 
+    } else {
+        imagenMostrar = `img/${evento.imagen || 'imgBandaGenerica.jpg'}`; 
+    }
 
     return `
         <div class="event-card ${finalizadoClass}">
@@ -207,7 +396,7 @@ function createEventCard(evento) {
                 <h3>${evento.titulo}</h3>
                 ${descripcionHTML}
                 <button class="btn-reservar" ${finalizadoDisabled}>
-                    ${finalizadoText}
+                    ${finalizadoTextStr}
                 </button>
                 ${botonAdicionalHTML}
             </div>
@@ -215,327 +404,117 @@ function createEventCard(evento) {
     `;
 }
 
-// Carga los eventos y renderiza el carrusel
 function inicializarEventos() {
     if (!eventos || eventos.length === 0) return; 
-
-    track.innerHTML = ''; // Limpiar el contenido estático
+    track.innerHTML = ''; 
 
     const ahoraMadrid = DateTimeLuxon.now().setZone("Europe/Madrid");
     let primerEventoProximoIndex = -1;
 
     eventos.forEach((evento, index) => {
-        // Generar el HTML de la card
         const cardHTML = createEventCard(evento);
         track.insertAdjacentHTML('beforeend', cardHTML);
 
-        // LÓGICA DE DETECCIÓN DEL EVENTO ACTUAL/PRÓXIMO:
-        
-        // 1. Obtener la fecha de corte para el evento (Día del evento + 1 a las 10:00 AM Madrid)
         const fechaCorteFinalizado = DateTimeLuxon.fromISO(evento.fecha, { zone: "Europe/Madrid" })
             .plus({ days: 1 })
             .set({ hour: HORA_LIMITE, minute: 0, second: 0, millisecond: 0 });
-            
-        // 2. Determinar si YA pasó el tiempo de caducidad
         const esPasado = ahoraMadrid >= fechaCorteFinalizado;
 
-        // 3. Encontrar el primer evento que AÚN NO HA CADUCADO (no es pasado)
         if (!esPasado && primerEventoProximoIndex === -1) {
             primerEventoProximoIndex = index;
         }
     });
 
     cards = Array.from(document.querySelectorAll('.carousel-track .event-card'));
-
-    // 1. Establecemos activeIndex al primer evento no finalizado (ej: 16/10/2025)
-    activeIndex = (primerEventoProximoIndex !== -1) 
-                    ? primerEventoProximoIndex 
-                    : Math.max(0, cards.length - 1); 
-    
-    // 2. ¡ELIMINAMOS EL BLOQUE DE CÓDIGO QUE CAUSABA EL DESFASE!
-    // La función updateCarousel ya se encarga de centrar el índice activo correctamente.
+    activeIndex = (primerEventoProximoIndex !== -1) ? primerEventoProximoIndex : Math.max(0, cards.length - 1); 
     
     updateCarousel();
     setupCarouselControls();
 }
 
+function updateCarousel() {
+    if (cards.length === 0) return;
+    cards = Array.from(document.querySelectorAll('.carousel-track .event-card'));
+    const cardWidth = cards[0].offsetWidth;
+    const cardMargin = 16; 
+    
+    let offsetIndex = 2; 
+    if (window.innerWidth <= 900) offsetIndex = 0; 
+
+    const adjustedActiveIndex = Math.max(0, activeIndex);
+    const offset = -(adjustedActiveIndex - offsetIndex) * (cardWidth + cardMargin);
+    track.style.transform = `translateX(${offset}px)`;
+
+    cards.forEach(card => card.classList.remove('active'));
+    if (cards[activeIndex]) cards[activeIndex].classList.add('active');
+}
+
 function setupCarouselControls() {
-    leftBtn.addEventListener('click', () => {
+    // Limpiar listeners anteriores para no duplicar
+    const newLeft = leftBtn.cloneNode(true);
+    const newRight = rightBtn.cloneNode(true);
+    leftBtn.parentNode.replaceChild(newLeft, leftBtn);
+    rightBtn.parentNode.replaceChild(newRight, rightBtn);
+
+    newLeft.addEventListener('click', () => {
         activeIndex = Math.max(0, activeIndex - 1);
         updateCarousel();
     });
 
-    rightBtn.addEventListener('click', () => {
+    newRight.addEventListener('click', () => {
         activeIndex = Math.min(cards.length - 1, activeIndex + 1);
         updateCarousel();
     });
 }
 
-
-// Modal del calendario (Integrado)
-
-const modal = document.getElementById("modalCalendario");
-const btnAbrir = document.getElementById("abrirCalendario");
-const btnCerrar = document.getElementById("cerrarCalendario");
-const filtro = document.getElementById("filtroEstado");
-const inputBusqueda = document.getElementById("busquedaEventos");
-const calendarioDiv = document.getElementById("calendario");
-const detalleEvento = document.getElementById("detalleEvento");
-
-btnAbrir.addEventListener("click", () => modal.style.display = "block");
-btnCerrar.addEventListener("click", () => modal.style.display = "none");
-window.addEventListener("click", e => {
-  if (e.target === modal) modal.style.display = "none";
-});
-
-// ✅ Cargar JSON desde la API e Inicializar (VERSIÓN CORREGIDA)
-// --- INICIO LÓGICA PRELOADER ---
-const preloader = document.getElementById('preloader');
-
-function ocultarPreloader() {
-  if (preloader) {
-    preloader.classList.add('preloader-hidden');
-  }
-}
-// --- FIN LÓGICA PRELOADER ---
-
-
-// ✅ Cargar JSON desde la API e Inicializar (VERSIÓN CORREGIDA)
-fetch("/api/eventos") // CAMBIO: Llamamos a nuestra nueva API
-  .then(res => {
-      if (!res.ok) {
-          throw new Error('Error al cargar la API de eventos');
-      }
-      return res.json();
-  })
-  .then(data => {
-    // 1. Recibimos los datos
-    eventos = data;
-    
-    // 2. ¡AQUÍ VA EL ARREGLO! Los ordenamos por fecha
-    eventos.sort((a, b) => a.fecha.localeCompare(b.fecha));
-
-    // 3. (Y solo ahora) Inicializamos todo con los datos ordenados
-    inicializarEventos(); 
-    inicializarCalendario();
-    aplicarFiltros(); 
-    
-    // 4. OCULTAMOS EL PRELOADER (ÉXITO)
-    ocultarPreloader();
-  })
-  .catch(error => {
-      console.error(error);
-      // Opcional: Mostrar un error en el carrusel
-      if (track) track.innerHTML = "<p style='color: white; text-align: center;'>Error al cargar eventos.</p>";
-
-      // 5. OCULTAMOS EL PRELOADER (FALLO)
-      ocultarPreloader();
-  });
-
-function inicializarCalendario() {
-  const picker = new Litepicker({
-    element: calendarioDiv,
-    format: 'YYYY-MM-DD',
-    lang: 'es-ES',
-    inlineMode: true,
-    setup: (picker) => {
-      picker.on('selected', (date) => {
-        const seleccionada = date.format('yyyy-MM-dd');
-        mostrarEvento(seleccionada);
-      });
-    }
-  });
-}
-
-function mostrarEvento(fecha) {
-  const evento = eventos.find(ev => ev.fecha === fecha);
-  if (!evento) {
-    detalleEvento.innerHTML = `<p>No hay evento en esta fecha.</p>`;
-    return;
-  }
-  
-  const ahora = DateTimeLuxon.now().setZone("Europe/Madrid");
-  const fechaEvento = DateTimeLuxon.fromISO(evento.fecha, { zone: "Europe/Madrid" });
-  const fechaCorteFinalizado = fechaEvento.plus({ days: 1 }).set({ hour: HORA_LIMITE });
-  const esPasado = ahora >= fechaCorteFinalizado;
-
-  // Lógica de "Cerrado/Privado" para el Modal
-  if (evento.tipoEvento === "Cerrado" || evento.tipoEvento === "Privado") {
-      const isClosed = evento.tipoEvento === "Cerrado";
-      const specialImage = isClosed ? "eventoPrivado.jpg" : "cerrado.jpg";
-      const specialTitle = isClosed ? "Cerrado por Descanso" : "Evento Privado";
-      const specialText = isClosed 
-          ? "El local permanecerá cerrado al público."
-          : "El local está reservado para un evento privado.";
-      
-      // --- ¡ARREGLO AQUÍ! ---
-      // 3. Añadimos la clase 'past' al modal también
-      const finalizadoClass = esPasado ? 'past' : '';
-
-      detalleEvento.innerHTML = `
-          <div class="event-card special ${isClosed ? 'closed' : 'private'} ${finalizadoClass}">
-              <div class="card-image special">
-                  <img src="img/${specialImage}" alt="${specialTitle}">
-                  <div class="event-date">${DateTimeLuxon.fromISO(evento.fecha).toFormat("dd LLLL")}</div>
-              </div>
-              <div class="card-content">
-                  <h3>${specialTitle}</h3>
-                  <p>${specialText}</p>
-              </div>
-          </div>`;
-      return;
-  }
-
-// Lógica de Evento Regular para el Modal
-  // (La lógica de botones aquí ya era correcta, priorizando 'concierto')
-  let botonAdicionalHTML = '';
-  if (evento.concierto && evento.concierto.trim() !== '') {
-      botonAdicionalHTML = `<a href="${evento.concierto}" target="_blank" class="btn-adicional btn-archive">Reviví el concierto</a>`;
-  }
-
-    let descripcionModalHTML = '';
-  // Mostramos la descripción si no es un evento pasado (según la lógica del botón)
-  if (!esPasado && evento.descripcion && evento.descripcion.trim() !== '') {
-       descripcionModalHTML = `<p class="card-descripcion-precio">${evento.descripcion}</p>`;
-  }
-  // --- INICIO DEL ARREGLO ---
-  let imagenMostrarModal;
-  if (evento.imagen && (evento.imagen.startsWith('http') || evento.imagen.startsWith('https'))) {
-      imagenMostrarModal = evento.imagen; // Es una URL de Cloudinary
-  } else {
-      imagenMostrarModal = `img/${evento.imagen || 'imgBandaGenerica.jpg'}`; // Es local o fallback
-  }
-  // --- FIN DEL ARREGLO ---
-
-  detalleEvento.innerHTML = `
-    <div class="event-card ${esPasado ? 'past' : ''}">
-      <div class="card-image">
-        <img src="${imagenMostrarModal}" alt="Evento ${evento.fecha}">
-        <div class="event-date">${DateTimeLuxon.fromISO(evento.fecha).toFormat("dd LLLL")}</div>
-      </div>
-      <div class="card-content">
-        <h3>${evento.titulo}</h3>
-        ${descripcionModalHTML}
-
-        <button class="btn-reservar" ${esPasado ? "disabled" : ""}>
-          ${esPasado ? "Finalizado" : "Reservar"}
-        </button>
-        ${botonAdicionalHTML}
-      </div>
-    </div>`;
-}
-
-// 🔍 Filtrar eventos por texto y estado
-function aplicarFiltros() {
-  const texto = inputBusqueda.value.toLowerCase();
-  const estado = filtro.value;
-  const ahora = DateTimeLuxon.now().setZone("Europe/Madrid");
-
-  let resultados = eventos.filter(ev => {
-    const eventoFecha = DateTimeLuxon.fromISO(ev.fecha, { zone: "Europe/Madrid" });
-    const fechaCorte = eventoFecha.plus({ days: 1 }).set({ hour: HORA_LIMITE });
-    const esPasado = ahora >= fechaCorte;
-    
-    // Filtrar por estado
-    const coincideEstado = estado === "proximos" ? !esPasado : esPasado;
-    
-    // Filtrar por texto (si es Regular)
-    const coincideTexto = ev.tipoEvento === "Regular" 
-      ? ev.titulo.toLowerCase().includes(texto) 
-      : ev.tipoEvento.toLowerCase().includes(texto) && texto !== "";
-
-    // Siempre incluimos los eventos no regulares si no se está buscando texto
-    const esEspecial = ev.tipoEvento !== "Regular";
-
-    return (coincideEstado && coincideTexto) || (esEspecial && coincideEstado && texto === "");
-  });
-
-  if (resultados.length > 0) {
-      // Priorizar el evento más próximo o más reciente
-      if (estado === "finalizados") {
-          resultados.sort((a, b) => b.fecha.localeCompare(a.fecha));
-      } else {
-          resultados.sort((a, b) => a.fecha.localeCompare(b.fecha));
-      }
-      mostrarEvento(resultados[0].fecha);
-  } else {
-      detalleEvento.innerHTML = `<p>No hay eventos que coincidan.</p>`;
-  }
-}
-
-inputBusqueda.addEventListener("input", aplicarFiltros);
-filtro.addEventListener("change", aplicarFiltros);
-
-
-// SWIPE PARA MOBILE (Carrusel de Eventos)
-
+// Swipe Mobile
 let startX = 0;
-let endX = 0;
-
-track.addEventListener('touchstart', (e) => {
-  startX = e.touches[0].clientX;
-});
-
+track.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; });
 track.addEventListener('touchend', (e) => {
-  endX = e.changedTouches[0].clientX;
-  const diff = startX - endX;
-
-  if (Math.abs(diff) > 50) { 
-    if (diff > 0) {
-      // Swipe izquierda → siguiente
-      activeIndex = Math.min(cards.length - 1, activeIndex + 1);
-      updateCarousel();
-    } else {
-      // Swipe derecha → anterior
-      activeIndex = Math.max(0, activeIndex - 1);
-      updateCarousel();
+    const endX = e.changedTouches[0].clientX;
+    const diff = startX - endX;
+    if (Math.abs(diff) > 50) { 
+        if (diff > 0) {
+            activeIndex = Math.min(cards.length - 1, activeIndex + 1);
+        } else {
+            activeIndex = Math.max(0, activeIndex - 1);
+        }
+        updateCarousel();
     }
-  }
 });
 
+// ======================================================
+// 6. GALERÍA Y MODALES
+// ======================================================
 
-// ------------------------------------------------------------------
-// LÓGICA DE CARRUSEL DE GALERÍA DE IMÁGENES
-// ------------------------------------------------------------------
-
+// GALERÍA
 const galleryTrack = document.querySelector('.gallery-track');
 const gallerySlides = document.querySelectorAll('.gallery-slide');
 const leftGalleryBtn = document.querySelector('.left-gallery-btn');
 const rightGalleryBtn = document.querySelector('.right-gallery-btn');
 const galleryIndicatorsContainer = document.querySelector('.gallery-indicators');
-
 let currentGalleryIndex = 0;
-const totalSlides = gallerySlides.length;
+const totalSlides = gallerySlides ? gallerySlides.length : 0;
 
-// 1. Crear Indicadores
 function createIndicators() {
+    galleryIndicatorsContainer.innerHTML = '';
     for (let i = 0; i < totalSlides; i++) {
         const indicator = document.createElement('div');
         indicator.classList.add('indicator');
-        indicator.dataset.index = i;
         indicator.addEventListener('click', () => moveToSlide(i));
         galleryIndicatorsContainer.appendChild(indicator);
     }
 }
 
-// 2. Función para mover al slide
 function moveToSlide(index) {
-    // Asegura que el índice esté dentro de los límites (ciclico)
-    if (index >= totalSlides) {
-        index = 0;
-    } else if (index < 0) {
-        index = totalSlides - 1;
-    }
-
+    if (index >= totalSlides) index = 0;
+    else if (index < 0) index = totalSlides - 1;
     currentGalleryIndex = index;
-    // Mueve por porcentaje de ancho (100% por slide)
     const offset = -currentGalleryIndex * 100; 
-    galleryTrack.style.transform = `translateX(${offset}vw)`;
-
+    if(galleryTrack) galleryTrack.style.transform = `translateX(${offset}vw)`;
     updateIndicators();
 }
 
-// 3. Actualizar Indicadores (y clase activa)
 function updateIndicators() {
     const indicators = document.querySelectorAll('.gallery-indicators .indicator');
     indicators.forEach((indicator, index) => {
@@ -543,132 +522,125 @@ function updateIndicators() {
     });
 }
 
-// 4. Navegación con botones
-if (leftGalleryBtn) leftGalleryBtn.addEventListener('click', () => {
-    moveToSlide(currentGalleryIndex - 1);
-});
-
-if (rightGalleryBtn) rightGalleryBtn.addEventListener('click', () => {
-    moveToSlide(currentGalleryIndex + 1);
-});
-
-// 5. Inicialización y Autoplay
 if (galleryTrack) {
+    if (leftGalleryBtn) leftGalleryBtn.addEventListener('click', () => moveToSlide(currentGalleryIndex - 1));
+    if (rightGalleryBtn) rightGalleryBtn.addEventListener('click', () => moveToSlide(currentGalleryIndex + 1));
     createIndicators();
     moveToSlide(0); 
-    setInterval(() => {
-        moveToSlide(currentGalleryIndex + 1);
-    }, 4000); // Cambia de slide cada 4 segundos
+    setInterval(() => moveToSlide(currentGalleryIndex + 1), 4000);
 }
 
-// 6. Manejo de Swipe para móvil en la galería
-let galleryStartX = 0;
-let galleryEndX = 0;
+// MODAL CALENDARIO
+const modalCalendario = document.getElementById("modalCalendario");
+const btnAbrirCal = document.getElementById("abrirCalendario");
+const btnCerrarCal = document.getElementById("cerrarCalendario");
+const filtroCal = document.getElementById("filtroEstado");
+const inputBusquedaCal = document.getElementById("busquedaEventos");
+const calendarioDiv = document.getElementById("calendario");
+const detalleEvento = document.getElementById("detalleEvento");
 
-if (galleryTrack) {
-    galleryTrack.addEventListener('touchstart', (e) => {
-        galleryStartX = e.touches[0].clientX;
-    });
+if (btnAbrirCal) btnAbrirCal.addEventListener("click", () => modalCalendario.style.display = "block");
+if (btnCerrarCal) btnCerrarCal.addEventListener("click", () => modalCalendario.style.display = "none");
+window.addEventListener("click", e => {
+  if (e.target === modalCalendario) modalCalendario.style.display = "none";
+});
 
-    galleryTrack.addEventListener('touchend', (e) => {
-        galleryEndX = e.changedTouches[0].clientX;
-        const diff = galleryStartX - galleryEndX;
-
-        if (Math.abs(diff) > 50) {
-            if (diff > 0) {
-                // Swipe izquierda → siguiente
-                moveToSlide(currentGalleryIndex + 1);
-            } else {
-                // Swipe derecha → anterior
-                moveToSlide(currentGalleryIndex - 1);
+function inicializarCalendario() {
+    // Asegurarse de que Litepicker existe
+    if (typeof Litepicker !== 'undefined' && calendarioDiv) {
+        new Litepicker({
+            element: calendarioDiv,
+            format: 'YYYY-MM-DD',
+            lang: 'es-ES',
+            inlineMode: true,
+            setup: (picker) => {
+                picker.on('selected', (date) => {
+                    mostrarEvento(date.format('yyyy-MM-dd'));
+                });
             }
-        }
-    });
+        });
+    }
 }
 
+function mostrarEvento(fecha) {
+    // Esta función usa la variable global 'eventos'
+    const evento = eventos.find(ev => ev.fecha === fecha);
+    if (!evento) {
+        detalleEvento.innerHTML = `<p>No hay evento en esta fecha.</p>`;
+        return;
+    }
+    // Reutiliza createEventCard para consistencia visual y de idioma
+    detalleEvento.innerHTML = createEventCard(evento);
+}
 
-// ------------------------------------------------------------------
-// LÓGICA DEL MODAL NEWSLETTER
-// ------------------------------------------------------------------
+if (inputBusquedaCal) inputBusquedaCal.addEventListener("input", aplicarFiltros);
+if (filtroCal) filtroCal.addEventListener("change", aplicarFiltros);
 
+function aplicarFiltros() {
+    const texto = inputBusquedaCal.value.toLowerCase();
+    const estado = filtroCal.value;
+    const ahora = DateTimeLuxon.now().setZone("Europe/Madrid");
+
+    let resultados = eventos.filter(ev => {
+        const fechaEv = DateTimeLuxon.fromISO(ev.fecha, { zone: "Europe/Madrid" });
+        const fechaCorte = fechaEv.plus({ days: 1 }).set({ hour: HORA_LIMITE });
+        const esPasado = ahora >= fechaCorte;
+        
+        const coincideEstado = estado === "proximos" ? !esPasado : esPasado;
+        const coincideTexto = ev.titulo.toLowerCase().includes(texto); // Simplificado
+
+        return coincideEstado && coincideTexto;
+    });
+
+    if (resultados.length > 0) {
+        mostrarEvento(resultados[0].fecha);
+    } else {
+        detalleEvento.innerHTML = `<p>No hay eventos que coincidan.</p>`;
+    }
+}
+
+// MODAL NEWSLETTER
 const newsletterModal = document.getElementById('newsletterModal');
-const openModalBtn = document.getElementById('openNewsletterModal');
-const openModalParallaxBtn = document.getElementById('openNewsletterModalParallax');
+const openModalBtn = document.getElementById('openNewsletterModal'); // Este ya no existe en HTML nuevo
+const parallaxBtn = document.getElementById('parallax-btn'); // Nuevo botón parallax
 const closeModalSpan = document.querySelector('.close-newsletter-modal');
 const newsletterForm = document.getElementById('newsletterForm');
-const formError = document.getElementById('formError');
 const successMessage = document.getElementById('newsletterSuccessMessage');
 const formContainer = document.getElementById('newsletterFormContainer');
 const closeSuccessBtn = document.getElementById('closeNewsletterSuccess');
 
-// Función para abrir el modal
-function openModal() {
-    newsletterModal.classList.add('show');
+function openNewsletter() {
+    if(newsletterModal) newsletterModal.classList.add('show');
+}
+function closeNewsletter() {
+    if(newsletterModal) newsletterModal.classList.remove('show');
+    if(formContainer) formContainer.style.display = 'block';
+    if(successMessage) successMessage.style.display = 'none';
+    if(newsletterForm) newsletterForm.reset();
 }
 
-// Función para cerrar el modal
-function closeModal() {
-    newsletterModal.classList.remove('show');
-    // Resetear a la vista del formulario
-    formContainer.style.display = 'block';
-    successMessage.style.display = 'none';
-    formError.textContent = '';
-    newsletterForm.reset();
-}
+// Listener delegado para botones dinámicos (Navbar)
+document.addEventListener('click', (e) => {
+    // Si el clic fue en el botón del navbar (generado por JS)
+    if (e.target && e.target.textContent === 'Newsletter') { 
+        // Podríamos usar una clase específica, pero por ahora el texto sirve
+        // Ojo: El botón del Parallax también dice Newsletter pero tiene ID
+        if(!e.target.id) openNewsletter(); 
+    }
+});
 
-// Abrir modal con botones
-if (openModalBtn) openModalBtn.addEventListener('click', openModal);
-if (openModalParallaxBtn) openModalParallaxBtn.addEventListener('click', openModal);
-
-// Cerrar modal con el botón X
-if (closeModalSpan) closeModalSpan.addEventListener('click', closeModal);
-
-// Cerrar modal con el botón de éxito
-if (closeSuccessBtn) closeSuccessBtn.addEventListener('click', closeModal);
-
-// Cerrar modal si el usuario hace clic fuera del contenido
+if (parallaxBtn) parallaxBtn.addEventListener('click', openNewsletter);
+if (closeModalSpan) closeModalSpan.addEventListener('click', closeNewsletter);
+if (closeSuccessBtn) closeSuccessBtn.addEventListener('click', closeNewsletter);
 window.addEventListener('click', (event) => {
-    if (event.target === newsletterModal) {
-        closeModal();
-    }
+    if (event.target === newsletterModal) closeNewsletter();
 });
 
-// Validación y Guardado (Simulación)
-newsletterForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    const name = document.getElementById('newsletterName').value.trim();
-    const email = document.getElementById('newsletterEmail').value.trim();
-
-    // Validación simple de Email (cliente)
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        formError.textContent = 'Por favor, introduce un correo electrónico válido.';
-        return;
-    }
-
-    if (name === '') {
-        formError.textContent = 'El nombre no puede estar vacío.';
-        return;
-    }
-    
-    formError.textContent = '';
-
-    // --- SIMULACIÓN DE GUARDADO EN JSON ---
-    const dataToSave = {
-        nombre: name,
-        mail: email,
-        fecha_suscripcion: new Date().toISOString()
-    };
-    
-    console.log("Datos listos para enviar (simulación JSON):", dataToSave);
-    
-    // Ocultar formulario y mostrar éxito
-    formContainer.style.display = 'none';
-    successMessage.style.display = 'block';
-
-});
-
-// --- ¡ARREGLO AQUÍ! ---
-// 4. Eliminamos el código antiguo de JQuery/Slick
-// (El bloque que estaba aquí fue eliminado)
+if (newsletterForm) {
+    newsletterForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        // Simulación de éxito
+        if(formContainer) formContainer.style.display = 'none';
+        if(successMessage) successMessage.style.display = 'block';
+    });
+}

@@ -42,19 +42,11 @@
                 <img src="img/altxerrilogo2.png" alt="Altxerri Jazz Bar Logo">
             </a>
 
-            <nav class="nav-links" id="nav-links">
-                <a href="#top">Inicio</a>
-                <a href="#historia">Historia</a>
-                <a href="#galeria">Galería</a>
-                <a href="#eventos">Conciertos</a>
-                <a href="carta.html" target="_blank">Carta</a>
-                <a href="#contacto">Contacto</a>
-            </nav>
+            <nav class="nav-links" id="nav-links-container">
+                </nav>
 
             <div class="nav-buttons">
-                <button class="btn-newsletter" id="openNewsletterModal">Newsletter</button>
-                <a href="reservar.html" class="btn-reservar">Reservar</a>
-                <button class="hamburger" id="hamburger">&#9776;</button>
+                <button class="hamburger" id="hamburger">☰</button>
             </div>
         </div>
     </header>
@@ -89,21 +81,19 @@
 
     <section class="segunda">
         <div class="primerbox">
-            <h1 class="movimientoh1">El Regreso del Jazz </h1>
-            <h3 class="movimientoh3">Tras años de silencio, el mítico Altxerri Jazz Bar de San Sebastián vuelve a abrir sus puertas.<br><br> Un lugar donde el arte, la música y las noches mágicas cobran vida nuevamente.</h3>
+            <h1 class="movimientoh1" id="hero-titulo">El Regreso del Jazz</h1>
+            <h3 class="movimientoh3" id="hero-subtitulo">Tras años de silencio...</h3>
         </div>
     </section>
 
     <section id="historia" class="historia-section">
         <div class="historia-container">
             <div class="historia-texto">
-                <h2>Nuestra historia</h2>
-                <p>
-                    En el corazón de San Sebastián, Altxerri nació como refugio de artistas y bohemios. Desde sus primeros compases, fue más que un bar: fue un latido constante de jazz, arte y libertad.
-                </p>
-                <p>
-                    Durante décadas, sus paredes vibraron con las melodías de grandes músicos nacionales e internacionales. Hoy, reabrimos con el mismo espíritu, renovados, pero fieles a nuestra esencia.
-                </p>
+                <h2 id="historia-titulo">Nuestra historia</h2>
+                <div id="historia-texto">
+                    <p>En el corazón de San Sebastián...</p>
+                    <p>Durante décadas...</p>
+                </div>
             </div>
             <div class="historia-imagen">
                 <img src="img/about.png" alt="Foto histórica de Altxerri Jazz Bar">
@@ -113,8 +103,8 @@
 
     <section id="galeria" class="gallery-section">
         <div class="gallery-title-container">
-            <h2>Galería</h2>
-            <p>Un recorrido visual por nuestras noches de Jazz, arte y buen ambiente.</p>
+            <h2 id="galeria-titulo">Galería</h2>
+            <p id="galeria-subtitulo">Un recorrido visual...</p>
         </div>
 
         <div class="carousel-gallery-container">
@@ -127,8 +117,8 @@
                 <img src="img/banda6.jpeg" alt="Imagen Galería 6" class="gallery-slide">
             </div>
 
-            <button class="gallery-btn left-gallery-btn">&#10094;</button>
-            <button class="gallery-btn right-gallery-btn">&#10095;</button>
+            <button class="gallery-btn left-gallery-btn">❮</button>
+            <button class="gallery-btn right-gallery-btn">❯</button>
             
             <div class="gallery-indicators"></div>
         </div>
@@ -136,135 +126,127 @@
 
     <section id="reserva" class="parallax-section">
         <div class="parallax-content">
-            <h2>Ven a vivir la experiencia Altxerri Jazz Bar</h2>
-            <button class="btn-newsletter" id="openNewsletterModalParallax">Newsletter</button>
+            <h2 id="parallax-titulo">Ven a vivir la experiencia Altxerri Jazz Bar</h2>
+            <button class="btn-newsletter" id="parallax-btn">Newsletter</button>
             <a href="reservar.html" class="btn-reservar">Reservar</a>
         </div>
     </section>
 
     <section id="eventos" class="event-carousel">
-  <div class="carousel-container">
-    <h2 class="event-section-title">Próximos Eventos</h2>
+        <div class="carousel-container">
+            <h2 class="event-section-title" id="eventos-titulo">Próximos Eventos</h2>
 
-    <button class="carousel-btn left">&#10094;</button>
+            <button class="carousel-btn left">❮</button>
 
-    <div class="carousel-track">
-      </div>
+            <div class="carousel-track">
+            </div>
 
-    <button class="carousel-btn right">&#10095;</button>
+            <button class="carousel-btn right">❯</button>
 
-  </div>
+        </div>
 
-  <!-- Buscador Nuevo de eventos -->
+        <div class="calendario-acceso">
+            <button id="abrirCalendario" class="btn-reservar2">Ver todos los eventos</button>
+        </div>
 
-  <!-- <div class="calendario-acceso">
-    <button id="abrirCalendario" class="btn-newsletter">Agenda</button>
-    <button id="abrirBuscador" class="btn-newsletter">Buscador</button>
-  </div> -->
-
-<!-- Fin Buscador Nuevo de eventos -->
-
-  <div class="calendario-acceso">
-    <button id="abrirCalendario" class="btn-reservar2">Ver todos los eventos</button>
-  </div>
-
-</section>
+    </section>
 
     <div id="modalCalendario" class="modal-calendario">
-  <div class="modal-contenido">
-    <span class="cerrar-modal" id="cerrarCalendario">&times;</span>
+        <div class="modal-contenido">
+            <span class="cerrar-modal" id="cerrarCalendario">×</span>
 
-    <div class="barra-filtros">
-      <select id="filtroEstado">
-        <option value="proximos">Próximos</option>
-        <option value="finalizados">Finalizados</option>
-      </select>
-      <input type="text" id="busquedaEventos" placeholder="Buscar evento...">
+            <div class="barra-filtros">
+                <select id="filtroEstado">
+                    <option value="proximos">Próximos</option>
+                    <option value="finalizados">Finalizados</option>
+                </select>
+                <input type="text" id="busquedaEventos" placeholder="Buscar evento...">
+            </div>
+
+            <div class="contenido-modal">
+                <div id="calendario" class="calendario"></div> 
+                <div id="detalleEvento" class="detalle-evento"></div> 
+            </div>
+        </div>
     </div>
-
-    <div class="contenido-modal">
-      <div id="calendario" class="calendario"></div> <div id="detalleEvento" class="detalle-evento"></div> </div>
-  </div>
-</div>
 
 
     <section id="contacto" class="contact-section">
-        <h2>Contacto</h2>
+        <h2 id="contacto-titulo">Contacto</h2>
 
         <div class="contact-tabs">
-            <button class="tab active" data-target="cliente">Cliente</button>
-            <button class="tab" data-target="banda">Banda / Solista</button>
-            <button class="tab" data-target="comercial">Propuesta Comercial</button>
-            <button class="tab" data-target="prensa">Prensa</button>
+            <button class="tab active" data-target="cliente" id="tab-cliente">Cliente</button>
+            <button class="tab" data-target="banda" id="tab-banda">Banda / Solista</button>
+            <button class="tab" data-target="comercial" id="tab-comercial">Propuesta Comercial</button>
+            <button class="tab" data-target="prensa" id="tab-prensa">Prensa</button>
         </div>
 
         <div class="form-container">
 
             <form id="cliente" class="contact-form active" action="https://formspree.io/f/tu_id_cliente" method="POST">
-                <input type="text" name="nombre" placeholder="Tu nombre" required>
-                <input type="email" name="email" placeholder="Tu email" required>
-                <input type="text" name="asunto" placeholder="Asunto" required>
-                <textarea name="mensaje" placeholder="Escribe tu mensaje" required></textarea>
-                <button type="submit">Enviar mensaje</button>
+                <input type="text" id="input-cliente-nombre" name="nombre" placeholder="Tu nombre" required>
+                <input type="email" id="input-cliente-mail" name="email" placeholder="Tu email" required>
+                <input type="text" id="input-cliente-asunto" name="asunto" placeholder="Asunto" required>
+                <textarea id="msg-cliente" name="mensaje" placeholder="Escribe tu mensaje" required></textarea>
+                <button type="submit" id="btn-cliente">Enviar mensaje</button>
             </form>
 
             <form id="banda" class="contact-form" action="https://formspree.io/f/tu_id_banda" method="POST">
-                <input type="text" name="nombre_banda" placeholder="Nombre de la banda/solista" required>
-                <input type="text" name="contacto" placeholder="Nombre de contacto" required>
-                <input type="email" name="email" placeholder="Email" required>
-                <input type="text" name="links" placeholder="Enlaces a material (YouTube, Spotify...)" required>
-                <textarea name="mensaje" placeholder="Escribe tu mensaje" required></textarea>
-                <button type="submit">Enviar propuesta</button>
+                <input type="text" id="input-banda-nombre" name="nombre_banda" placeholder="Nombre de la banda/solista" required>
+                <input type="text" id="input-banda-contacto" name="contacto" placeholder="Nombre de contacto" required>
+                <input type="email" id="input-banda-mail" name="email" placeholder="Email" required>
+                <input type="text" id="input-banda-material" name="links" placeholder="Enlaces a material (YouTube, Spotify...)" required>
+                <textarea id="msg-banda" name="mensaje" placeholder="Escribe tu mensaje" required></textarea>
+                <button type="submit" id="btn-banda">Enviar propuesta</button>
             </form>
 
             <form id="comercial" class="contact-form" action="https://formspree.io/f/tu_id_comercial" method="POST">
-                <input type="text" name="empresa" placeholder="Nombre de la empresa" required>
-                <input type="text" name="contacto" placeholder="Nombre de contacto" required>
-                <input type="email" name="email" placeholder="Email" required>
-                <input type="text" name="tipo" placeholder="Tipo de propuesta" required>
-                <textarea name="mensaje" placeholder="Escribe tu mensaje" required></textarea>
-                <button type="submit">Enviar propuesta</button>
+                <input type="text" id="input-comercial-empresa" name="empresa" placeholder="Nombre de la empresa" required>
+                <input type="text" id="input-comercial-contacto" name="contacto" placeholder="Nombre de contacto" required>
+                <input type="email" id="input-comercial-mail" name="email" placeholder="Email" required>
+                <input type="text" id="input-comercial-tipo" name="tipo" placeholder="Tipo de propuesta" required>
+                <textarea id="msg-comercial" name="mensaje" placeholder="Escribe tu mensaje" required></textarea>
+                <button type="submit" id="btn-comercial">Enviar propuesta</button>
             </form>
 
             <form id="prensa" class="contact-form" action="https://formspree.io/f/tu_id_prensa" method="POST">
-                <input type="text" name="medio" placeholder="Nombre del medio" required>
-                <input type="text" name="contacto" placeholder="Nombre de contacto" required>
-                <input type="email" name="email" placeholder="Email" required>
-                <input type="text" name="motivo" placeholder="Motivo del contacto" required>
-                <textarea name="mensaje" placeholder="Escribe tu mensaje" required></textarea>
-                <button type="submit">Enviar mensaje</button>
+                <input type="text" id="input-prensa-medio" name="medio" placeholder="Nombre del medio" required>
+                <input type="text" id="input-prensa-contacto" name="contacto" placeholder="Nombre de contacto" required>
+                <input type="email" id="input-prensa-mail" name="email" placeholder="Email" required>
+                <input type="text" id="input-prensa-motivo" name="motivo" placeholder="Motivo del contacto" required>
+                <textarea id="msg-prensa" name="mensaje" placeholder="Escribe tu mensaje" required></textarea>
+                <button type="submit" id="btn-prensa">Enviar mensaje</button>
             </form>
 
         </div>
     </section>
 
     <section class="location-section">
-    <div class="gallery-title-container">
-        <h2>Encuéntranos</h2>
-    </div>
-    
-    <div class="location-container">
-        
-        <div class="location-address">
-            <p>Erregina Erregeordea kalea, 2</p>
-            <p>20003 Donostia / San Sebastián, Gipuzkoa, España</p>
+        <div class="gallery-title-container">
+            <h2 id="ubicacion-titulo">Encuéntranos</h2>
         </div>
         
-<div class="location-map-wrapper">
-    <iframe 
-        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2902.5767398449925!2d-1.9817653999999998!3d43.3231191!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd51a54e390d51eb%3A0x4d2e9ccab4d662e1!2sAltxerri%20Jazz%26Club!5e0!3m2!1ses-419!2sar!4v1763236739987!5m2!1ses-419!2sar" 
-        width="100%" 
-        height="400" 
-        style="border:0;" 
-        allowfullscreen="" 
-        loading="lazy" 
-        referrerpolicy="no-referrer-when-downgrade">
-    </iframe>
+        <div class="location-container">
+            
+            <div class="location-address">
+                <p id="ubicacion-subtitulo">Erregina Erregeordea kalea, 2</p>
+                <p id="ubicacion-texto">20003 Donostia / San Sebastián, Gipuzkoa, España</p>
+            </div>
+            
+            <div class="location-map-wrapper">
+                <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2902.575390523363!2d-1.983502023466797!3d43.32309607362716!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd51a54c3003c28f%3A0x710207729056530!2sAltxerri%20Bar%20%26%20Jazz!5e0!3m2!1ses!2ses!4v1700000000000!5m2!1ses!2ses" 
+                    width="100%" 
+                    height="400" 
+                    style="border:0;" 
+                    allowfullscreen="" 
+                    loading="lazy" 
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+                </div>
 
-</div>
-
-    </div>
-</section>
+        </div>
+    </section>
 
 
     <footer class="footer">
@@ -287,21 +269,21 @@
         </div>
 
         <div class="footer-bottom">
-            <p>&copy; 2025 Altxerri Jazz Bar. <br>Realizada por <a href="https://www.instagram.com/sebaoconnor/">@sebaoconnor</a></p>
+            <p>© 2025 Altxerri Jazz Bar. <br>Realizada por <a href="https://www.instagram.com/sebaoconnor/">@sebaoconnor</a></p>
         </div>
     </footer>
 
     <div id="newsletterModal" class="newsletter-modal">
         <div class="modal-content-newsletter">
-            <span class="close-newsletter-modal">&times;</span>
+            <span class="close-newsletter-modal">×</span>
             <div class="newsletter-form-container" id="newsletterFormContainer">
-                <h3>¡Sé el primero en saberlo!</h3>
-                <p>Ingresa tu nombre y correo y entérate de todos los conciertos, eventos privados y noticias de Altxerri.</p>
+                <h3 id="newsletter-modal-titulo">¡Sé el primero en saberlo!</h3>
+                <p id="newsletter-modal-subtitulo">Ingresa tu nombre y correo y entérate de todos los conciertos, eventos privados y noticias de Altxerri.</p>
                 
                 <form id="newsletterForm">
                     <input type="text" id="newsletterName" placeholder="Tu Nombre" required>
                     <input type="email" id="newsletterEmail" placeholder="Tu Correo Electrónico" required>
-                    <button type="submit" class="btn-newsletter">Suscribirme</button>
+                    <button type="submit" class="btn-newsletter" id="newsletter-btn-enviar">Suscribirme</button>
                 </form>
                 <small id="formError" class="error-message"></small>
             </div>
