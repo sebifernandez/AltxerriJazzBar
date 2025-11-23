@@ -1127,18 +1127,17 @@ function inicializarPanelesBusquedaEventos() {
 }
 // --- FUNCIÓN DE RENDERIZADO BLINDADA Y DETALLADA ---
 function renderizarResultadosEventos() {
-    console.log("--> INICIO RENDERIZADO <--");
+    console.log("--> INICIO RENDERIZADO (FORZADO) <--");
     
-    // 1. Verificar Contenedores
     const contenedorMod = document.getElementById('mod-resultados-container');
     const contenedorBaja = document.getElementById('baja-resultados-container');
 
     if (!contenedorMod || !contenedorBaja) {
-        console.error("¡ERROR CRÍTICO! No se encontraron los contenedores en el HTML (IDs: mod-resultados-container, baja-resultados-container)");
+        console.error("Error: No se encontraron los contenedores en el HTML.");
         return;
     }
 
-    // 2. Captura de Inputs (Helper seguro)
+    // Helper para obtener valores de inputs de forma segura
     const getVal = (id) => document.getElementById(id)?.value || '';
     
     const filtrosMod = {
@@ -1155,58 +1154,52 @@ function renderizarResultadosEventos() {
         tags: getVal('baja-search-tags').toLowerCase(),
     };
 
-    console.log(`Eventos en memoria: ${adminEventos.length}`);
+    // Filtramos y Ordenamos (usando fechas seguras)
+    const filtradosMod = filtrarEventos(filtrosMod).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+    const filtradosBaja = filtrarEventos(filtrosBaja).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
 
-    // 3. Filtrado Seguro
-    // (Usamos una copia simple si filtrarEventos fallara, pero asumimos que funciona por los logs anteriores)
-    const filtradosMod = filtrarEventos(filtrosMod);
-    const filtradosBaja = filtrarEventos(filtrosBaja);
-    
-    console.log(`Filtrados para Modificar: ${filtradosMod.length}`);
-    console.log(`Filtrados para Baja: ${filtradosBaja.length}`);
+    console.log(`Eventos encontrados para Modificar: ${filtradosMod.length}`);
 
-    // 4. Generador de HTML Seguro (Try-Catch por elemento)
+    // Generador de HTML seguro
     const generarHTML = (lista, accion) => {
-        if (lista.length === 0) {
-            return '<div style="text-align:center; padding:2rem; color:#9E9E9E; border:1px dashed #555; margin-top:1rem;">No se encontraron eventos con estos filtros.</div>';
-        }
-        
-        return lista.map(evento => {
-            try {
-                return crearTarjetaResultadoEvento(evento, accion);
-            } catch (err) {
-                console.error("Error al generar tarjeta para el evento:", evento, err);
-                return `<div style="color:red; padding:1rem; border:1px solid red;">Error visualizando evento: ${evento.titulo || 'Sin título'}</div>`;
-            }
-        }).join('');
+        if (lista.length === 0) return '<p style="color:#ccc; padding:20px; text-align:center;">No hay eventos que coincidan.</p>';
+        return lista.map(ev => crearTarjetaResultadoEvento(ev, accion)).join('');
     };
 
-    // 5. Inyección al DOM (Aquí es donde sabremos si funciona)
+    // --- INYECCIÓN EN MODIFICACIÓN (Con Estilos Forzados) ---
     try {
         const htmlMod = generarHTML(filtradosMod, 'modificar');
-        // Forzamos un log del HTML generado para ver si está vacío
-        console.log("HTML generado para Modificar (primeros 50 chars):", htmlMod.substring(0, 50) + "...");
         
-        contenedorMod.innerHTML = htmlMod;
-        // Forzamos un estilo visible por si acaso el CSS estuviera oculto
-        contenedorMod.style.display = "grid"; 
-        contenedorMod.style.minHeight = "50px";
-        
-        console.log("DOM Modificación actualizado correctamente.");
-    } catch (e) {
-        console.error("Error al inyectar HTML en Modificación:", e);
-    }
+        // Inyectamos el CHIVATO ROJO + Las Tarjetas
+        contenedorMod.innerHTML = `
+            <div style="grid-column: 1/-1; background: #B71C1C; color: white; padding: 15px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #FFC107; border-radius: 10px;">
+                ⚠️ PRUEBA DE VISIBILIDAD ⚠️<br>
+                Si ves este cuadro rojo, el sistema funciona.<br>
+                Hay ${filtradosMod.length} tarjeta(s) generada(s) debajo.
+            </div>
+        ` + htmlMod;
 
+        // FORZAMOS ESTILOS (Ignora admin.css si está roto)
+        contenedorMod.style.display = 'grid';
+        contenedorMod.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, 1fr))';
+        contenedorMod.style.gap = '1.5rem';
+        contenedorMod.style.width = '100%';
+        contenedorMod.style.minHeight = '100px';
+        contenedorMod.style.visibility = 'visible';
+        contenedorMod.style.opacity = '1';
+        
+    } catch (e) { console.error("Error renderizando Modificar:", e); }
+
+    // --- INYECCIÓN EN BAJA ---
     try {
         const htmlBaja = generarHTML(filtradosBaja, 'eliminar');
         contenedorBaja.innerHTML = htmlBaja;
-        contenedorBaja.style.display = "grid";
-        contenedorBaja.style.minHeight = "50px";
-        console.log("DOM Baja actualizado correctamente.");
-    } catch (e) {
-        console.error("Error al inyectar HTML en Baja:", e);
-    }
-    
+        // Forzamos estilos aquí también
+        contenedorBaja.style.display = 'grid';
+        contenedorBaja.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, 1fr))';
+        contenedorBaja.style.gap = '1.5rem';
+    } catch (e) { console.error("Error renderizando Baja:", e); }
+
     console.log("--> FIN RENDERIZADO <--");
 }
 // --- FUNCIÓN DE FILTRADO SEGURA ---
