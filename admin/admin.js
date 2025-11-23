@@ -1233,67 +1233,37 @@ function filtrarEventos(filtros) {
     });
 }
 
+// --- FUNCIÓN DE TARJETA A PRUEBA DE FALLOS (Reemplazar en admin.js) ---
 function crearTarjetaResultadoEvento(evento, tipoAccion) {
-    const esModificar = tipoAccion === 'modificar';
-    const botonHtml = esModificar
-        ? `<button class="btn btn-card btn-card-modificar" data-id="${evento._id}"><i class='bx bxs-pencil'></i> Modificar</button>`
-        : `<button class="btn btn-card btn-card-eliminar" data-id="${evento._id}"><i class='bx bxs-trash'></i> Eliminar</button>`;
+    // 1. Botones según la acción
+    const botonHtml = tipoAccion === 'modificar'
+        ? `<button class="btn btn-card btn-card-modificar" data-id="${evento._id}" style="background:#E3F2FD; color:#1565C0;">Modificar</button>`
+        : `<button class="btn btn-card btn-card-eliminar" data-id="${evento._id}" style="background:#FFEBEE; color:#C62828;">Eliminar</button>`;
 
-    // BLINDAJE 1: Título y Fechas seguros
-    let tituloMostrar = evento.titulo || "Evento sin título";
-    let fechaMostrar = evento.fecha || "Sin fecha";
+    // 2. Datos Seguros (Si falta algo, ponemos texto genérico)
+    const titulo = evento.titulo || "Evento sin título";
+    const fecha = evento.fecha || "Sin fecha";
+    const tipo = evento.tipoEvento || "Regular";
     
-    // Lógica de Imagen
-    let imagenMostrar;
-    if (evento.imagen && (evento.imagen.startsWith('http') || evento.imagen.startsWith('https'))) {
-        imagenMostrar = evento.imagen; 
-    } else if (evento.imagen) {
-        imagenMostrar = `../img/${evento.imagen}`;
-    } else {
-        imagenMostrar = `../img/imgBandaGenerica.jpg`;
-    }
+    // 3. Imagen Simple (Sin lógica compleja de URL por ahora)
+    // Si tiene imagen, intentamos mostrarla, si no, un placeholder de color.
+    let imgHtml = `<div style="width:80px; height:80px; background:#555; display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px;">Sin Img</div>`;
     
-    // Casos especiales (Cerrado/Privado)
-    if (evento.tipoEvento === 'Cerrado') {
-        tituloMostrar = "CERRADO";
-        imagenMostrar = "../img/cerrado.jpg";
-    } else if (evento.tipoEvento === 'Privado') {
-        tituloMostrar = "EVENTO PRIVADO";
-        imagenMostrar = "../img/eventoPrivado.jpg";
-    }
-    
-    const tipoClase = `tipo-${(evento.tipoEvento || 'regular').toLowerCase()}`;
-
-    // BLINDAJE 2: Tags (El culpable probable)
-    // Verificamos si es array antes de intentar .join()
-    let tagsVisuales = 'Sin tags';
-    if (Array.isArray(evento.imgReferencia) && evento.imgReferencia.length > 0) {
-        tagsVisuales = evento.imgReferencia.join(', ');
-    } else if (typeof evento.imgReferencia === 'string') {
-        tagsVisuales = evento.imgReferencia; // Si se guardó como texto plano, lo mostramos igual
+    if (evento.imagen) {
+        const ruta = (evento.imagen.startsWith('http')) ? evento.imagen : `../img/${evento.imagen}`;
+        imgHtml = `<img src="${ruta}" style="width:80px; height:80px; object-fit:cover;">`;
     }
 
+    // 4. HTML Simple y Directo
     return `
-    <div class="card-resultado" id="evento-card-${evento._id}">
-        <div class="card-resultado-header">
-            <img src="${imagenMostrar}" alt="${tituloMostrar}" class="card-resultado-img">
-            <div class="card-resultado-info">
-                <h4>${tituloMostrar}</h4>
-                <p>${fechaMostrar}</p>
-                <p class="${tipoClase}">${evento.tipoEvento || 'Tipo desc.'}</p>
-            </div>
+    <div class="card-resultado" style="background:#333; color:#fff; margin-bottom:10px; padding:10px; display:flex; gap:10px; border:1px solid #555;">
+        ${imgHtml}
+        <div style="flex-grow:1;">
+            <h4 style="margin:0; color:#fff;">${titulo}</h4>
+            <p style="margin:5px 0 0; font-size:0.9rem; color:#ccc;">${fecha} | ${tipo}</p>
+            <small style="color:#777; font-size:0.7rem;">ID: ${evento._id}</small>
         </div>
-        <div class="card-resultado-body">
-            <div class="data-pair">
-                <strong>Live:</strong>
-                <span>${evento.live || 'No asignado'}</span>
-            </div>
-            <div class="data-pair">
-                <strong>Tags:</strong>
-                <span>${tagsVisuales}</span>
-            </div>
-        </div>
-        <div class="card-resultado-footer">
+        <div style="display:flex; align-items:center;">
             ${botonHtml}
         </div>
     </div>
