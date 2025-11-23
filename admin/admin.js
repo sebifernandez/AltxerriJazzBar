@@ -1214,18 +1214,21 @@ function crearTarjetaResultadoEvento(evento, tipoAccion) {
         ? `<button class="btn btn-card btn-card-modificar" data-id="${evento._id}"><i class='bx bxs-pencil'></i> Modificar</button>`
         : `<button class="btn btn-card btn-card-eliminar" data-id="${evento._id}"><i class='bx bxs-trash'></i> Eliminar</button>`;
 
-    let tituloMostrar = evento.titulo;
-    let imagenMostrar;
-
-    // Comprueba si la imagen es una URL completa (de Cloudinary)
-    if (evento.imagen && (evento.imagen.startsWith('http') || evento.imagen.startsWith('https'))) {
-        imagenMostrar = evento.imagen; // Ya es una URL, la usamos directamente
-    } else if (evento.imagen) {
-        imagenMostrar = `../img/${evento.imagen}`; // Es un archivo local (ej: imgBandaGenerica.jpg)
-    } else {
-        imagenMostrar = `../img/imgBandaGenerica.jpg`; // Fallback por si acaso
-    }
+    // BLINDAJE 1: Título y Fechas seguros
+    let tituloMostrar = evento.titulo || "Evento sin título";
+    let fechaMostrar = evento.fecha || "Sin fecha";
     
+    // Lógica de Imagen
+    let imagenMostrar;
+    if (evento.imagen && (evento.imagen.startsWith('http') || evento.imagen.startsWith('https'))) {
+        imagenMostrar = evento.imagen; 
+    } else if (evento.imagen) {
+        imagenMostrar = `../img/${evento.imagen}`;
+    } else {
+        imagenMostrar = `../img/imgBandaGenerica.jpg`;
+    }
+    
+    // Casos especiales (Cerrado/Privado)
     if (evento.tipoEvento === 'Cerrado') {
         tituloMostrar = "CERRADO";
         imagenMostrar = "../img/cerrado.jpg";
@@ -1233,16 +1236,26 @@ function crearTarjetaResultadoEvento(evento, tipoAccion) {
         tituloMostrar = "EVENTO PRIVADO";
         imagenMostrar = "../img/eventoPrivado.jpg";
     }
-    const tipoClase = `tipo-${evento.tipoEvento.toLowerCase()}`;
+    
+    const tipoClase = `tipo-${(evento.tipoEvento || 'regular').toLowerCase()}`;
+
+    // BLINDAJE 2: Tags (El culpable probable)
+    // Verificamos si es array antes de intentar .join()
+    let tagsVisuales = 'Sin tags';
+    if (Array.isArray(evento.imgReferencia) && evento.imgReferencia.length > 0) {
+        tagsVisuales = evento.imgReferencia.join(', ');
+    } else if (typeof evento.imgReferencia === 'string') {
+        tagsVisuales = evento.imgReferencia; // Si se guardó como texto plano, lo mostramos igual
+    }
 
     return `
     <div class="card-resultado" id="evento-card-${evento._id}">
         <div class="card-resultado-header">
             <img src="${imagenMostrar}" alt="${tituloMostrar}" class="card-resultado-img">
             <div class="card-resultado-info">
-                <h4>${tituloMostrar || "Evento sin título"}</h4>
-                <p>${evento.fecha}</p>
-                <p class="${tipoClase}">${evento.tipoEvento}</p>
+                <h4>${tituloMostrar}</h4>
+                <p>${fechaMostrar}</p>
+                <p class="${tipoClase}">${evento.tipoEvento || 'Tipo desc.'}</p>
             </div>
         </div>
         <div class="card-resultado-body">
@@ -1252,7 +1265,7 @@ function crearTarjetaResultadoEvento(evento, tipoAccion) {
             </div>
             <div class="data-pair">
                 <strong>Tags:</strong>
-                <span>${(evento.imgReferencia && evento.imgReferencia.length > 0) ? evento.imgReferencia.join(', ') : 'Sin tags'}</span>
+                <span>${tagsVisuales}</span>
             </div>
         </div>
         <div class="card-resultado-footer">
