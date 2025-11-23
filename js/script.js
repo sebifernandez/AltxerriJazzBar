@@ -34,8 +34,8 @@ async function cargarContenidoDesdeAPI() {
         if (!response.ok) throw new Error('Error al cargar contenido');
         const data = await response.json();
         
-        contenidoWeb.es = data.es.datos;
-        contenidoWeb.en = data.en.datos;
+        contenidoWeb.es = data.es;
+        contenidoWeb.en = data.en;
         
         console.log("Textos cargados:", contenidoWeb);
     } catch (error) {
