@@ -774,19 +774,34 @@ function inicializarFormularioAlta() {
         btnSubmit.disabled = true;
         btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
         
-        const eventoData = {
-            fecha: document.getElementById('evento-fecha').value,
-            tipoEvento: document.getElementById('evento-tipo').value,
-            titulo: document.getElementById('evento-titulo').value.trim(),
+        const eventoData = {
+            fecha: document.getElementById('evento-fecha').value,
+            tipoEvento: document.getElementById('evento-tipo').value,
+            
+            // ESPAÑOL
+            titulo: document.getElementById('evento-titulo').value.trim(),
+            descripcion: document.getElementById('evento-descripcion').value.trim(),
+            
+            // INGLES (Nuevos campos)
             titulo_en: document.getElementById('evento-titulo-en').value.trim(),
-            descripcion: document.getElementById('evento-descripcion').value.trim(),
             descripcion_en: document.getElementById('evento-descripcion-en').value.trim(),
+
+            // Links
             live: document.getElementById('evento-live').value.trim(),
-            concierto: document.getElementById('evento-concierto').value.trim(),
-            usaGenerica: document.getElementById('evento-img-generica').checked,
-            archivoImagen: document.getElementById('evento-imagen-upload').files[0],
-            imgReferencia: tags
-        };
+            concierto: document.getElementById('evento-concierto').value.trim(),
+            
+            // Imagen
+            usaGenerica: document.getElementById('evento-img-generica').checked,
+            archivoImagen: document.getElementById('evento-imagen-upload').files[0],
+            imgReferencia: tags
+        };
+        
+        // Lógica para el checkbox "Mismo contenido"
+        const checkMismo = document.getElementById('evento-mismo-contenido');
+        if (checkMismo && checkMismo.checked) {
+            eventoData.titulo_en = eventoData.titulo;
+            eventoData.descripcion_en = eventoData.descripcion;
+        }
 
         // ... (Validación y lógica de subida de imagen - SIN CAMBIOS) ...
         if (eventoData.tipoEvento === 'Regular' && !eventoData.titulo) {
@@ -869,6 +884,8 @@ function inicializarFormularioAlta() {
             imgReferencia: eventoData.imgReferencia,
             titulo: eventoData.titulo,
             descripcion: eventoData.descripcion,
+            titulo_en: eventoData.titulo_en,
+            descripcion_en: eventoData.descripcion_en,
             live: eventoData.live,
             concierto: eventoData.concierto
         };
@@ -1255,80 +1272,79 @@ function prellenarFormularioModEvento(evento) {
     tabContent.querySelector('h3').textContent = `Modificando: ${evento.titulo || evento.tipoEvento}`;
     form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
 
+    // 1. Fechas
     const inputFecha = document.getElementById('evento-fecha');
     inputFecha.value = evento.fecha;
     
-    // --- ¡ARREGLO! Aseguramos que el picker se destruya y recree
-    if (picker) {
-        picker.destroy();
-    }
-    picker = new Litepicker({
-        element: inputFecha,
-        format: 'YYYY-MM-DD',
-        lang: 'es-ES',
-        // (El resto de la config del picker...)
-        buttonText: {
-            previousMonth: '<i class="bx bx-chevron-left"></i>',
-            nextMonth: '<i class="bx bx-chevron-right"></i>',
-            reset: '<i class="bx bx-refresh"></i>',
-            apply: 'Aplicar'
-        },
-        onselected: (date) => {
-            const fechaSeleccionadaMillis = date.getTime();
-            const hoyMillis = DateTime.now().startOf('day').toMillis();
-            if (fechaSeleccionadaMillis < hoyMillis) {
-                if (!confirm("Has seleccionado una fecha en el pasado. ¿Estás seguro de que quieres continuar?")) {
-                    picker.setDate(evento.fecha); // Lo revierte a la fecha original
-                }
-            }
-        }
-    });
-    picker.setDate(evento.fecha); 
-    // --- FIN ARREGLO ---
-    
+    if (picker) picker.destroy();
+    crearCalendarioAlta(); // Re-creamos el picker
+    // Pequeño timeout para asegurar que el picker esté listo antes de setear la fecha
+    setTimeout(() => { if(picker) picker.setDate(evento.fecha); }, 100);
+
+    // 2. Datos Básicos
     document.getElementById('evento-tipo').value = evento.tipoEvento;
-    document.getElementById('evento-titulo').value = evento.titulo;
-    document.getElementById('evento-titulo-en').value = evento.titulo_en || evento.titulo;
+    
+    // 3. Datos Bilingües (Aquí estaba el problema)
+    document.getElementById('evento-titulo').value = evento.titulo || '';
     document.getElementById('evento-descripcion').value = evento.descripcion || '';
-    document.getElementById('evento-descripcion-en').value = evento.descripcion_en || evento.descripcion || '';
+    
+    // Inglés (con fallback si no existe)
+    const tituloEN = evento.titulo_en || evento.titulo || '';
+    const descEN = evento.descripcion_en || evento.descripcion || '';
+    
+    document.getElementById('evento-titulo-en').value = tituloEN;
+    document.getElementById('evento-descripcion-en').value = descEN;
+
+    // 4. Links
     document.getElementById('evento-live').value = evento.live || '';
     document.getElementById('evento-concierto').value = evento.concierto || '';
-    document.getElementById('evento-tipo').dispatchEvent(new Event('change'));
-    tags = evento.imgReferencia || [];
-    renderizarTags();
 
-    if (evento.titulo === evento.titulo_en && evento.descripcion === evento.descripcion_en) {
-        document.getElementById('evento-mismo-contenido').checked = true;
-        document.getElementById('evento-titulo-en').disabled = true;
-        document.getElementById('evento-descripcion-en').disabled = true;
-    } else {
-        document.getElementById('evento-mismo-contenido').checked = false;
-        document.getElementById('evento-titulo-en').disabled = false;
-        document.getElementById('evento-descripcion-en').disabled = false;
+    // 5. Lógica del Checkbox "Mismo Contenido"
+    const checkMismo = document.getElementById('evento-mismo-contenido');
+    const esIgual = (evento.titulo === tituloEN) && (evento.descripcion === descEN);
+    
+    if (checkMismo) {
+        checkMismo.checked = esIgual;
+        // Disparamos el evento para que habilite/deshabilite los campos
+        checkMismo.dispatchEvent(new Event('change'));
     }
 
+    // 6. Imagen y Tags
+    document.getElementById('evento-tipo').dispatchEvent(new Event('change')); // Actualiza estado de cerrado/privado
+    tags = evento.imgReferencia || [];
+    renderizarTags();
+    
+    // Lógica de imagen existente (Visualización)
     const checkGenerica = document.getElementById('evento-img-generica');
     const fieldsetImagen = document.getElementById('fieldset-imagen');
     const infoImg = document.getElementById('info-img-actual');
     if (infoImg) infoImg.remove();
+
     if (evento.imagen === 'imgBandaGenerica.jpg') {
         checkGenerica.checked = true;
         fieldsetImagen.disabled = true;
     } else {
         checkGenerica.checked = false;
         fieldsetImagen.disabled = false;
+        
+        // Bloqueamos edición de tags si hay imagen asignada
+        deshabilitarEdicionTags();
+
         const infoHtml = `
             <div id="info-img-actual" class="info-imagen-actual">
                 <strong>Imagen Actual:</strong> ${evento.imagen}
                 <br>
-                <small>Sube un archivo nuevo para reemplazarla, o déjalo vacío para conservarla.</small>
+                <small>Sube un archivo nuevo para reemplazarla.</small>
             </div>
         `;
         fieldsetImagen.insertAdjacentHTML('afterbegin', infoHtml);
     }
+
     if (evento.tipoEvento === 'Cerrado' || evento.tipoEvento === 'Privado') {
         fieldsetImagen.disabled = true;
     }
+
+    // 7. Ir al tab y scrollear
     document.querySelector('.tab-link[data-tab="alta-evento"]').click();
     form.scrollIntoView({ behavior: 'smooth' });
 }

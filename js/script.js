@@ -461,12 +461,24 @@ function updateCarousel() {
 }
 
 function setupCarouselControls() {
-    // Limpiar listeners anteriores para no duplicar
-    const newLeft = leftBtn.cloneNode(true);
-    const newRight = rightBtn.cloneNode(true);
-    leftBtn.parentNode.replaceChild(newLeft, leftBtn);
-    rightBtn.parentNode.replaceChild(newRight, rightBtn);
+    // Buscamos los botones frescos del DOM
+    const left = document.querySelector('.carousel-btn.left');
+    const right = document.querySelector('.carousel-btn.right');
 
+    if (!left || !right) return;
+
+    // Clona y reemplaza para limpiar listeners viejos de forma segura
+    const newLeft = left.cloneNode(true);
+    const newRight = right.cloneNode(true);
+    
+    if (left.parentNode) {
+        left.parentNode.replaceChild(newLeft, left);
+    }
+    if (right.parentNode) {
+        right.parentNode.replaceChild(newRight, right);
+    }
+
+    // Asignamos los nuevos listeners
     newLeft.addEventListener('click', () => {
         activeIndex = Math.max(0, activeIndex - 1);
         updateCarousel();

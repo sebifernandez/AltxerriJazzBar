@@ -119,7 +119,7 @@ const DATOS_SEMILLA = [
             idioma: "es",
             navbar: {
                 items: [
-                    { texto: "Inicio", link: "#hero" },
+                    { texto: "Inicio", link: "#top" },
                     { texto: "Historia", link: "#historia" },
                     { texto: "Galería", link: "#galeria" },
                     { texto: "Conciertos", link: "#eventos" },
@@ -194,7 +194,7 @@ const DATOS_SEMILLA = [
             idioma: "en",
             navbar: {
                 items: [
-                    { texto: "Home", link: "#hero" },
+                    { texto: "Home", link: "#top" },
                     { texto: "History", link: "#historia" },
                     { texto: "Gallery", link: "#galeria" },
                     { texto: "Concerts", link: "#eventos" },

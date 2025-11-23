@@ -1345,3 +1345,25 @@ body {
         min-height: 100%;
     }
 }
+
+#btn-lang-toggle {
+    background-color: #000 !important;
+    color: #fff !important;
+    border: 1px solid #fff !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px; /* Ancho fijo */
+    height: 40px; /* Altura fija */
+    padding: 0;
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-left: 1rem;
+    cursor: pointer;
+    z-index: 100;
+}
+
+#btn-lang-toggle:hover {
+    background-color: #fff !important;
+    color: #000 !important;
+}
