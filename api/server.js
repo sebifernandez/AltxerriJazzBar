@@ -44,7 +44,7 @@ cloudinary.config({
   secure: true,
 });
 
-// --- DATOS SEMILLA (A MEDIDA PARA ALTXERRI JAZZ BAR) ---
+// --- DATOS SEMILLA (DEFINITIVO Y COMPLETO V2) ---
 const DATOS_SEMILLA = [
     // 1. Textos UI de la Carta (ES)
     {
@@ -117,19 +117,17 @@ const DATOS_SEMILLA = [
         datos: {
             tipo: "home",
             idioma: "es",
-            // Barra de Navegación
             navbar: {
                 items: [
                     { texto: "Inicio", link: "#hero" },
                     { texto: "Historia", link: "#historia" },
                     { texto: "Galería", link: "#galeria" },
                     { texto: "Conciertos", link: "#eventos" },
-                    { texto: "Carta", link: "/carta" }, // Link externo a carta.html
+                    { texto: "Carta", link: "carta.html" }, 
                     { texto: "Contacto", link: "#contacto" }
                 ],
-                btnExtra: "Newsletter" // El botón del final
+                btnExtra: "Newsletter"
             },
-            // Secciones Principales
             hero: { 
                 titulo: "El Regreso del Jazz", 
                 subtitulo: "Tras años de silencio, el mítico Altxerri Jazz Bar de San Sebastián vuelve a abrir sus puertas. <br>Un lugar donde el arte, la música y las noches mágicas cobran vida nuevamente." 
@@ -143,12 +141,11 @@ const DATOS_SEMILLA = [
                 subtitulo: "Un recorrido visual por nuestras noches de Jazz, arte y buen ambiente." 
             },
             parallax: { 
-                titulo: "Suscríbete a nuestras novedades y vive la experiencia Altxerri Jazz Bar", // Ejemplo para newsletter
+                titulo: "Suscríbete a nuestras novedades y vive la experiencia Altxerri Jazz Bar", 
                 btnTexto: "Newsletter"
             },
             eventos: { 
                 titulo: "Próximos Eventos",
-                // Textos fijos de las cards (para traducir)
                 ui: {
                     btnVivo: "Ver en Vivo",
                     btnArchivo: "Reviví el concierto",
@@ -159,7 +156,6 @@ const DATOS_SEMILLA = [
                     txtEspecial: "Sigue en ambiente:"
                 }
             },
-            // Sección Contacto y Formularios Dinámicos
             contacto: { 
                 titulo: "Contacto",
                 pestanas: {
@@ -169,46 +165,17 @@ const DATOS_SEMILLA = [
                     prensa: "Prensa"
                 },
                 formularios: {
-                    cliente: {
-                        phNombre: "Tu Nombre",
-                        phMail: "Tu Correo",
-                        phAsunto: "Asunto",
-                        phMensaje: "Escribe tu Mensaje",
-                        btnEnviar: "Enviar Mensaje"
-                    },
-                    banda: {
-                        phNombreBanda: "Nombre de la Banda/solista",
-                        phContacto: "Nombre del Contacto",
-                        phMail: "Correo Electrónico",
-                        phMaterial: "Enlace a material (YouTube/Spotify...)",
-                        phMensaje: "Mensaje / Propuesta...",
-                        btnEnviar: "Enviar Propuesta"
-                    },
-                    comercial: {
-                        phEmpresa: "Nombre de la Empresa",
-                        phContacto: "Nombre del Contacto",
-                        phMail: "Correo Electrónico",
-                        phTipo: "Tipo de Propuesta",
-                        phMensaje: "Escribe tu mensaje",
-                        btnEnviar: "Enviar Propuesta"
-                    },
-                    prensa: {
-                        phMedio: "Nombre del Medio",
-                        phContacto: "Nombre del Contacto",
-                        phMail: "Correo Electrónico",
-                        phMotivo: "Motivo del contacto",
-                        phMensaje: "Escribe tu mensaje",
-                        btnEnviar: "Enviar Mensaje"
-                    }
+                    cliente: { phNombre: "Tu Nombre", phMail: "Tu Correo", phAsunto: "Asunto", phMensaje: "Escribe tu Mensaje", btnEnviar: "Enviar Mensaje" },
+                    banda: { phNombreBanda: "Nombre de la Banda/solista", phContacto: "Nombre del Contacto", phMail: "Correo Electrónico", phMaterial: "Enlace a material (YouTube/Spotify...)", phMensaje: "Mensaje / Propuesta...", btnEnviar: "Enviar Propuesta" },
+                    comercial: { phEmpresa: "Nombre de la Empresa", phContacto: "Nombre del Contacto", phMail: "Correo Electrónico", phTipo: "Tipo de Propuesta", phMensaje: "Escribe tu mensaje", btnEnviar: "Enviar Propuesta" },
+                    prensa: { phMedio: "Nombre del Medio", phContacto: "Nombre del Contacto", phMail: "Correo Electrónico", phMotivo: "Motivo del contacto", phMensaje: "Escribe tu mensaje", btnEnviar: "Enviar Mensaje" }
                 }
             },
-            // Ubicación (Octava Sección)
             ubicacion: {
                 titulo: "Encuéntranos",
-                subtitulo: "Erregina Erregeordea kalea, 2", // Negrita
-                texto: "20003 Donostia / San Sebastián, Gipuzkoa, España" // Texto pequeño
+                subtitulo: "Erregina Erregeordea kalea, 2",
+                texto: "20003 Donostia / San Sebastián, Gipuzkoa, España"
             },
-            // Sección Extra (Newsletter Modal)
             newsletter: {
                 titulo: "¡Sé el primero en saberlo!",
                 subtitulo: "Ingresa tu nombre y correo y entérate de todos los conciertos, eventos privados y noticias de Altxerri.",
@@ -218,7 +185,7 @@ const DATOS_SEMILLA = [
             }
         }
     },
-    // 4. Contenido HOME (ENGLISH) - ESTRUCTURA IDÉNTICA
+    // 4. Contenido HOME (ENGLISH)
     {
         coleccion: "contenido_web",
         id_personalizado: "home_en",
@@ -231,25 +198,25 @@ const DATOS_SEMILLA = [
                     { texto: "History", link: "#historia" },
                     { texto: "Gallery", link: "#galeria" },
                     { texto: "Concerts", link: "#eventos" },
-                    { texto: "Menu", link: "/carta" },
+                    { texto: "Menu", link: "carta.html" },
                     { texto: "Contact", link: "#contacto" }
                 ],
                 btnExtra: "Newsletter"
             },
             hero: { 
                 titulo: "The Return of Jazz", 
-                subtitulo: "After years of silence, the legendary Altxerri Jazz Bar in San Sebastián is opening its doors once again. <br>A place where art, music, and magical nights come back to life." 
+                subtitulo: "After years of silence, the legendary Altxerri Jazz Bar returns. <br>A place where art, music, and magical nights come alive again." 
             },
             historia: { 
                 titulo: "Our History", 
-                texto: "In the heart of San Sebastián, Altxerri was born as a refuge for artists and bohemians. From its very first notes, it was more than a bar: it was a steady heartbeat of jazz, art, and freedom. <br>For decades, its walls resonated with the melodies of great national and international musicians. Today, we reopen with the same spirit—renewed, yet faithful to our essence." 
+                texto: "In the heart of San Sebastián, Altxerri was born as a refuge for artists and bohemians. <br>Today, we reopen with the same spirit, renewed, yet faithful to our essence." 
             },
             galeria: { 
                 titulo: "Gallery", 
-                subtitulo: "A glimpse of our nights" 
+                subtitulo: "A visual journey through our nights of Jazz, art, and good vibes." 
             },
             parallax: { 
-                titulo: "Subscribe to our news", 
+                titulo: "Subscribe to our news and live the Altxerri Jazz Bar experience", 
                 btnTexto: "Newsletter"
             },
             eventos: { 
@@ -257,63 +224,36 @@ const DATOS_SEMILLA = [
                 ui: {
                     btnVivo: "Watch Live",
                     btnArchivo: "Watch Archive",
-                    labelCerrado: "Closed for rest",
+                    labelCerrado: "Closed for Rest",
+                    txtCerrado: "We'll be back soon with more Jazz!",
                     labelPrivado: "Private Event",
-                    txtCerrado: "We’ll be back soon with more jazz!",
-                    txtPrivado: "Sorry… but we’ll be waiting for you the rest of the week!",
-                    txtEspecial: "Stay in the vibe:"
+                    txtPrivado: "Sorry... We'll be waiting for you the rest of the week!",
+                    txtEspecial: "Keep the vibe:"
                 }
             },
             contacto: { 
                 titulo: "Contact",
                 pestanas: {
                     cliente: "Customer",
-                    banda: "Band / Artist",
+                    banda: "Band / Soloist",
                     comercial: "Business Proposal",
                     prensa: "Press"
                 },
                 formularios: {
-                    cliente: {
-                        phNombre: "Your Name",
-                        phMail: "Your Email",
-                        phAsunto: "Subject",
-                        phMensaje: "Your Message...",
-                        btnEnviar: "Send Message"
-                    },
-                    banda: {
-                        phNombreBanda: "Band/Artist Name",
-                        phContacto: "Contact Name",
-                        phMail: "Email",
-                        phMaterial: "Link to material (YouTube/Spotify...)",
-                        phMensaje: "Message / Proposal...",
-                        btnEnviar: "Send Proposal"
-                    },
-                    comercial: {
-                        phEmpresa: "Company Name",
-                        phContacto: "Contact Name",
-                        phMail: "Email",
-                        phTipo: "Proposal Type",
-                        phMensaje: "Details...",
-                        btnEnviar: "Send Proposal"
-                    },
-                    prensa: {
-                        phMedio: "Media Name",
-                        phContacto: "Contact Name",
-                        phMail: "Email",
-                        phMotivo: "Reason for contact",
-                        phMensaje: "Message...",
-                        btnEnviar: "Send Message"
-                    }
+                    cliente: { phNombre: "Your Name", phMail: "Your Email", phAsunto: "Subject", phMensaje: "Write your Message", btnEnviar: "Send Message" },
+                    banda: { phNombreBanda: "Band/Artist Name", phContacto: "Contact Name", phMail: "Email", phMaterial: "Link to material", phMensaje: "Message / Proposal...", btnEnviar: "Send Proposal" },
+                    comercial: { phEmpresa: "Company Name", phContacto: "Contact Name", phMail: "Email", phTipo: "Proposal Type", phMensaje: "Write your message", btnEnviar: "Send Proposal" },
+                    prensa: { phMedio: "Media Name", phContacto: "Contact Name", phMail: "Email", phMotivo: "Reason for contact", phMensaje: "Write your message", btnEnviar: "Send Message" }
                 }
             },
             ubicacion: {
-                titulo: "Location",
+                titulo: "Find Us",
                 subtitulo: "Erregina Erregeordea kalea, 2",
                 texto: "20003 Donostia / San Sebastián, Gipuzkoa, Spain"
             },
             newsletter: {
                 titulo: "Be the first to know!",
-                subtitulo: "Enter your name and email to stay informed about all Altxerri concerts, private events, and news.",
+                subtitulo: "Enter your name and email to get all the news.",
                 phNombre: "Your Name",
                 phMail: "Your Email",
                 btnSuscribir: "Subscribe"
