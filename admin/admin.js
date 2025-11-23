@@ -1078,9 +1078,9 @@ async function fetchEventosData() {
         });
         if (!response.ok) {
             if (response.status === 401 || response.status === 403) {
-                 alert("Error de autenticación. Saliendo...");
-                 document.getElementById('logout-btn').click();
-                 return;
+                alert("Error de autenticación. Saliendo...");
+                document.getElementById('logout-btn').click();
+                return;
             }
             throw new Error('No se pudo cargar eventos.json desde la API');
         }
@@ -1128,34 +1128,82 @@ function inicializarPanelesBusquedaEventos() {
 function renderizarResultadosEventos() {
     const contenedorMod = document.getElementById('mod-resultados-container');
     const contenedorBaja = document.getElementById('baja-resultados-container');
-    if (!contenedorMod || !contenedorBaja) return;
+    
+    if (!contenedorMod || !contenedorBaja) {
+        console.warn("No se encontraron los contenedores de resultados en el DOM.");
+        return;
+    }
+
+    // Captura segura de inputs (usando ?.value para evitar errores si no existen)
     const filtrosMod = {
-        fecha: document.getElementById('mod-search-fecha').value,
-        tipo: document.getElementById('mod-search-tipo').value,
-        titulo: document.getElementById('mod-search-titulo').value.toLowerCase(),
-        tags: document.getElementById('mod-search-tags').value.toLowerCase(),
+        fecha: document.getElementById('mod-search-fecha')?.value || '',
+        tipo: document.getElementById('mod-search-tipo')?.value || '',
+        titulo: (document.getElementById('mod-search-titulo')?.value || '').toLowerCase(),
+        tags: (document.getElementById('mod-search-tags')?.value || '').toLowerCase(),
     };
+
     const filtrosBaja = {
-        fecha: document.getElementById('baja-search-fecha').value,
-        tipo: document.getElementById('baja-search-tipo').value,
-        titulo: document.getElementById('baja-search-titulo').value.toLowerCase(),
-        tags: document.getElementById('baja-search-tags').value.toLowerCase(),
+        fecha: document.getElementById('baja-search-fecha')?.value || '',
+        tipo: document.getElementById('baja-search-tipo')?.value || '',
+        titulo: (document.getElementById('baja-search-titulo')?.value || '').toLowerCase(),
+        tags: (document.getElementById('baja-search-tags')?.value || '').toLowerCase(),
     };
+
+    console.log("AdminEventos cargados:", adminEventos.length);
+
+    // Filtrado y Ordenamiento BLINDADO contra fechas nulas
     const eventosFiltradosMod = filtrarEventos(filtrosMod)
-        .sort((a, b) => b.fecha.localeCompare(a.fecha));
+        .sort((a, b) => {
+            const fechaA = a.fecha || '0000-00-00';
+            const fechaB = b.fecha || '0000-00-00';
+            return fechaB.localeCompare(fechaA);
+        });
+
     const eventosFiltradosBaja = filtrarEventos(filtrosBaja)
-        .sort((a, b) => b.fecha.localeCompare(a.fecha));
-    contenedorMod.innerHTML = eventosFiltradosMod.map(evento => crearTarjetaResultadoEvento(evento, 'modificar')).join('');
-    contenedorBaja.innerHTML = eventosFiltradosBaja.map(evento => crearTarjetaResultadoEvento(evento, 'eliminar')).join('');
+        .sort((a, b) => {
+            const fechaA = a.fecha || '0000-00-00';
+            const fechaB = b.fecha || '0000-00-00';
+            return fechaB.localeCompare(fechaA);
+        });
+
+    console.log("Resultados Modificación:", eventosFiltradosMod.length);
+    
+    // Renderizado
+    contenedorMod.innerHTML = eventosFiltradosMod.length > 0 
+        ? eventosFiltradosMod.map(evento => crearTarjetaResultadoEvento(evento, 'modificar')).join('')
+        : '<p style="text-align:center; padding:2rem; color:#aaa;">No se encontraron eventos.</p>';
+
+    contenedorBaja.innerHTML = eventosFiltradosBaja.length > 0
+        ? eventosFiltradosBaja.map(evento => crearTarjetaResultadoEvento(evento, 'eliminar')).join('')
+        : '<p style="text-align:center; padding:2rem; color:#aaa;">No se encontraron eventos.</p>';
 }
+// --- FUNCIÓN DE FILTRADO SEGURA ---
 function filtrarEventos(filtros) {
+    if (!Array.isArray(adminEventos)) {
+        console.error("Error: adminEventos no es un array", adminEventos);
+        return [];
+    }
+
     return adminEventos.filter(evento => {
+        // Protección contra valores nulos (si un campo falta, usamos string vacío)
+        const evTitulo = (evento.titulo || '').toLowerCase();
+        const evTipo = (evento.tipoEvento || '').toLowerCase();
+        const evFecha = evento.fecha || '';
+        const evTags = Array.isArray(evento.imgReferencia) 
+            ? evento.imgReferencia.join(' ').toLowerCase() 
+            : '';
+
         const checkTitulo = !filtros.titulo || 
-                            (evento.titulo && evento.titulo.toLowerCase().includes(filtros.titulo)) ||
-                            (evento.tipoEvento !== 'Regular' && evento.tipoEvento.toLowerCase().includes(filtros.titulo));
-        const checkFecha = !filtros.fecha || (evento.fecha === filtros.fecha);
-        const checkTipo = !filtros.tipo || (evento.tipoEvento === filtros.tipo);
-        const checkTags = !filtros.tags || (evento.imgReferencia && evento.imgReferencia.join(' ').toLowerCase().includes(filtros.tags));
+                            evTitulo.includes(filtros.titulo) ||
+                            (evTipo !== 'regular' && evTipo.includes(filtros.titulo));
+                            
+        const checkFecha = !filtros.fecha || (evFecha === filtros.fecha);
+        
+        // Comparación laxa para el tipo (para evitar errores de mayúsculas/minúsculas)
+        const checkTipo = !filtros.tipo || (evTipo === filtros.tipo.toLowerCase());
+        
+        const checkTags = !filtros.tags || evTags.includes(filtros.tags);
+
         return checkFecha && checkTipo && checkTitulo && checkTags;
     });
 }
