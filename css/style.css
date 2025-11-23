@@ -6,6 +6,7 @@
 
 html {
     scroll-behavior: smooth;
+    scroll-padding-top: 100px;
 }
 
 body {
@@ -1081,6 +1082,25 @@ body {
 /* ------ MEDIAQUERYS --------*/
 
 @media (max-width: 900px) {
+  .nav-buttons {
+    gap: 10px;
+  }
+
+  #nav-btn-newsletter {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    height: auto;
+  }
+
+  .btn-lang-list {
+    background: transparent;
+    border: 1px solid #fff;
+    color: #fff;
+    margin-top: 1rem;
+    width: 100px;
+    align-self: center;
+  }
+  
   .nav-links {
     display: none;
     position: absolute;

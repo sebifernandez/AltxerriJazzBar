@@ -119,38 +119,40 @@ function setPlaceholder(id, text) {
 }
 
 function renderizarNavbar(navData, lang) {
-    // 1. Renderizar Enlaces (Centro)
     const container = document.getElementById('nav-links-container');
-    if (container) {
-        let html = '';
-        navData.items.forEach(item => {
-            html += `<a href="${item.link}">${item.texto}</a>`;
-        });
-        container.innerHTML = html;
-        
-        // Reasignar listener para cerrar menú en móvil
-        const links = container.querySelectorAll('a');
-        links.forEach(link => {
-            link.addEventListener('click', () => {
-                container.classList.remove('active');
-            });
-        });
-    }
+    if (!container) return;
 
-    // 2. Actualizar Texto Botón Newsletter (Derecha)
+    let html = '';
+    navData.items.forEach(item => {
+        // 1. FIX CARTA: Si el link contiene 'carta', se abre en nueva pestaña
+        const targetAttr = item.link.includes('carta') ? 'target="_blank"' : '';
+        html += `<a href="${item.link}" ${targetAttr}>${item.texto}</a>`;
+    });
+
+    // 2. FIX MOBILE: Botón de idioma ADENTRO de la lista (último item)
+    // Usamos una clase específica 'btn-lang-list' para darle estilo
+    html += `
+        <button class="btn-newsletter btn-lang-list" id="btn-lang-toggle" style="background: #000; border: 1px solid #fff;">
+            ${lang === 'es' ? 'ENG' : 'ESP'}
+        </button>
+    `;
+    
+    container.innerHTML = html;
+
+    // 3. Actualizar el texto del botón Newsletter (que está fuera, junto a la hamburguesa)
     setText('nav-btn-newsletter', navData.btnExtra);
 
-    // 3. Renderizar Botón de Idioma (Derecha)
-    const langContainer = document.getElementById('lang-btn-container');
-    if (langContainer) {
-        // Creamos el botón si no existe, o actualizamos texto
-        langContainer.innerHTML = `
-            <button class="btn-newsletter btn-lang" id="btn-lang-toggle">
-                ${lang === 'es' ? 'ENG' : 'ESP'}
-            </button>
-        `;
-        document.getElementById('btn-lang-toggle').addEventListener('click', toggleIdioma);
-    }
+    // Re-asignar listener del botón de idioma (ahora está dentro del container)
+    const btnLang = document.getElementById('btn-lang-toggle');
+    if(btnLang) btnLang.addEventListener('click', toggleIdioma);
+
+    // Re-asignar listener para cerrar menú en móvil al hacer clic
+    const links = container.querySelectorAll('a');
+    links.forEach(link => {
+        link.addEventListener('click', () => {
+            container.classList.remove('active');
+        });
+    });
 }
 
 function actualizarFormularios(forms) {
