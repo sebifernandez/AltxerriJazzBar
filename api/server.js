@@ -779,7 +779,7 @@ router.get('/semilla', async (req, res) => {
             const filtro = { uid: item.id_personalizado };
             const update = { $set: { ...item.datos, uid: item.id_personalizado } };
             
-            const resultado = await db.collection(item.coleccion).replaceOne(filtro, update, { upsert: true });
+            const resultado = await db.collection(item.coleccion).updateOne(filtro, update, { upsert: true });
             resultados.push({ id: item.id_personalizado, resultado });
         }
 
