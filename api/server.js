@@ -791,6 +791,26 @@ router.get('/semilla', async (req, res) => {
     }
 });
 
+// --- NUEVA RUTA: LEER CONTENIDO HOME 
+router.get('/contenido/home', async (req, res) => {
+    try {
+        const db = await connectToDb();
+        // Buscamos los dos documentos que creamos con la semilla
+        const [homeES, homeEN] = await Promise.all([
+            db.collection('contenido_web').findOne({ uid: "home_es" }),
+            db.collection('contenido_web').findOne({ uid: "home_en" })
+        ]);
+
+        res.json({
+            es: homeES ? homeES : {}, // Si no existe, devuelve objeto vacío para no romper
+            en: homeEN ? homeEN : {}
+        });
+    } catch (error) {
+        console.error("Error en GET /contenido/home:", error);
+        res.status(500).json({ success: false, message: 'Error al leer contenido home' });
+    }
+});
+
 app.use('/api', router);
 
 // Exportamos el "enchufe" final
