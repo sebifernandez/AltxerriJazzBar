@@ -119,35 +119,38 @@ function setPlaceholder(id, text) {
 }
 
 function renderizarNavbar(navData, lang) {
+    // 1. Renderizar Enlaces (Centro)
     const container = document.getElementById('nav-links-container');
-    if (!container) return;
+    if (container) {
+        let html = '';
+        navData.items.forEach(item => {
+            html += `<a href="${item.link}">${item.texto}</a>`;
+        });
+        container.innerHTML = html;
+        
+        // Reasignar listener para cerrar menú en móvil
+        const links = container.querySelectorAll('a');
+        links.forEach(link => {
+            link.addEventListener('click', () => {
+                container.classList.remove('active');
+            });
+        });
+    }
 
-    let html = '';
-    navData.items.forEach(item => {
-        html += `<a href="${item.link}">${item.texto}</a>`;
-    });
+    // 2. Actualizar Texto Botón Newsletter (Derecha)
+    setText('nav-btn-newsletter', navData.btnExtra);
 
-    html += `
-        <div class="nav-buttons">
-            <button class="btn-newsletter" id="btn-lang-toggle" style="background:#000; color:#fff; border:1px solid #fff; margin-left:10px;">
+    // 3. Renderizar Botón de Idioma (Derecha)
+    const langContainer = document.getElementById('lang-btn-container');
+    if (langContainer) {
+        // Creamos el botón si no existe, o actualizamos texto
+        langContainer.innerHTML = `
+            <button class="btn-newsletter btn-lang" id="btn-lang-toggle">
                 ${lang === 'es' ? 'ENG' : 'ESP'}
             </button>
-        </div>
-    `;
-    
-    container.innerHTML = html;
-
-    // Re-asignar listener del botón de idioma
-    document.getElementById('btn-lang-toggle').addEventListener('click', toggleIdioma);
-
-    // Re-asignar listener para cerrar menú al hacer clic en enlaces (Móvil)
-    const navLinks = document.querySelector('.nav-links');
-    const links = navLinks.querySelectorAll('a');
-    links.forEach(link => {
-        link.addEventListener('click', () => {
-            navLinks.classList.remove('active');
-        });
-    });
+        `;
+        document.getElementById('btn-lang-toggle').addEventListener('click', toggleIdioma);
+    }
 }
 
 function actualizarFormularios(forms) {
@@ -298,12 +301,12 @@ function createEventCard(evento) {
     // OBTIENE LOS TEXTOS TRADUCIDOS DE LA BD (O usa fallback si no cargó aún)
     const textosUI = contenidoWeb[idiomaActual]?.eventos?.ui || {};
     
-    // Textos por defecto para botones (Hardcoded fallback por si acaso)
+    // Textos por defecto para botones
     const txtReservar = idiomaActual === 'en' ? 'Book' : 'Reservar';
     const txtFinalizado = idiomaActual === 'en' ? 'Ended' : 'Finalizado';
 
     const luxonFecha = DateTimeLuxon.fromISO(evento.fecha);
-    const ahoraMadrid = DateTimeLuxon.now().setZone("Europe/Madrid");
+    const ahoraMadrid = DateTimeLuxon.now().setZone("Europe/Madrid");    
 
     // 1. Evento Pasado
     const fechaCorteFinalizado = DateTimeLuxon.fromISO(evento.fecha, { zone: "Europe/Madrid" })
@@ -311,13 +314,13 @@ function createEventCard(evento) {
         .set({ hour: HORA_LIMITE, minute: 0, second: 0, millisecond: 0 });
     const esPasado = ahoraMadrid >= fechaCorteFinalizado;
     
-    // 2. Especiales (Cerrado/Privado)
+    // 2. Especiales (Cerrado/Privado) - ESTE BLOQUE RETORNA Y TERMINA LA FUNCIÓN SI ES ESPECIAL
     if (evento.tipoEvento === "Cerrado" || evento.tipoEvento === "Privado") {
         const isClosed = evento.tipoEvento === "Cerrado";
         const specialImage = isClosed ? "cerrado.jpg" : "eventoPrivado.jpg";
         const specialClass = isClosed ? "closed" : "private";
         
-        // TEXTOS TRADUCIDOS DESDE BD
+        // Textos traducidos
         const specialTitle = isClosed 
             ? (textosUI.labelCerrado || "Cerrado") 
             : (textosUI.labelPrivado || "Privado");
@@ -327,7 +330,6 @@ function createEventCard(evento) {
             : (textosUI.txtPrivado || "...");
             
         const txtSigueAmbiente = textosUI.txtEspecial || "Sigue en ambiente:";
-
         const finalizadoClass = esPasado ? 'past' : '';
 
         return `
@@ -347,7 +349,15 @@ function createEventCard(evento) {
         `;
     }
     
-    // 3. Regular
+    // 3. LÓGICA DE EVENTOS REGULARES (Si no entró en el if anterior, sigue aquí)
+    
+    // --- AQUÍ ESTÁ LA LÓGICA BILINGÜE (NUEVO) ---
+    // Si estamos en inglés Y existe título en inglés, úsalo. Si no, usa el normal.
+    const tituloMostrar = (idiomaActual === 'en' && evento.titulo_en) ? evento.titulo_en : evento.titulo;
+    // Lo mismo para la descripción
+    const descData = (idiomaActual === 'en' && evento.descripcion_en) ? evento.descripcion_en : evento.descripcion;
+    // ---------------------------------------------
+
     let botonAdicionalHTML = '';
     let descripcionHTML = '';
 
@@ -357,19 +367,18 @@ function createEventCard(evento) {
     const liveCaducado = ahoraMadrid >= fechaCorteLive;
     
     if (evento.concierto && evento.concierto.trim() !== '') {
-        // BOTÓN ARCHIVO TRADUCIDO
         const txtArchivo = textosUI.btnArchivo || "Reviví el concierto";
         botonAdicionalHTML = `<a href="${evento.concierto}" target="_blank" class="btn-adicional btn-archive">${txtArchivo}</a>`;
     
     } else {
         if (!liveCaducado) { 
             if (evento.live && evento.live.trim() !== '') {
-                // BOTÓN VIVO TRADUCIDO
                 const txtVivo = textosUI.btnVivo || "Ver en Vivo";
                 botonAdicionalHTML = `<a href="${evento.live}" target="_blank" class="btn-adicional btn-live">${txtVivo}</a>`;
             }
-            if (evento.descripcion && evento.descripcion.trim() !== '') {
-                descripcionHTML = `<p class="card-descripcion-precio">${evento.descripcion}</p>`;
+            // Usamos la variable traducida 'descData'
+            if (descData && descData.trim() !== '') {
+                descripcionHTML = `<p class="card-descripcion-precio">${descData}</p>`;
             }
         }
     }
@@ -386,15 +395,15 @@ function createEventCard(evento) {
         imagenMostrar = `img/${evento.imagen || 'imgBandaGenerica.jpg'}`; 
     }
 
+    // HTML FINAL PARA EVENTOS REGULARES
     return `
         <div class="event-card ${finalizadoClass}">
             <div class="card-image">
-                <img src="${imagenMostrar}" alt="${evento.titulo}">
+                <img src="${imagenMostrar}" alt="${tituloMostrar}">
                 <div class="event-date">${luxonFecha.toFormat("dd LLLL")}</div>
             </div>
             <div class="card-content">
-                <h3>${evento.titulo}</h3>
-                ${descripcionHTML}
+                <h3>${tituloMostrar}</h3> ${descripcionHTML}
                 <button class="btn-reservar" ${finalizadoDisabled}>
                     ${finalizadoTextStr}
                 </button>
@@ -601,41 +610,40 @@ function aplicarFiltros() {
 
 // MODAL NEWSLETTER
 const newsletterModal = document.getElementById('newsletterModal');
-const openModalBtn = document.getElementById('openNewsletterModal'); // Este ya no existe en HTML nuevo
-const parallaxBtn = document.getElementById('parallax-btn'); // Nuevo botón parallax
+const navBtnNewsletter = document.getElementById('nav-btn-newsletter'); 
+const parallaxBtn = document.getElementById('parallax-btn'); 
 const closeModalSpan = document.querySelector('.close-newsletter-modal');
 const newsletterForm = document.getElementById('newsletterForm');
 const successMessage = document.getElementById('newsletterSuccessMessage');
 const formContainer = document.getElementById('newsletterFormContainer');
 const closeSuccessBtn = document.getElementById('closeNewsletterSuccess');
 
+// Función para abrir
 function openNewsletter() {
     if(newsletterModal) newsletterModal.classList.add('show');
 }
+
+// Función para cerrar
 function closeNewsletter() {
     if(newsletterModal) newsletterModal.classList.remove('show');
+    // Reseteamos estados visuales
     if(formContainer) formContainer.style.display = 'block';
     if(successMessage) successMessage.style.display = 'none';
     if(newsletterForm) newsletterForm.reset();
 }
 
-// Listener delegado para botones dinámicos (Navbar)
-document.addEventListener('click', (e) => {
-    // Si el clic fue en el botón del navbar (generado por JS)
-    if (e.target && e.target.textContent === 'Newsletter') { 
-        // Podríamos usar una clase específica, pero por ahora el texto sirve
-        // Ojo: El botón del Parallax también dice Newsletter pero tiene ID
-        if(!e.target.id) openNewsletter(); 
-    }
-});
-
+// Listeners (Conectamos los botones a las funciones)
+if (navBtnNewsletter) navBtnNewsletter.addEventListener('click', openNewsletter);
 if (parallaxBtn) parallaxBtn.addEventListener('click', openNewsletter);
 if (closeModalSpan) closeModalSpan.addEventListener('click', closeNewsletter);
 if (closeSuccessBtn) closeSuccessBtn.addEventListener('click', closeNewsletter);
+
+// Cerrar si clickean fuera
 window.addEventListener('click', (event) => {
     if (event.target === newsletterModal) closeNewsletter();
 });
 
+// Envío del formulario
 if (newsletterForm) {
     newsletterForm.addEventListener('submit', (e) => {
         e.preventDefault();

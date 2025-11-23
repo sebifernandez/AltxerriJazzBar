@@ -645,6 +645,35 @@ try {
 
 // --- INICIO DE LA FUNCIÓN REEMPLAZADA ---
 function inicializarFormularioAlta() {
+
+        // --- Lógica Bilingüe Eventos ---
+    const checkMismoContenido = document.getElementById('evento-mismo-contenido');
+    const inputTituloES = document.getElementById('evento-titulo');
+    const inputTituloEN = document.getElementById('evento-titulo-en');
+    const inputDescES = document.getElementById('evento-descripcion');
+    const inputDescEN = document.getElementById('evento-descripcion-en');
+
+    // Función para copiar contenido si está checkeado
+    function sincronizarContenido() {
+        if (checkMismoContenido.checked) {
+            inputTituloEN.value = inputTituloES.value;
+            inputDescEN.value = inputDescES.value;
+            inputTituloEN.disabled = true;
+            inputDescEN.disabled = true;
+        } else {
+            inputTituloEN.disabled = false;
+            inputDescEN.disabled = false;
+        }
+    }
+
+    // Listeners
+    checkMismoContenido.addEventListener('change', sincronizarContenido);
+    inputTituloES.addEventListener('input', () => {
+        if(checkMismoContenido.checked) inputTituloEN.value = inputTituloES.value;
+    });
+    inputDescES.addEventListener('input', () => {
+        if(checkMismoContenido.checked) inputDescEN.value = inputDescES.value;
+    });
     
     // 1. Obtenemos referencias a los elementos PERMANENTES
     const form = document.getElementById('form-alta-evento');
@@ -749,7 +778,9 @@ function inicializarFormularioAlta() {
             fecha: document.getElementById('evento-fecha').value,
             tipoEvento: document.getElementById('evento-tipo').value,
             titulo: document.getElementById('evento-titulo').value.trim(),
+            titulo_en: document.getElementById('evento-titulo-en').value.trim(),
             descripcion: document.getElementById('evento-descripcion').value.trim(),
+            descripcion_en: document.getElementById('evento-descripcion-en').value.trim(),
             live: document.getElementById('evento-live').value.trim(),
             concierto: document.getElementById('evento-concierto').value.trim(),
             usaGenerica: document.getElementById('evento-img-generica').checked,
@@ -1257,12 +1288,25 @@ function prellenarFormularioModEvento(evento) {
     
     document.getElementById('evento-tipo').value = evento.tipoEvento;
     document.getElementById('evento-titulo').value = evento.titulo;
+    document.getElementById('evento-titulo-en').value = evento.titulo_en || evento.titulo;
     document.getElementById('evento-descripcion').value = evento.descripcion || '';
+    document.getElementById('evento-descripcion-en').value = evento.descripcion_en || evento.descripcion || '';
     document.getElementById('evento-live').value = evento.live || '';
     document.getElementById('evento-concierto').value = evento.concierto || '';
     document.getElementById('evento-tipo').dispatchEvent(new Event('change'));
     tags = evento.imgReferencia || [];
     renderizarTags();
+
+    if (evento.titulo === evento.titulo_en && evento.descripcion === evento.descripcion_en) {
+        document.getElementById('evento-mismo-contenido').checked = true;
+        document.getElementById('evento-titulo-en').disabled = true;
+        document.getElementById('evento-descripcion-en').disabled = true;
+    } else {
+        document.getElementById('evento-mismo-contenido').checked = false;
+        document.getElementById('evento-titulo-en').disabled = false;
+        document.getElementById('evento-descripcion-en').disabled = false;
+    }
+
     const checkGenerica = document.getElementById('evento-img-generica');
     const fieldsetImagen = document.getElementById('fieldset-imagen');
     const infoImg = document.getElementById('info-img-actual');
