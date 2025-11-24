@@ -82,7 +82,7 @@ body {
 }
 
 .logo img {
-  height: 70px;
+  height: 50px;
   transition: 0.3s;
 }
 
@@ -1371,7 +1371,7 @@ body {
 /* 1. Estirar las Cards (Desktop) */
 .event-card {
     /* Altura mínima mayor para que no se vean "achanchadas" */
-    min-height: 500px !important; 
+    min-height: 440px !important; 
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
@@ -1387,7 +1387,7 @@ body {
     height: 45% !important;
     display: flex !important;
     flex-direction: column !important;
-    padding: 1rem 1rem 80px 1rem !important; /* 80px abajo para dejar espacio a los botones */
+    padding: 1rem 1rem 75px 1rem !important; /* 75px abajo para dejar espacio a los botones */
     position: relative !important; /* Clave para fijar botones */
     overflow: hidden !important; /* Si el texto es eterno, que no rompa la card */
 }
@@ -1438,29 +1438,35 @@ body {
 
 /* 4. Ajustes Mobile (Botones chicos y Cards altas) */
 @media (max-width: 900px) {
-    .event-card {
-        min-height: 450px !important; /* Altura generosa en móvil */
+.event-card {
+        min-height: 400px !important; /* Antes 450px */
+        flex: 0 0 95% !important; /* Antes 90% -> Ahora más anchas */
     }
 
-    /* Achicar botones en móvil */
+    /* Ajuste de fuente en títulos para que "Evento Privado" no se rompa mal */
+    .event-card h3 {
+        font-size: 1.2rem !important; 
+        white-space: nowrap; /* Evita que se parta en dos líneas si es posible */
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Botones compactos */
     .btn-reservar, .btn-adicional, .btn-newsletter {
-        font-size: 0.8rem !important; /* Letra más chica */
-        padding: 0.4rem 0.5rem !important; /* Menos relleno */
-        height: auto !important; /* Altura automática */
+        font-size: 0.8rem !important; 
+        padding: 0.4rem 0.5rem !important; 
+        height: auto !important; 
         min-height: 35px !important;
     }
     
-    /* Ajuste específico para Newsletter en navbar móvil */
     #nav-btn-newsletter {
         font-size: 0.8rem !important;
         padding: 0.3rem 0.6rem !important;
     }
 
-    /* Ajuste de posiciones para móvil */
     .btn-reservar { bottom: 50px !important; }
     .btn-adicional { bottom: 10px !important; }
     
-    /* Texto de descripción que no se corte */
     .card-content p {
         font-size: 0.9rem !important;
         line-height: 1.4 !important;
