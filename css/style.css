@@ -1577,3 +1577,37 @@ body {
         gap: 0.5rem !important; /* Espacio entre elementos */
     }
 }
+
+/* --- FIX CARDS ESPECIALES (Cerrado/Privado) EN MÓVIL --- */
+
+@media (max-width: 900px) {
+    /* 1. Quitar el espacio reservado para botones que no existen */
+    .event-card.special .card-content {
+        padding-bottom: 1.5rem !important; /* Padding normal abajo */
+        justify-content: center !important; /* Centrar todo verticalmente */
+        gap: 1rem !important; /* Espacio entre Título, Texto y Link */
+    }
+
+    /* 2. Asegurar que el texto NO se corte */
+    .event-card.special .card-content p {
+        display: block !important;
+        -webkit-line-clamp: unset !important; /* Anula el recorte de líneas */
+        overflow: visible !important;
+        height: auto !important;
+        margin-bottom: 0 !important;
+        white-space: normal !important; /* Permite que el texto baje de línea */
+    }
+
+    /* 3. Ajuste del Título Especial */
+    .event-card.special h3 {
+        margin-top: 0 !important;
+        font-size: 1.3rem !important;
+        white-space: normal !important; /* Que no se corte si es largo */
+    }
+
+    /* 4. Link de Instagram (Amarillo) */
+    .special-links {
+        margin-top: 0 !important;
+        font-size: 0.9rem !important;
+    }
+}
