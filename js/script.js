@@ -625,6 +625,21 @@ if (galleryTrack) {
     });
 }
 
+// MODAL CALENDARIO (Variables y Listeners)
+const modalCalendario = document.getElementById("modalCalendario");
+const btnAbrirCal = document.getElementById("abrirCalendario");
+const btnCerrarCal = document.getElementById("cerrarCalendario");
+const filtroCal = document.getElementById("filtroEstado");
+const inputBusquedaCal = document.getElementById("busquedaEventos");
+const calendarioDiv = document.getElementById("calendario");
+const detalleEvento = document.getElementById("detalleEvento");
+
+if (btnAbrirCal) btnAbrirCal.addEventListener("click", () => modalCalendario.style.display = "block");
+if (btnCerrarCal) btnCerrarCal.addEventListener("click", () => modalCalendario.style.display = "none");
+window.addEventListener("click", e => {
+  if (e.target === modalCalendario) modalCalendario.style.display = "none";
+});
+
 function inicializarCalendario() {
     // Asegurarse de que Litepicker existe
     if (typeof Litepicker !== 'undefined' && calendarioDiv) {
