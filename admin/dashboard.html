@@ -135,42 +135,41 @@
                                 </div>
                             </div>
 
-                        <div class="form-section">
-                            <h4>Gestión de Imagen</h4>
-                            
-                            <div class="form-group-checkbox">
-                                <input type="checkbox" id="evento-img-generica">
-                                <label for="evento-img-generica">Usar imagen genérica (imgBandaGenerica.jpg)</label>
-                            </div>
-                            
-                            <fieldset id="fieldset-imagen" class="form-grid">
-                                
-                                <div class="form-col">
-                                    <div class="form-group">
-                                        <label for="evento-imagen-upload">Subir Nueva Imagen</label>
-                                        <input type="file" id="evento-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp">
-                                    </div>
-                                    <div class="form-group">
-                                        <button type="button" id="btn-elegir-img" class="btn btn-secondary">
-                                            <i class='bx bx-images'></i> Elegir Imagen Preexistente
-                                        </button>
-                                    </div>
-                                </div>
-                                <fieldset id="fieldset-imagen" class="form-grid">
-                                    <input type="hidden" id="evento-imagen-url-seleccionada"> 
-                                </fieldset>
+<div class="form-section">
+    <h4>Gestión de Imagen</h4>
+    
+    <div class="form-group-checkbox">
+        <input type="checkbox" id="evento-img-generica">
+        <label for="evento-img-generica">Usar imagen genérica (imgBandaGenerica.jpg)</label>
+    </div>
+    
+    <fieldset id="fieldset-imagen" class="form-grid">
+        
+        <div class="form-col">
+            <div class="form-group">
+                <label for="evento-imagen-upload">Subir Nueva Imagen</label>
+                <input type="file" id="evento-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp">
+            </div>
+            <div class="form-group">
+                <button type="button" id="btn-elegir-img" class="btn btn-secondary">
+                    <i class='bx bx-images'></i> Elegir Imagen Preexistente
+                </button>
+            </div>
+        </div>
 
-                                <div class="form-col">
-                                    <div class="form-group">
-                                        <label for="evento-tags">Referencias de Imagen (Tags) *</label>
-                                        <div class="tag-container" id="tag-container">
-                                            <input type="text" id="evento-tags" placeholder="Escribe y presiona Enter (Ej: Pedro Asnar)...">
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                            </fieldset>
-                        </div>
+        <input type="hidden" id="evento-imagen-url-seleccionada"> 
+        
+        <div class="form-col">
+            <div class="form-group">
+                <label for="evento-tags">Referencias de Imagen (Tags) *</label>
+                <div class="tag-container" id="tag-container">
+                    <input type="text" id="evento-tags" placeholder="Escribe y presiona Enter (Ej: Pedro Asnar)...">
+                </div>
+            </div>
+        </div>
+        
+    </fieldset>
+</div>
                         
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary"><i class='bx bxs-save'></i> Guardar Evento</button>

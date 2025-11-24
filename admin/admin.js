@@ -1,22 +1,40 @@
-/* --- ADMIN.JS (Versión 4.7 - Arreglo Global de Bugs) --- */
-
-// --- Variables Globales ---
+// ==========================================
+// 1. VARIABLES GLOBALES Y UTILIDADES
+// ==========================================
 const { DateTime } = luxon; 
 let adminEventos = []; 
 let modoEdicion = false; 
-let idEventoEdicion = null; // Guardará el _id de Mongo
+let idEventoEdicion = null; 
 
 let adminProductos = []; 
 let adminProductos_EN = []; 
 let modoVisibilidad = false; 
 let idProductoEdicion = null;
 
-// --- ¡ARREGLO! Movido al ámbito global
-
 let tags = []; 
 let picker; 
 
-// --- ¡ARREGLO! Movido al ámbito global ---
+function getAuthToken() {
+    return localStorage.getItem('altxerri_token') || '';
+}
+
+function formatarPrecio(precio) {
+    if (!precio || precio === 0) return '–';
+    return `${precio}€`;
+}
+
+function toBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}
+
+// ==========================================
+// 2. PLANTILLAS HTML (CARTA)
+// ==========================================
 const plantillasBloques = {
     unicos_titulo_marca: `
         <div class="form-group">
@@ -179,7 +197,6 @@ const plantillasBloques = {
             <label for="producto-crianza-es">Crianza (ES)</label>
             <input type="text" id="producto-crianza-es" class="form-input" placeholder="Ej: En barricas nuevas...">
         </div>`,
-
     
     trad_en_titulo: `
         <div class="form-group">
@@ -234,7 +251,7 @@ const plantillasBloques = {
                 </div>
                 <div class="lang-content lang-col-en" data-lang-content="en">
                     <button type="button" class="btn-translate" data-lang-group="en">
-                        <i class='bx bxs-magic-wand'></i> Sugerir traducción para todos los campos
+                        <i class='bx bxs-magic-wand'></i> Sugerir traducción
                     </button>
                     ${html_en}
                 </div>
@@ -245,7 +262,7 @@ const plantillasBloques = {
 const plantillasFormCarta = {
     coctel: `
         <div class="form-section">
-            <h4>Datos Únicos (No se traducen)</h4>
+            <h4>Datos Únicos</h4>
             ${plantillasBloques.unicos_precios_copa_solo}
             ${plantillasBloques.unicos_imagen_coctel}
         </div>
@@ -256,7 +273,7 @@ const plantillasFormCarta = {
     `,
     sinAlcohol: `
         <div class="form-section">
-            <h4>Datos Únicos (No se traducen)</h4>
+            <h4>Datos Únicos</h4>
             ${plantillasBloques.unicos_precios_botella_solo}
         </div>
         ${plantillasBloques.bilingue_wrapper(
@@ -264,10 +281,9 @@ const plantillasFormCarta = {
             plantillasBloques.trad_en_titulo + plantillasBloques.trad_en_descripcion
         )}
     `,
-    
     cervezaBarril: `
         <div class="form-section">
-            <h4>Datos Únicos (No se traducen)</h4>
+            <h4>Datos Únicos</h4>
             ${plantillasBloques.unicos_titulo_marca}
             ${plantillasBloques.unicos_precios_cana_pinta}
             ${plantillasBloques.unicos_cerveza_datos}
@@ -279,7 +295,7 @@ const plantillasFormCarta = {
     `,
     cervezaEnvasada: `
         <div class="form-section">
-            <h4>Datos Únicos (No se traducen)</h4>
+            <h4>Datos Únicos</h4>
             ${plantillasBloques.unicos_titulo_marca}
             ${plantillasBloques.unicos_precios_botella_solo}
             ${plantillasBloques.unicos_cerveza_datos}
@@ -292,7 +308,7 @@ const plantillasFormCarta = {
     vino: `
         ${plantillasBloques.unicos_vino_destacado}
         <div class="form-section">
-            <h4>Datos Únicos (No se traducen)</h4>
+            <h4>Datos Únicos</h4>
             ${plantillasBloques.unicos_titulo_marca}
             ${plantillasBloques.unicos_vino_datos}
             ${plantillasBloques.unicos_precios_copa_botella}
@@ -305,7 +321,7 @@ const plantillasFormCarta = {
     `,
     destilado: `
         <div class="form-section">
-            <h4>Datos Únicos (No se traducen)</h4>
+            <h4>Datos Únicos</h4>
             ${plantillasBloques.unicos_titulo_marca}
             ${plantillasBloques.unicos_precios_copa_botella_destilado}
             ${plantillasBloques.unicos_destilado_datos}
@@ -317,28 +333,15 @@ const plantillasFormCarta = {
     `
 };
 
-// (formatarPrecio y sugerirTraduccion no cambian)
-function formatarPrecio(precio) {
-    if (!precio || precio === 0) {
-        return '–'; 
-    }
-    return `${precio}€`;
-}
-
-function getAuthToken() {
-    return localStorage.getItem('altxerri_token') || '';
-}
-
-
-// --- FIN DE LAS VARIABLES GLOBALES ---
-
-
-// --- INICIO DEL DOMCONTENTLOADED ---
+// ==========================================
+// 3. INICIALIZACIÓN Y EVENTOS DOM
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.querySelector('.login-form');
     const dashboardContainer = document.querySelector('.dashboard-container');
+
+    // --- LOGIN ---
     if (loginForm) {
-        // (Lógica de Login no cambia)
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault(); 
             const errorMessage = document.getElementById('login-error');
@@ -360,1684 +363,953 @@ document.addEventListener('DOMContentLoaded', () => {
                     errorMessage.textContent = data.message;
                 }
             } catch (error) {
-                console.error('Error de red al intentar login:', error);
+                console.error(error);
                 errorMessage.textContent = 'Error de conexión. Intenta de nuevo.';
             }
         });
     } 
+    // --- DASHBOARD ---
     else if (dashboardContainer) {
-        // (Lógica de Bouncer y Logout no cambia)
+        // Auth Check
         if (localStorage.getItem('altxerri_auth') !== 'true') {
-            alert("Acceso denegado. Por favor, inicia sesión.");
             window.location.href = 'index.html';
             return; 
         }
-        const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                localStorage.removeItem('altxerri_auth');
-                localStorage.removeItem('altxerri_token');
-                window.location.href = 'index.html';
-            });
-        }
         
-        // (Navegación base no cambia)
-        const sidebar = document.getElementById('sidebar');
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        const navLinks = document.querySelectorAll('.nav-link');
-        const contentSections = document.querySelectorAll('.content-section');
-        const tabLinks = document.querySelectorAll('.tab-link');
-        const dashCards = document.querySelectorAll('.dash-card');
-        if (mobileMenuBtn) { mobileMenuBtn.addEventListener('click', () => sidebar.classList.toggle('open')); }
-        navLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const targetId = link.getAttribute('data-target');
-                if (!targetId) return;
-                navLinks.forEach(l => l.classList.remove('active'));
-                link.classList.add('active');
-                contentSections.forEach(section => {
-                    section.classList.remove('active');
-                    if (section.id === targetId) {
-                        section.classList.add('active');
-                    }
-                });
-                if (sidebar.classList.contains('open')) { sidebar.classList.remove('open'); }
-            });
-        });
-        dashCards.forEach(card => {
-            card.addEventListener('click', () => {
-                const targetId = card.getAttribute('data-target');
-                document.querySelector(`.nav-link[data-target="${targetId}"]`).click();
-            });
-        });
-        
-        // (Listener de TABS no cambia)
-        tabLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                const targetId = link.getAttribute('data-tab');
-                const parentSection = link.closest('.content-section');
-
-                parentSection.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
-                link.classList.add('active');
-
-                parentSection.querySelectorAll('.tab-content').forEach(content => {
-                    content.classList.remove('active');
-                    if (content.id === targetId) {
-                        content.classList.add('active');
-                    }
-                });
-                
-                if (targetId === 'alta-evento') {
-                    if (!modoEdicion) {
-                        crearCalendarioAlta();
-                    }
-                }
-                
-                if (targetId === 'alta-producto') {
-                    if (!modoEdicion) {
-                        resetearFormularioCarta(); 
-                    }
-                }
-            });
-        });
-        
-        // (El resto de inicializadores no cambia)
-        const formAlta = document.getElementById('form-alta-evento');
-        if (formAlta) { inicializarFormularioAlta(); } // Se llama una vez al cargar
-        fetchEventosData(); 
-        inicializarPanelesBusquedaEventos();
-        
-        const formAltaProducto = document.getElementById('form-alta-producto');
-        if (formAltaProducto) { inicializarFormularioCarta(); } // Se llama una vez al cargar
-        
-        const selectorTipoCarta = document.getElementById('producto-tipo');
-    const formCarta = document.getElementById('form-alta-producto');
-    const containerCarta = document.getElementById('smart-form-container');
-    const actionsCarta = document.getElementById('form-actions-producto');
-
-    if (selectorTipoCarta && formCarta && containerCarta) {
-
-        // Listener del Selector de Tipo
-        selectorTipoCarta.addEventListener('change', () => {
-            let tipoSeleccionado = selectorTipoCarta.value;
-            containerCarta.querySelectorAll('.form-fields-group').forEach(group => {
-                group.classList.remove('visible');
-            });
-
-            const tipoPlantilla = tipoSeleccionado.startsWith('vino') ? 'vino' : tipoSeleccionado;
-            
-            if (tipoSeleccionado) {
-                const grupoAMostrar = document.getElementById(`fields-${tipoPlantilla}`);
-                if (grupoAMostrar) {
-                    grupoAMostrar.classList.add('visible');
-                    activarLogicaBilingue(grupoAMostrar); // Activamos pestañas ES/EN
-                }
-                actionsCarta.style.display = 'block'; 
-            } else {
-                actionsCarta.style.display = 'none'; 
-            }
-        });
-
-        // Listener del Botón de Guardar (Submit)
-        formCarta.addEventListener('submit', async (e) => {
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', (e) => {
             e.preventDefault();
-            const tipo = selectorTipoCarta.value;
-            const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
-            const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
-            const btnSubmit = formCarta.querySelector('.btn-primary');
-            btnSubmit.disabled = true;
-            btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
-            
-            const langGroupEN = formGroup.querySelector('.lang-content[data-lang-content="en"]');
-            const requiredInputsEN = langGroupEN.querySelectorAll('input[required], textarea[required]');
-            let firstInvalid = null;
+            localStorage.removeItem('altxerri_auth');
+            localStorage.removeItem('altxerri_token');
+            window.location.href = 'index.html';
+        });
 
-            for (const input of requiredInputsEN) {
-                if (!input.value.trim()) {
-                    firstInvalid = input; // Encontramos el primer campo vacío
-                    break;
+        // Navegación Sidebar y Tabs
+        inicializarNavegacion();
+
+        // Inicializadores de Módulos
+        inicializarFormularioAlta();
+        inicializarFormularioCarta();
+        inicializarModalImagenes();
+        
+        // Cargas iniciales
+        fetchEventosData(); 
+        fetchProductosData(); 
+        inicializarPanelesBusquedaEventos();
+        inicializarPanelesBusquedaProductos();
+    }
+});
+
+function inicializarNavegacion() {
+    const sidebar = document.getElementById('sidebar');
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const contentSections = document.querySelectorAll('.content-section');
+    const tabLinks = document.querySelectorAll('.tab-link');
+    const dashCards = document.querySelectorAll('.dash-card');
+
+    if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('data-target');
+            if (!targetId) return;
+            navLinks.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+            contentSections.forEach(section => {
+                section.classList.remove('active');
+                if (section.id === targetId) {
+                    section.classList.add('active');
+                }
+            });
+            if (sidebar.classList.contains('open')) sidebar.classList.remove('open');
+        });
+    });
+
+    dashCards.forEach(card => {
+        card.addEventListener('click', () => {
+            const targetId = card.getAttribute('data-target');
+            document.querySelector(`.nav-link[data-target="${targetId}"]`).click();
+        });
+    });
+
+    tabLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            const targetId = link.getAttribute('data-tab');
+            const parentSection = link.closest('.content-section');
+
+            parentSection.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+
+            parentSection.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+                if (content.id === targetId) {
+                    content.classList.add('active');
+                }
+            });
+            
+            if (targetId === 'alta-evento') {
+                if (!modoEdicion) {
+                    crearCalendarioAlta();
                 }
             }
-
-            if (firstInvalid) {
-                // ¡Hay un error!
-                alert("¡Faltan campos obligatorios en la pestaña 'Inglés'!");
-                
-                // Cambiamos a la pestaña de Inglés
-                const tabButtonEN = formGroup.querySelector('.lang-tab-btn[data-lang="en"]');
-                if(tabButtonEN) tabButtonEN.click();
-                
-                // Marcamos la pestaña como "rota" (¡tu idea!)
-                const langTabs = formGroup.querySelectorAll('.lang-tab-btn');
-                langTabs.forEach(tab => {
-                    if(tab.dataset.lang === 'en') {
-                        tab.style.color = 'var(--color-primario-rojo)';
-                        tab.style.border = '1px solid var(--color-primario-rojo)';
-                    } else {
-                        tab.style.color = '';
-                        tab.style.border = '';
-                    }
-                });
-
-                firstInvalid.focus(); // Hacemos foco en el campo vacío
-
-                // Reactivamos el botón y detenemos el envío
-                btnSubmit.disabled = false;
-                btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Producto";
-                return; // ¡IMPORTANTE! Detiene la función
+            
+            if (targetId === 'alta-producto') {
+                if (!modoEdicion) {
+                    resetearFormularioCarta(); 
+                }
             }
-try {
-                const tipo = selectorTipoCarta.value; 
-                const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
+        });
+    });
+}
 
-                // 1. Recolectamos los datos (esto nos da 'archivoImagen' si existe)
-                let { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
+// ==========================================
+// 4. GESTIÓN DE EVENTOS (ALTA, BAJA, MOD)
+// ==========================================
 
-                // 2. LÓGICA DE CLOUDINARY
-                let imagenUrl;
-                if (producto_es.archivoImagen) { // 'archivoImagen' es el File
-                    console.log("Subiendo imagen de producto a Cloudinary...");
-                    btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Subiendo imagen...";
-                    
-                    const base64Image = await toBase64(producto_es.archivoImagen);
-                    const uploadRes = await fetch('/api/imagenes/subir', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
-                        body: JSON.stringify({ data: base64Image })
-                    });
-                    const uploadData = await uploadRes.json();
-                    if (!uploadData.success) {
-                        throw new Error(uploadData.message || "Falló la subida de imagen a Cloudinary");
-                    }
-                    imagenUrl = uploadData.url;
-                    console.log("Imagen de producto subida:", imagenUrl);
-                    
-                    btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
-                
-                } else if (modoEdicion) {
-                    // --- INICIO DEL ARREGLO ---
-                    // Usamos la variable 'idProductoEdicion' que sí tiene el ID
-                    const productoOriginal = adminProductos.find(p => p._id === idProductoEdicion);
-                    // --- FIN DEL ARREGLO ---
-                    imagenUrl = productoOriginal.imagen || 'bebidaSinFoto.jpg';
-                } else {
-                    // Fallback si no hay archivo y no es edición
-                    imagenUrl = producto_es.imagen; // (ya trae 'bebidaSinFoto.jpg' desde recolectarDatos)
-                }
-
-                // 3. Asignamos la URL final y borramos datos temporales
-                producto_es.imagen = imagenUrl;
-                producto_en.imagen = imagenUrl;
-                delete producto_es.archivoImagen;
-                delete producto_en.archivoImagen;
-
-                // 4. Continuamos con la validación y el guardado
-                if ((!producto_es.titulo || producto_es.titulo === '')) {
-                     throw new Error("El Título (ES o Marca) es obligatorio.");
-                }
-
-                if (modoEdicion) {
-                    // --- MODO MODIFICAR (PUT) ---
-                    // --- INICIO DEL ARREGLO ---
-                    // Usamos la variable 'idProductoEdicion'
-                    const response = await fetch(`/api/productos/modificar/${idProductoEdicion}`, {
-                    // --- FIN DEL ARREGLO ---
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': getAuthToken()
-                            },
-                            body: JSON.stringify({ producto_es, producto_en })
-                        });
-
-                        if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
-                        
-                        alert("¡Producto Modificado con Éxito!");
-                        
-                        resetearFormularioCarta();
-                        fetchProductosData();
-                      document.querySelector('.tab-link[data-tab="mod-producto"]').click();
-
-                } else {
-                    // --- MODO CREAR (POST) ---
-                    const response = await fetch('/api/productos/crear', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': getAuthToken()
-                        },
-                        body: JSON.stringify({ producto_es, producto_en })
-                    });
-
-                    if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
-                    alert("¡Producto Creado con Éxito!");
-                    btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Producto";
-                    resetearFormularioCarta();
-                    fetchProductosData(); 
-                }
-
-            } catch (error) {
-                console.error("Error al guardar producto:", error);
-                alert(`Error al guardar producto: ${error.message}`);
-               btnSubmit.disabled = false;
-                btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-            }
-        }); 
-    }
-        
-        fetchProductosData(); 
-        inicializarPanelesBusquedaProductos();
-        inicializarModalImagenes();
-    }
-// --- ¡ARREGLO DE SINTAXIS! ---
-// Esta es la llave que cierra el 'DOMContentLoaded'
-// que se abrió en la línea 23
-
-
-
-// -----------------------------------------------------------------
-// --- FASE 2: LÓGICA DEL FORMULARIO DE ALTA (EVENTOS) ---
-// (Corregido con _id y Bugfix de UX v4.5)
-// -----------------------------------------------------------------
-
-// --- INICIO DE LA FUNCIÓN REEMPLAZADA ---
 function inicializarFormularioAlta() {
+    const form = document.getElementById('form-alta-evento');
+    const checkGenerica = document.getElementById('evento-img-generica');
+    const fieldsetImagen = document.getElementById('fieldset-imagen');
+    const inputTag = document.getElementById('evento-tags');
+    const tagContainer = document.getElementById('tag-container');
+    const tipoEventoSelect = document.getElementById('evento-tipo');
+    const inputArchivo = document.getElementById('evento-imagen-upload');
 
-        // --- Lógica Bilingüe Eventos ---
-    const checkMismoContenido = document.getElementById('evento-mismo-contenido');
-    const inputTituloES = document.getElementById('evento-titulo');
-    const inputTituloEN = document.getElementById('evento-titulo-en');
-    const inputDescES = document.getElementById('evento-descripcion');
-    const inputDescEN = document.getElementById('evento-descripcion-en');
+    // Bilingüe Check
+    const checkMismo = document.getElementById('evento-mismo-contenido');
+    const tituloES = document.getElementById('evento-titulo');
+    const tituloEN = document.getElementById('evento-titulo-en');
+    const descES = document.getElementById('evento-descripcion');
+    const descEN = document.getElementById('evento-descripcion-en');
 
-    // Función para copiar contenido si está checkeado
-    function sincronizarContenido() {
-        if (checkMismoContenido.checked) {
-            inputTituloEN.value = inputTituloES.value;
-            inputDescEN.value = inputDescES.value;
-            inputTituloEN.disabled = true;
-            inputDescEN.disabled = true;
-        } else {
-            inputTituloEN.disabled = false;
-            inputDescEN.disabled = false;
-        }
+    if(checkMismo) {
+        checkMismo.addEventListener('change', () => {
+            if(checkMismo.checked) {
+                tituloEN.value = tituloES.value;
+                descEN.value = descES.value;
+                tituloEN.disabled = true;
+                descEN.disabled = true;
+            } else {
+                tituloEN.disabled = false;
+                descEN.disabled = false;
+            }
+        });
+        tituloES.addEventListener('input', () => { if(checkMismo.checked) tituloEN.value = tituloES.value; });
+        descES.addEventListener('input', () => { if(checkMismo.checked) descEN.value = descES.value; });
     }
 
-    // Listeners
-    checkMismoContenido.addEventListener('change', sincronizarContenido);
-    inputTituloES.addEventListener('input', () => {
-        if(checkMismoContenido.checked) inputTituloEN.value = inputTituloES.value;
-    });
-    inputDescES.addEventListener('input', () => {
-        if(checkMismoContenido.checked) inputDescEN.value = inputDescES.value;
-    });
-    
-    // 1. Obtenemos referencias a los elementos PERMANENTES
-    const form = document.getElementById('form-alta-evento');
-    const checkGenerica = document.getElementById('evento-img-generica');
-    const fieldsetImagen = document.getElementById('fieldset-imagen');
-    const inputTag = document.getElementById('evento-tags');
-    const tagContainer = document.getElementById('tag-container');
-    const tipoEventoSelect = document.getElementById('evento-tipo');
-
-    // 2. Listener del Checkbox
-    checkGenerica.addEventListener('change', () => {
+    // Imagen Genérica
+    checkGenerica.addEventListener('change', () => {
         habilitarEdicionTags();
         const infoImg = document.getElementById('info-img-actual');
-        if (infoImg) {
-            infoImg.remove(); // Solo se ejecuta si el cartel existe
+        if (infoImg) infoImg.remove();
+        fieldsetImagen.disabled = checkGenerica.checked;
+        if (checkGenerica.checked) {
+            tags = [];
+            renderizarTags();
+            if(inputArchivo) inputArchivo.value = '';
         }
-        fieldsetImagen.disabled = checkGenerica.checked;
-        if (checkGenerica.checked) {
-            tags = [];
-            renderizarTags();
-            document.getElementById('evento-imagen-upload').value = '';
-        }
-    });
+    });
 
-    const inputArchivo = document.getElementById('evento-imagen-upload');
-    if (inputArchivo) {
+    // Archivo Nuevo
+    if(inputArchivo) {
         inputArchivo.addEventListener('change', () => {
             if (inputArchivo.files.length > 0) {
-                habilitarEdicionTags(); // ¡Desbloqueamos!
-                
-                 // Limpiamos la URL preseleccionada anterior para evitar conflictos
-                const urlInput = document.getElementById('evento-imagen-url-seleccionada');
-                if(urlInput) urlInput.value = '';
-                
-                 // Quitamos el cartel verde de "Imagen Vinculada"
+                habilitarEdicionTags();
+                document.getElementById('evento-imagen-url-seleccionada').value = '';
                 const infoImg = document.getElementById('info-img-actual');
                 if (infoImg) infoImg.remove();
             }
         });
     }
 
-    // 3. Listener de Tags
-    inputTag.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ',') {
-            e.preventDefault(); 
-            const tagTexto = inputTag.value.trim();
-            if (tagTexto.length > 0 && !tags.includes(tagTexto)) {
-                tags.push(tagTexto);
-                renderizarTags();
-            }
-            inputTag.value = ''; 
-        }
-    });
+    // Tags
+    inputTag.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault(); 
+            const val = inputTag.value.trim();
+            if (val && !tags.includes(val)) {
+                tags.push(val);
+                renderizarTags();
+            }
+            inputTag.value = ''; 
+        }
+    });
+    tagContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-tag-btn')) {
+            tags = tags.filter(t => t !== e.target.dataset.tag);
+            renderizarTags();
+        }
+    });
 
-    tagContainer.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-tag-btn')) {
-            const tagTexto = e.target.getAttribute('data-tag');
-            tags = tags.filter(t => t !== tagTexto);
-            renderizarTags();
-        }
-    });
-    
-    // 4. Listener de "Privado/Cerrado"
-    tipoEventoSelect.addEventListener('change', () => {
-        const tituloInput = document.getElementById('evento-titulo');
-        const liveInput = document.getElementById('evento-live');
-        const conciertoInput = document.getElementById('evento-concierto');
-        const currentCheckGenerica = document.getElementById('evento-img-generica');
-        const currentFieldsetImagen = document.getElementById('fieldset-imagen');
-        
-        const tipo = tipoEventoSelect.value;
-        const esEspecial = (tipo === 'Privado' || tipo === 'Cerrado');
-        
-        tituloInput.disabled = esEspecial;
-        liveInput.disabled = esEspecial;
-        conciertoInput.disabled = esEspecial;
-        currentCheckGenerica.disabled = esEspecial;
-        currentFieldsetImagen.disabled = esEspecial;
+    // Tipo Evento
+    tipoEventoSelect.addEventListener('change', () => {
+        const esEspecial = ['Privado', 'Cerrado'].includes(tipoEventoSelect.value);
+        tituloES.disabled = esEspecial;
+        document.getElementById('evento-live').disabled = esEspecial;
+        document.getElementById('evento-concierto').disabled = esEspecial;
+        checkGenerica.disabled = esEspecial;
+        fieldsetImagen.disabled = esEspecial;
+        if(esEspecial) {
+            tituloES.value = '';
+            checkGenerica.checked = false;
+            if(inputArchivo) inputArchivo.value = '';
+            tags = [];
+            renderizarTags();
+        }
+    });
 
-        if (esEspecial) {
-            tituloInput.value = '';
-            liveInput.value = '';
-            conciertoInput.value = '';
-            currentCheckGenerica.checked = false;
-            document.getElementById('evento-imagen-upload').value = '';
-            tags = [];
-            renderizarTags();
-        }
-    });
-    
-    // 5. Creación INICIAL del Calendario
-    crearCalendarioAlta(); 
+    crearCalendarioAlta();
 
-    // 6. Listener de SUBMIT (Se añade UNA SOLA VEZ)
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault(); 
-        const btnSubmit = form.querySelector('.btn-primary');
-        btnSubmit.disabled = true;
-        btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
-        
-        const eventoData = {
+    // SUBMIT EVENTO
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault(); 
+        const btn = form.querySelector('.btn-primary');
+        btn.disabled = true;
+        btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
+
+        const data = {
             fecha: document.getElementById('evento-fecha').value,
-            tipoEvento: document.getElementById('evento-tipo').value,
-            
-            // ESPAÑOL
-            titulo: document.getElementById('evento-titulo').value.trim(),
-            descripcion: document.getElementById('evento-descripcion').value.trim(),
-            
-            // INGLES (Nuevos campos)
-            titulo_en: document.getElementById('evento-titulo-en').value.trim(),
-            descripcion_en: document.getElementById('evento-descripcion-en').value.trim(),
-
-            // Links
+            tipoEvento: tipoEventoSelect.value,
+            titulo: tituloES.value.trim(),
+            titulo_en: tituloEN.value.trim(),
+            descripcion: descES.value.trim(),
+            descripcion_en: descEN.value.trim(),
             live: document.getElementById('evento-live').value.trim(),
             concierto: document.getElementById('evento-concierto').value.trim(),
-            
-            // Imagen
-            usaGenerica: document.getElementById('evento-img-generica').checked,
-            archivoImagen: document.getElementById('evento-imagen-upload').files[0],
+            usaGenerica: checkGenerica.checked,
+            archivoImagen: inputArchivo.files[0],
             imgReferencia: tags
         };
-        
-        // Lógica para el checkbox "Mismo contenido"
-        const checkMismo = document.getElementById('evento-mismo-contenido');
-        if (checkMismo && checkMismo.checked) {
-            eventoData.titulo_en = eventoData.titulo;
-            eventoData.descripcion_en = eventoData.descripcion;
+
+        if (checkMismo.checked) {
+            data.titulo_en = data.titulo;
+            data.descripcion_en = data.descripcion;
         }
 
-        // ... (Validación y lógica de subida de imagen - SIN CAMBIOS) ...
-        if (eventoData.tipoEvento === 'Regular' && !eventoData.titulo) {
-            alert("Error: 'Título' es obligatorio para eventos Regulares.");
-            btnSubmit.disabled = false;
-            btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-            return;
-        }
-        if (!eventoData.fecha) {
-             alert("Error: 'Fecha' es un campo obligatorio.");
-            btnSubmit.disabled = false;
-            btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-            return;
-        }
-
-        // --- INICIO: VALIDACIÓN DE TAGS OBLIGATORIOS ---
-        if (!eventoData.usaGenerica) {
-            if (eventoData.archivoImagen && eventoData.imgReferencia.length === 0) {
-                alert("Error: Las 'Referencias de Imagen (Tags)' son obligatorias si subes un archivo nuevo.");
-                btnSubmit.disabled = false;
-                btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-                return; // Detiene el proceso de submit
-            }
+        // Validaciones
+        if (data.tipoEvento === 'Regular' && !data.titulo) {
+            alert("Título es obligatorio."); btn.disabled = false; btn.innerHTML = "Guardar Evento"; return;
+        }
+        if (!data.fecha) {
+            alert("Fecha es obligatoria."); btn.disabled = false; btn.innerHTML = "Guardar Evento"; return;
+        }
+        if (!data.usaGenerica && data.archivoImagen && data.imgReferencia.length === 0) {
+            alert("Tags obligatorios si subes imagen."); btn.disabled = false; btn.innerHTML = "Guardar Evento"; return;
         }
 
-        // Capturamos el campo oculto
-        const urlSeleccionada = document.getElementById('evento-imagen-url-seleccionada')?.value || '';
+        try {
+            let imagenUrl;
+            const urlOculta = document.getElementById('evento-imagen-url-seleccionada').value;
 
-        let imagenUrl; 
-
-        if (eventoData.tipoEvento === 'Cerrado') {
-            imagenUrl = "cerrado.jpg";
-        } else if (eventoData.tipoEvento === 'Privado') {
-            imagenUrl = "eventoPrivado.jpg";
-        } else if (eventoData.usaGenerica) { // 2. Se marcó la genérica        
-            imagenUrl = "imgBandaGenerica.jpg";
-        } else if (urlSeleccionada) { // 1. Se seleccionó una imagen preexistente (URL)
-            imagenUrl = urlSeleccionada;
-        } else if (eventoData.archivoImagen) { // 
-            // 1. Hay un archivo nuevo, lo subimos
-            console.log("Subiendo imagen de evento a Cloudinary...");
-            btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Subiendo imagen...";
-            
-            const base64Image = await toBase64(eventoData.archivoImagen);
-            const uploadRes = await fetch('/api/imagenes/subir', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
-                body: JSON.stringify({ data: base64Image })
-            });
-            const uploadData = await uploadRes.json();
-            if (!uploadData.success) {
-                throw new Error(uploadData.message || "Falló la subida de imagen a Cloudinary");
-            }
-            imagenUrl = uploadData.url; // 2. Usamos la URL de Cloudinary
-            console.log("Imagen subida:", imagenUrl);
-            
-            btnSubmit.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando..."; // Volvemos al texto de guardado
-            
-            // --- INICIO DEL ARREGLO PARA GUARDAR TAGS EN MONGO ---
-            if (eventoData.imgReferencia && eventoData.imgReferencia.length > 0) {
-                console.log("Guardando tags en la colección de imágenes...");
-                await fetch('/api/imagenes/guardar', {
+            if (['Cerrado', 'Privado'].includes(data.tipoEvento)) {
+                imagenUrl = data.tipoEvento === 'Cerrado' ? "cerrado.jpg" : "eventoPrivado.jpg";
+            } else if (data.usaGenerica) {
+                imagenUrl = "imgBandaGenerica.jpg";
+            } else if (urlOculta) {
+                imagenUrl = urlOculta;
+            } else if (data.archivoImagen) {
+                const base64 = await toBase64(data.archivoImagen);
+                const res = await fetch('/api/imagenes/subir', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
-                    body: JSON.stringify({ url: imagenUrl, tags: eventoData.imgReferencia })
+                    body: JSON.stringify({ data: base64 })
                 });
+                const json = await res.json();
+                if (!json.success) throw new Error(json.message);
+                imagenUrl = json.url;
+
+                if (data.imgReferencia.length > 0) {
+                    await fetch('/api/imagenes/guardar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
+                        body: JSON.stringify({ url: imagenUrl, tags: data.imgReferencia })
+                    });
+                }
+            } else if (modoEdicion) {
+                const original = adminEventos.find(ev => ev._id === idEventoEdicion);
+                imagenUrl = original.imagen || "imgBandaGenerica.jpg";
+            } else {
+                imagenUrl = "imgBandaGenerica.jpg";
             }
-            
-        } else if (modoEdicion) {
-            const eventoOriginal = adminEventos.find(ev => ev._id === idEventoEdicion);
-            imagenUrl = eventoOriginal.imagen || "imgBandaGenerica.jpg";
-        } else {
-            imagenUrl = "imgBandaGenerica.jpg";
-        }
 
-        let eventoFinal = {
-            fecha: eventoData.fecha,
-            tipoEvento: eventoData.tipoEvento,
-            imagen: imagenUrl,
-            imgReferencia: eventoData.imgReferencia,
-            titulo: eventoData.titulo,
-            descripcion: eventoData.descripcion,
-            titulo_en: eventoData.titulo_en,
-            descripcion_en: eventoData.descripcion_en,
-            live: eventoData.live,
-            concierto: eventoData.concierto
-        };
+            const payload = { ...data, imagen: imagenUrl };
+            delete payload.archivoImagen; delete payload.usaGenerica;
 
-        // ... (Bloque try/catch/finally - SIN CAMBIOS) ...
-        try {
-            if (modoEdicion) {
-                const response = await fetch(`/api/eventos/modificar/${idEventoEdicion}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': getAuthToken()
-                    },
-                    body: JSON.stringify(eventoFinal)
-                });
-                if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
-                alert("¡Evento Modificado con Éxito!");
+            let urlAPI = modoEdicion ? `/api/eventos/modificar/${idEventoEdicion}` : '/api/eventos/crear';
+            let methodAPI = modoEdicion ? 'PUT' : 'POST';
 
-            } else {
-                
-                if (adminEventos.some(ev => ev.fecha === eventoFinal.fecha)) {
-                    if (!confirm("¡Atención! Ya existe otro evento en esta fecha. ¿Deseas crearlo igualmente?")) {
-                        btnSubmit.disabled = false;
-                        btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
-                        return;
-                    }
-                }
-                
-                const response = await fetch('/api/eventos/crear', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': getAuthToken()
-                    },
-                    body: JSON.stringify(eventoFinal)
-                });
-                if (!response.ok) throw new Error((await response.json()).message || "Error del servidor");
-                alert("¡Evento Creado con Éxito!");
-            }
-            
-            fetchEventosData();
-            resetearFormularioAlta(); 
+            if (!modoEdicion && adminEventos.some(ev => ev.fecha === payload.fecha)) {
+                if (!confirm("Ya existe evento en esta fecha. ¿Crear igual?")) {
+                    btn.disabled = false; return;
+                }
+            }
 
-        } catch (error) {
-            console.error("Error al guardar evento:", error);
-            alert(`Error: ${error.message}`);
-        } finally {
-            btnSubmit.disabled = false;
-            btnSubmit.innerHTML = modoEdicion ? "<i class='bx bxs-save'></i> Guardar Modificaciones" : "<i class='bx bxs-save'></i> Guardar Evento";
-            if (modoEdicion) resetearFormularioAlta(); 
-        }
-    });
-}
-// --- FIN DE LA FUNCIÓN REEMPLAZADA ---
+            const response = await fetch(urlAPI, {
+                method: methodAPI,
+                headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
+                body: JSON.stringify(payload)
+            });
 
-// --- INICIO DE LA NUEVA FUNCIÓN ---
-function crearCalendarioAlta() {
-    const inputFecha = document.getElementById('evento-fecha');
-    // Si no encontramos el input, salimos para evitar errores
-    if (!inputFecha) return; 
-    
-    // Destruye el picker anterior si existe
-    if (picker) {
-        picker.destroy();
-        picker = null;
-    }
+            if (!response.ok) throw new Error("Error servidor");
+            alert(modoEdicion ? "Modificado con éxito" : "Creado con éxito");
+            
+            fetchEventosData();
+            resetearFormularioAlta();
 
-    // Vuelve a crear el picker
-    picker = new Litepicker({
-        element: inputFecha, 
-        format: 'YYYY-MM-DD',
-        lang: 'es-ES',
-        buttonText: {
-            previousMonth: '<i class="bx bx-chevron-left"></i>',
-            nextMonth: '<i class="bx bx-chevron-right"></i>',
-            reset: '<i class="bx bx-refresh"></i>',
-            apply: 'Aplicar'
-        },
-        onselected: (date) => {
-            const fechaSeleccionadaMillis = date.toMillis();
-            const hoyMillis = DateTime.now().startOf('day').toMillis();
-            
-            if (fechaSeleccionadaMillis < hoyMillis) {
-                if (!confirm("Has seleccionado una fecha en el pasado. ¿Estás seguro de que quieres continuar?")) {
-                    picker.clearSelection(); 
-               }
-            }
-        }
-    });
-}
-// --- FIN DE LA NUEVA FUNCIÓN ---
-
-
-
-// (renderizarTags, esURLValida no cambian)
-function renderizarTags() {
-    const tagContainer = document.getElementById('tag-container');
-    if (!tagContainer) return; 
-    tagContainer.querySelectorAll('.tag-item').forEach(tagEl => tagEl.remove());
-    tags.slice().reverse().forEach(tagTexto => {
-        const tagEl = document.createElement('span');
-        tagEl.classList.add('tag-item');
-        tagEl.innerHTML = `${tagTexto} <span class="remove-tag-btn" data-tag="${tagTexto}">&times;</span>`;
-        tagContainer.prepend(tagEl);
+        } catch (err) {
+            console.error(err);
+            alert("Error: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = modoEdicion ? "Guardar Modificaciones" : "Guardar Evento";
+        }
     });
 }
 
-// --- FUNCIONES NUEVAS PARA FASE 1 (Tags Bloqueados) ---
+function renderizarTags() {
+    const container = document.getElementById('tag-container');
+    if (!container) return;
+    container.querySelectorAll('.tag-item').forEach(e => e.remove());
+    tags.slice().reverse().forEach(tag => {
+        const el = document.createElement('span');
+        el.className = 'tag-item';
+        el.innerHTML = `${tag} <span class="remove-tag-btn" data-tag="${tag}">&times;</span>`;
+        container.prepend(el);
+    });
+}
 
-function deshabilitarEdicionTags() {
-    const tagContainer = document.getElementById('tag-container');
-    const inputTag = document.getElementById('evento-tags');
-    
-    if (tagContainer && inputTag) {
-        tagContainer.classList.add('disabled');
-        inputTag.disabled = true;
-        inputTag.placeholder = "Tags fijos (Imagen preexistente)";
-    }
+function crearCalendarioAlta() {
+    const input = document.getElementById('evento-fecha');
+    if (!input) return;
+    if (picker) { picker.destroy(); picker = null; }
+    picker = new Litepicker({
+        element: input, format: 'YYYY-MM-DD', lang: 'es-ES',
+        buttonText: { previousMonth: '<', nextMonth: '>', reset: 'x', apply: 'Ok' },
+        onselected: (date) => {
+            if (date.toMillis() < DateTime.now().startOf('day').toMillis()) {
+                if (!confirm("Fecha pasada. ¿Seguro?")) picker.clearSelection();
+            }
+        }
+    });
 }
 
 function habilitarEdicionTags() {
-    const tagContainer = document.getElementById('tag-container');
-    const inputTag = document.getElementById('evento-tags');
-    
-    if (tagContainer && inputTag) {
-        tagContainer.classList.remove('disabled');
-        inputTag.disabled = false;
-        inputTag.placeholder = "Escribe y presiona Enter (Ej: Pedro Asnar)...";
-    }
+    const cont = document.getElementById('tag-container');
+    const inp = document.getElementById('evento-tags');
+    if (cont) cont.classList.remove('disabled');
+    if (inp) { inp.disabled = false; inp.placeholder = "Escribe tags..."; }
 }
-
-
-function esURLValida(string) {
-    try {
-        new URL(string);
-        return (string.startsWith('http://') || string.startsWith('https://'));
-    } catch (_) {
-        return false;
-    }
+function deshabilitarEdicionTags() {
+    const cont = document.getElementById('tag-container');
+    const inp = document.getElementById('evento-tags');
+    if (cont) cont.classList.add('disabled');
+    if (inp) { inp.disabled = true; inp.placeholder = "Tags fijos (Imagen preexistente)"; }
 }
 
 function resetearFormularioAlta() {
-    const form = document.getElementById('form-alta-evento');
-    if (!form) return;
-    
-    // Reseteamos el formulario
-    form.reset();
-    tags = [];
-    renderizarTags();
-    
-    // Destruimos el picker
-    if (picker) {
-        picker.destroy();
-        picker = null; 
-    }
-    
-    document.getElementById('fieldset-imagen').disabled = false;
-    document.getElementById('evento-titulo').disabled = false;
-    document.getElementById('evento-live').disabled = false;
-    document.getElementById('evento-concierto').disabled = false;
-    document.getElementById('evento-img-generica').disabled = false;
-    modoEdicion = false;
-    idEventoEdicion = null;
-    form.classList.remove('modo-edicion');
-    const tabContent = form.closest('.tab-content');
-    if (tabContent) { 
-        tabContent.querySelector('h3').textContent = "Crear Nuevo Evento";
-    }
-    form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
-    const infoImg = document.getElementById('info-img-actual');
-    if (infoImg) infoImg.remove();
+    const form = document.getElementById('form-alta-evento');
+    if (!form) return;
+    form.reset();
+    tags = [];
+    renderizarTags();
     habilitarEdicionTags();
-    const urlInput = document.getElementById('evento-imagen-url-seleccionada');
-    if(urlInput) urlInput.value = ''; // Limpia el hidden input
-    crearCalendarioAlta(); 
+    document.getElementById('fieldset-imagen').disabled = false;
+    document.getElementById('evento-titulo').disabled = false;
+    document.getElementById('evento-imagen-url-seleccionada').value = '';
     
+    modoEdicion = false;
+    idEventoEdicion = null;
+    form.classList.remove('modo-edicion');
+    document.getElementById('alta-evento').querySelector('h3').textContent = "Crear Nuevo Evento";
+    form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
+    
+    const infoImg = document.getElementById('info-img-actual');
+    if(infoImg) infoImg.remove();
+    
+    crearCalendarioAlta();
 }
 
-// -----------------------------------------------------------------
-// --- FASE 3: LÓGICA DE BÚSQUEDA Y RESULTADOS (EVENTOS) ---
-// (Esta sección no tiene cambios)
-// -----------------------------------------------------------------
+// ==========================================
+// 5. RENDERIZADO Y BÚSQUEDA (EVENTOS)
+// ==========================================
 
 async function fetchEventosData() {
     try {
-        const response = await fetch('/api/eventos', {
-            headers: {
-                'Authorization': getAuthToken()
-            }
-        });
-        if (!response.ok) {
-            if (response.status === 401 || response.status === 403) {
-                alert("Error de autenticación. Saliendo...");
-                document.getElementById('logout-btn').click();
-                return;
-            }
-            throw new Error('No se pudo cargar eventos.json desde la API');
-        }
-        adminEventos = await response.json(); 
+        const res = await fetch('/api/eventos', { headers: { 'Authorization': getAuthToken() }});
+        if (!res.ok) throw new Error("Error API Eventos");
+        adminEventos = await res.json();
         renderizarResultadosEventos();
-    } catch (error) {
-        console.error(error);
-        alert("Error fatal: No se pudieron cargar los datos de los eventos.");
-    }
+    } catch (e) { console.error(e); }
 }
 
 function inicializarPanelesBusquedaEventos() {
-    const inputs = document.querySelectorAll('#form-busqueda-mod .form-input, #form-busqueda-baja .form-input');
-    inputs.forEach(input => {
-        const eventType = (input.tagName === 'SELECT') ? 'change' : 'input';
-        input.addEventListener(eventType, renderizarResultadosEventos);
-    });
+    const inputs = document.querySelectorAll('.form-busqueda .form-input');
+    inputs.forEach(i => i.addEventListener(i.tagName === 'SELECT' ? 'change' : 'input', renderizarResultadosEventos));
     
-    document.querySelectorAll('#form-busqueda-mod .search-input-fecha, #form-busqueda-baja .search-input-fecha').forEach(input => {
-        new Litepicker({
-            element: input,
-            format: 'YYYY-MM-DD',
-            lang: 'es-ES',
-            singleMode: true,
-            allowRepick: true, 
-            buttonText: {
-                previousMonth: '<i class="bx bx-chevron-left"></i>',
-                nextMonth: '<i class="bx bx-chevron-right"></i>',
-                reset: '<i class="bx bx-x"></i>', 
-                apply: 'Aplicar'
-            },
-            onselected: () => renderizarResultadosEventos(), 
-        });
-        input.addEventListener('change', () => {
-            if (input.value === '') renderizarResultadosEventos();
+    // Delegación de eventos para botones (Modificar / Eliminar)
+    const containers = [document.getElementById('mod-resultados-container'), document.getElementById('baja-resultados-container')];
+    containers.forEach(c => {
+        if(c) c.addEventListener('click', (e) => {
+            const btnMod = e.target.closest('.btn-card-modificar');
+            const btnDel = e.target.closest('.btn-card-eliminar');
+            if (btnMod) prellenarFormularioModEvento(adminEventos.find(ev => ev._id === btnMod.dataset.id));
+            if (btnDel) eliminarEvento(adminEventos.find(ev => ev._id === btnDel.dataset.id), btnDel);
         });
     });
-
-    const modContainer = document.getElementById('mod-resultados-container');
-    const bajaContainer = document.getElementById('baja-resultados-container');
-    
-    if (modContainer) modContainer.addEventListener('click', (e) => manejarClickTarjetaEvento(e, 'modificar'));
-    if (bajaContainer) bajaContainer.addEventListener('click', (e) => manejarClickTarjetaEvento(e, 'eliminar'));
 }
-// --- FUNCIÓN DE RENDERIZADO BLINDADA Y DETALLADA ---
+
 function renderizarResultadosEventos() {
-    console.log("--> INICIO RENDERIZADO (FORZADO) <--");
+    const contMod = document.getElementById('mod-resultados-container');
+    const contBaja = document.getElementById('baja-resultados-container');
+    if (!contMod || !contBaja) return;
+
+    const getVal = (id) => document.getElementById(id)?.value.toLowerCase() || '';
     
-    const contenedorMod = document.getElementById('mod-resultados-container');
-    const contenedorBaja = document.getElementById('baja-resultados-container');
+    const fMod = { t: getVal('mod-search-titulo'), d: getVal('mod-search-fecha'), k: getVal('mod-search-tipo') };
+    const fBaja = { t: getVal('baja-search-titulo'), d: getVal('baja-search-fecha'), k: getVal('baja-search-tipo') };
 
-    if (!contenedorMod || !contenedorBaja) {
-        console.error("Error: No se encontraron los contenedores en el HTML.");
-        return;
-    }
+    // Filtro Seguro
+    const filter = (list, f) => list.filter(ev => {
+        const tit = (ev.titulo || '').toLowerCase();
+        const tipo = (ev.tipoEvento || '').toLowerCase();
+        const fecha = ev.fecha || '';
+        return (!f.t || tit.includes(f.t)) && (!f.d || fecha === f.d) && (!f.k || tipo === f.k);
+    }).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
 
-    // Helper para obtener valores de inputs de forma segura
-    const getVal = (id) => document.getElementById(id)?.value || '';
-    
-    const filtrosMod = {
-        fecha: getVal('mod-search-fecha'),
-        tipo: getVal('mod-search-tipo'),
-        titulo: getVal('mod-search-titulo').toLowerCase(),
-        tags: getVal('mod-search-tags').toLowerCase(),
-    };
-
-    const filtrosBaja = {
-        fecha: getVal('baja-search-fecha'),
-        tipo: getVal('baja-search-tipo'),
-        titulo: getVal('baja-search-titulo').toLowerCase(),
-        tags: getVal('baja-search-tags').toLowerCase(),
-    };
-
-    // Filtramos y Ordenamos (usando fechas seguras)
-    const filtradosMod = filtrarEventos(filtrosMod).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
-    const filtradosBaja = filtrarEventos(filtrosBaja).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
-
-    console.log(`Eventos encontrados para Modificar: ${filtradosMod.length}`);
-
-    // Generador de HTML seguro
-    const generarHTML = (lista, accion) => {
-        if (lista.length === 0) return '<p style="color:#ccc; padding:20px; text-align:center;">No hay eventos que coincidan.</p>';
-        return lista.map(ev => crearTarjetaResultadoEvento(ev, accion)).join('');
-    };
-
-    // --- INYECCIÓN EN MODIFICACIÓN (Con Estilos Forzados) ---
-    try {
-        const htmlMod = generarHTML(filtradosMod, 'modificar');
+    // Generador HTML Seguro
+    const htmlSafe = (ev, action) => {
+        let img = `<div style="width:80px;height:80px;background:#555;display:flex;align-items:center;justify-content:center;">Sin</div>`;
+        if(ev.imagen && ev.imagen.length > 3) {
+            const src = ev.imagen.startsWith('http') ? ev.imagen : `../img/${ev.imagen}`;
+            img = `<img src="${src}" style="width:80px;height:80px;object-fit:cover;border-radius:5px;">`;
+        }
         
-        // Inyectamos el CHIVATO ROJO + Las Tarjetas
-        contenedorMod.innerHTML = `
-            <div style="grid-column: 1/-1; background: #B71C1C; color: white; padding: 15px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #FFC107; border-radius: 10px;">
-                ⚠️ PRUEBA DE VISIBILIDAD ⚠️<br>
-                Si ves este cuadro rojo, el sistema funciona.<br>
-                Hay ${filtradosMod.length} tarjeta(s) generada(s) debajo.
+        const btnLabel = action === 'modificar' ? 'Modificar' : 'Eliminar';
+        const btnClass = action === 'modificar' ? 'modificar' : 'eliminar';
+        const btnColor = action === 'modificar' ? 'color:#448AFF;' : 'color:#F44336;';
+
+        return `
+        <div class="card-resultado" style="display:flex; gap:1rem; background:#333; color:#fff; padding:1rem; margin-bottom:1rem; border:1px solid #555; border-radius:10px; align-items:center;">
+            ${img}
+            <div style="flex:1;">
+                <h4 style="margin:0; font-size:1.1rem;">${ev.titulo || 'Sin Título'}</h4>
+                <p style="margin:5px 0 0; color:#ccc; font-size:0.9rem;">${ev.fecha || 'S/F'} | ${ev.tipoEvento}</p>
             </div>
-        ` + htmlMod;
+            <button class="btn btn-card btn-card-${btnClass}" data-id="${ev._id}" style="padding:0.5rem 1rem; cursor:pointer; background:transparent; border:1px solid; border-radius:5px; ${btnColor}">
+                ${btnLabel}
+            </button>
+        </div>`;
+    };
 
-        // FORZAMOS ESTILOS (Ignora admin.css si está roto)
-        contenedorMod.style.display = 'grid';
-        contenedorMod.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, 1fr))';
-        contenedorMod.style.gap = '1.5rem';
-        contenedorMod.style.width = '100%';
-        contenedorMod.style.minHeight = '100px';
-        contenedorMod.style.visibility = 'visible';
-        contenedorMod.style.opacity = '1';
-        
-    } catch (e) { console.error("Error renderizando Modificar:", e); }
+    // Renderizar Modificación
+    const listMod = filter(adminEventos, fMod);
+    contMod.innerHTML = listMod.length ? listMod.map(ev => htmlSafe(ev, 'modificar')).join('') : '<p style="color:#ccc;text-align:center;">Sin resultados</p>';
+    contMod.style.display = 'grid'; 
+    contMod.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, 1fr))'; 
+    contMod.style.gap = '1rem';
 
-    // --- INYECCIÓN EN BAJA ---
-    try {
-        const htmlBaja = generarHTML(filtradosBaja, 'eliminar');
-        contenedorBaja.innerHTML = htmlBaja;
-        // Forzamos estilos aquí también
-        contenedorBaja.style.display = 'grid';
-        contenedorBaja.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, 1fr))';
-        contenedorBaja.style.gap = '1.5rem';
-    } catch (e) { console.error("Error renderizando Baja:", e); }
-
-    console.log("--> FIN RENDERIZADO <--");
-}
-// --- FUNCIÓN DE FILTRADO SEGURA ---
-function filtrarEventos(filtros) {
-    if (!Array.isArray(adminEventos)) {
-        console.error("Error: adminEventos no es un array", adminEventos);
-        return [];
-    }
-
-    return adminEventos.filter(evento => {
-        // Protección contra valores nulos (si un campo falta, usamos string vacío)
-        const evTitulo = (evento.titulo || '').toLowerCase();
-        const evTipo = (evento.tipoEvento || '').toLowerCase();
-        const evFecha = evento.fecha || '';
-        const evTags = Array.isArray(evento.imgReferencia) 
-            ? evento.imgReferencia.join(' ').toLowerCase() 
-            : '';
-
-        const checkTitulo = !filtros.titulo || 
-                            evTitulo.includes(filtros.titulo) ||
-                            (evTipo !== 'regular' && evTipo.includes(filtros.titulo));
-                            
-        const checkFecha = !filtros.fecha || (evFecha === filtros.fecha);
-        
-        // Comparación laxa para el tipo (para evitar errores de mayúsculas/minúsculas)
-        const checkTipo = !filtros.tipo || (evTipo === filtros.tipo.toLowerCase());
-        
-        const checkTags = !filtros.tags || evTags.includes(filtros.tags);
-
-        return checkFecha && checkTipo && checkTitulo && checkTags;
-    });
+    // Renderizar Baja
+    const listBaja = filter(adminEventos, fBaja);
+    contBaja.innerHTML = listBaja.length ? listBaja.map(ev => htmlSafe(ev, 'eliminar')).join('') : '<p style="color:#ccc;text-align:center;">Sin resultados</p>';
+    contBaja.style.display = 'grid'; 
+    contBaja.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, 1fr))'; 
+    contBaja.style.gap = '1rem';
 }
 
-// --- FUNCIÓN DE TARJETA A PRUEBA DE FALLOS (Reemplazar en admin.js) ---
-function crearTarjetaResultadoEvento(evento, tipoAccion) {
-    // 1. Botones según la acción
-    const botonHtml = tipoAccion === 'modificar'
-        ? `<button class="btn btn-card btn-card-modificar" data-id="${evento._id}" style="background:#E3F2FD; color:#1565C0;">Modificar</button>`
-        : `<button class="btn btn-card btn-card-eliminar" data-id="${evento._id}" style="background:#FFEBEE; color:#C62828;">Eliminar</button>`;
-
-    // 2. Datos Seguros (Si falta algo, ponemos texto genérico)
-    const titulo = evento.titulo || "Evento sin título";
-    const fecha = evento.fecha || "Sin fecha";
-    const tipo = evento.tipoEvento || "Regular";
-    
-    // 3. Imagen Simple (Sin lógica compleja de URL por ahora)
-    // Si tiene imagen, intentamos mostrarla, si no, un placeholder de color.
-    let imgHtml = `<div style="width:80px; height:80px; background:#555; display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px;">Sin Img</div>`;
-    
-    if (evento.imagen) {
-        const ruta = (evento.imagen.startsWith('http')) ? evento.imagen : `../img/${evento.imagen}`;
-        imgHtml = `<img src="${ruta}" style="width:80px; height:80px; object-fit:cover;">`;
-    }
-
-    // 4. HTML Simple y Directo
-    return `
-    <div class="card-resultado" style="background:#333; color:#fff; margin-bottom:10px; padding:10px; display:flex; gap:10px; border:1px solid #555;">
-        ${imgHtml}
-        <div style="flex-grow:1;">
-            <h4 style="margin:0; color:#fff;">${titulo}</h4>
-            <p style="margin:5px 0 0; font-size:0.9rem; color:#ccc;">${fecha} | ${tipo}</p>
-            <small style="color:#777; font-size:0.7rem;">ID: ${evento._id}</small>
-        </div>
-        <div style="display:flex; align-items:center;">
-            ${botonHtml}
-        </div>
-    </div>
-    `;
-}
-
-function manejarClickTarjetaEvento(e, accion) {
-    const boton = e.target.closest(accion === 'modificar' ? '.btn-card-modificar' : '.btn-card-eliminar');
-    if (!boton) return; 
-    
-    const idMongo = boton.getAttribute('data-id'); 
-    const evento = adminEventos.find(ev => ev._id === idMongo); 
-    if (!evento) {
-        alert("Error: No se encontró el evento.");
-        return;
-    }
-
-    if (accion === 'modificar') {
-        prellenarFormularioModEvento(evento);
-    } else {
-        eliminarEvento(evento, boton);
-    }
-}
-
-async function eliminarEvento(evento, boton) {
-    if (!confirm(`¿Estás seguro de que quieres eliminar el evento "${evento.titulo || evento.tipoEvento}" del ${evento.fecha}? \n\n¡Esta acción es REAL y guarda un backup!`)) {
-        return;
-    }
-    boton.disabled = true;
-    boton.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i>";
-    
-    try {
-        const response = await fetch(`/api/eventos/eliminar/${evento._id}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': getAuthToken()
-            }
-        });
-        
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message);
-        alert(`Evento "${evento.titulo || evento.tipoEvento}" eliminado con éxito.`);
-        
-        fetchEventosData(); 
-        
-    } catch (error) {
-        console.error("Error al eliminar evento:", error);
-        alert(`Error: ${error.message}`);
-        boton.disabled = false;
-        boton.innerHTML = "<i class='bx bxs-trash'></i> Eliminar";
-    }
-}
-
-function prellenarFormularioModEvento(evento) {
+function prellenarFormularioModEvento(ev) {
     modoEdicion = true;
-    idEventoEdicion = evento._id; 
-    
+    idEventoEdicion = ev._id;
     const form = document.getElementById('form-alta-evento');
     form.classList.add('modo-edicion');
-    
-    const tabContent = form.closest('.tab-content');
-    tabContent.querySelector('h3').textContent = `Modificando: ${evento.titulo || evento.tipoEvento}`;
-    form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
+    document.getElementById('alta-evento').querySelector('h3').textContent = "Modificando Evento";
+    form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Cambios";
 
-    // 1. Fechas
-    const inputFecha = document.getElementById('evento-fecha');
-    inputFecha.value = evento.fecha;
+    // Datos Básicos
+    document.getElementById('evento-fecha').value = ev.fecha;
+    document.getElementById('evento-tipo').value = ev.tipoEvento;
+    document.getElementById('evento-titulo').value = ev.titulo || '';
+    document.getElementById('evento-descripcion').value = ev.descripcion || '';
     
-    if (picker) picker.destroy();
-    crearCalendarioAlta(); // Re-creamos el picker
-    // Pequeño timeout para asegurar que el picker esté listo antes de setear la fecha
-    setTimeout(() => { if(picker) picker.setDate(evento.fecha); }, 100);
+    // Datos Inglés
+    document.getElementById('evento-titulo-en').value = ev.titulo_en || ev.titulo || '';
+    document.getElementById('evento-descripcion-en').value = ev.descripcion_en || ev.descripcion || '';
+    
+    // Links
+    document.getElementById('evento-live').value = ev.live || '';
+    document.getElementById('evento-concierto').value = ev.concierto || '';
 
-    // 2. Datos Básicos
-    document.getElementById('evento-tipo').value = evento.tipoEvento;
-    
-    // 3. Datos Bilingües (Aquí estaba el problema)
-    document.getElementById('evento-titulo').value = evento.titulo || '';
-    document.getElementById('evento-descripcion').value = evento.descripcion || '';
-    
-    // Inglés (con fallback si no existe)
-    const tituloEN = evento.titulo_en || evento.titulo || '';
-    const descEN = evento.descripcion_en || evento.descripcion || '';
-    
-    document.getElementById('evento-titulo-en').value = tituloEN;
-    document.getElementById('evento-descripcion-en').value = descEN;
-
-    // 4. Links
-    document.getElementById('evento-live').value = evento.live || '';
-    document.getElementById('evento-concierto').value = evento.concierto || '';
-
-    // 5. Lógica del Checkbox "Mismo Contenido"
+    // Checkbox Mismo Contenido
     const checkMismo = document.getElementById('evento-mismo-contenido');
-    const esIgual = (evento.titulo === tituloEN) && (evento.descripcion === descEN);
-    
-    if (checkMismo) {
+    if(checkMismo) {
+        // Si son iguales o si el inglés estaba vacío (migración), marcamos check
+        const esIgual = (ev.titulo === (ev.titulo_en || ev.titulo)) && (ev.descripcion === (ev.descripcion_en || ev.descripcion));
         checkMismo.checked = esIgual;
-        // Disparamos el evento para que habilite/deshabilite los campos
         checkMismo.dispatchEvent(new Event('change'));
     }
 
-    // 6. Imagen y Tags
-    document.getElementById('evento-tipo').dispatchEvent(new Event('change')); // Actualiza estado de cerrado/privado
-    tags = evento.imgReferencia || [];
+    // Calendario
+    if (picker) picker.destroy();
+    crearCalendarioAlta();
+    setTimeout(() => { if(picker) picker.setDate(ev.fecha); }, 100);
+
+    // Tags e Imagen
+    tags = ev.imgReferencia || [];
     renderizarTags();
     
-    // Lógica de imagen existente (Visualización)
-    const checkGenerica = document.getElementById('evento-img-generica');
-    const fieldsetImagen = document.getElementById('fieldset-imagen');
-    const infoImg = document.getElementById('info-img-actual');
-    if (infoImg) infoImg.remove();
+    const checkGen = document.getElementById('evento-img-generica');
+    const fieldset = document.getElementById('fieldset-imagen');
+    const infoOld = document.getElementById('info-img-actual');
+    if(infoOld) infoOld.remove();
 
-    if (evento.imagen === 'imgBandaGenerica.jpg') {
-        checkGenerica.checked = true;
-        fieldsetImagen.disabled = true;
-    } else {
-        checkGenerica.checked = false;
-        fieldsetImagen.disabled = false;
-        
-        // Bloqueamos edición de tags si hay imagen asignada
-        deshabilitarEdicionTags();
+    document.getElementById('evento-tipo').dispatchEvent(new Event('change')); // Refresca estado de inputs según tipo
 
-        const infoHtml = `
-            <div id="info-img-actual" class="info-imagen-actual">
-                <strong>Imagen Actual:</strong> ${evento.imagen}
-                <br>
-                <small>Sube un archivo nuevo para reemplazarla.</small>
-            </div>
-        `;
-        fieldsetImagen.insertAdjacentHTML('afterbegin', infoHtml);
+    // Solo gestionamos imagen si no es Cerrado/Privado (que ya lo maneja el dispatchEvent)
+    if (!['Cerrado', 'Privado'].includes(ev.tipoEvento)) {
+        if(ev.imagen === 'imgBandaGenerica.jpg') {
+            checkGen.checked = true;
+            fieldset.disabled = true;
+        } else {
+            checkGen.checked = false;
+            fieldset.disabled = false;
+            deshabilitarEdicionTags();
+            const urlImg = ev.imagen.startsWith('http') ? ev.imagen : `../img/${ev.imagen}`;
+            fieldset.insertAdjacentHTML('afterbegin', `
+                <div id="info-img-actual" class="info-imagen-actual">
+                    <strong>Imagen Actual:</strong> <a href="${urlImg}" target="_blank" style="color:#FFC107;">Ver Imagen</a>
+                    <br><small>Sube un archivo nuevo para reemplazarla.</small>
+                </div>`);
+        }
     }
 
-    if (evento.tipoEvento === 'Cerrado' || evento.tipoEvento === 'Privado') {
-        fieldsetImagen.disabled = true;
-    }
-
-    // 7. Ir al tab y scrollear
     document.querySelector('.tab-link[data-tab="alta-evento"]').click();
-    form.scrollIntoView({ behavior: 'smooth' });
+    form.scrollIntoView({behavior: "smooth"});
 }
 
+async function eliminarEvento(ev, btn) {
+    if(!confirm(`¿Eliminar "${ev.titulo || ev.tipoEvento}" del ${ev.fecha}?`)) return;
+    btn.disabled = true;
+    btn.innerHTML = "...";
+    try {
+        await fetch(`/api/eventos/eliminar/${ev._id}`, { method: 'DELETE', headers: {'Authorization': getAuthToken()} });
+        alert("Evento eliminado correctamente.");
+        fetchEventosData();
+    } catch(e) { 
+        console.error(e); 
+        alert("Error al eliminar.");
+        btn.disabled = false;
+        btn.innerHTML = "Eliminar";
+    }
+}
 
-// -----------------------------------------------------------------
-// --- FASE 4/5/6: LÓGICA COMPLETA DE "CARTA" ---
-// (Esta sección no tiene cambios, sigue en simulación)
-// -----------------------------------------------------------------
-
-// --- ¡¡¡INICIO DEL BLOQUE A REEMPLAZAR!!! ---
-// --- ¡¡¡INICIO DEL BLOQUE A REEMPLAZAR!!! ---
-// (Esta es la v4.9 - Solo construye el HTML)
+// ==========================================
+// 6. GESTIÓN DE CARTA (COMPLETO)
+// ==========================================
 
 function inicializarFormularioCarta() {
     const container = document.getElementById('smart-form-container');
+    const form = document.getElementById('form-alta-producto');
+    const sel = document.getElementById('producto-tipo');
+    const btnActions = document.getElementById('form-actions-producto');
 
-    // 1. Rellenamos el HTML (SOLO LA PRIMERA VEZ)
-    // Esto construye los <div id="fields-coctel"> etc.
+    // 1. Inyectar Plantillas (Solo una vez)
     if (container.children.length === 0) {
-
-        console.log("Construyendo formularios de carta por primera vez...");
-
-        for (const tipo in plantillasFormCarta) {
-            const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
-            const divId = `fields-${tipoPlantilla}`;
-            if (!document.getElementById(divId)) {
-                const div = document.createElement('div');
-                div.id = divId;
-                div.className = 'form-fields-group';
-                div.innerHTML = plantillasFormCarta[tipoPlantilla];
-                container.appendChild(div);
-            }
+        for (const t in plantillasFormCarta) {
+            const div = document.createElement('div');
+            div.id = `fields-${t.startsWith('vino')?'vino':t}`;
+            div.className = 'form-fields-group';
+            div.innerHTML = plantillasFormCarta[t.startsWith('vino')?'vino':t];
+            container.appendChild(div);
         }
     }
-}
-// --- ¡¡¡FIN DEL BLOQUE A REEMPLAZAR!!! ---
-function crearCalendarioAlta() {
-    const inputFecha = document.getElementById('evento-fecha');
-    if (picker) {
-            picker.destroy();
-            picker = null;
-        }
-        picker = new Litepicker({
-            element: inputFecha, // Usamos la referencia directa
-            format: 'YYYY-MM-DD',
-            lang: 'es-ES',
-            buttonText: {
-                previousMonth: '<i class="bx bx-chevron-left"></i>',
-                nextMonth: '<i class="bx bx-chevron-right"></i>',
-                reset: '<i class="bx bx-refresh"></i>',
-                apply: 'Aplicar'
-            },
-            onselected: (date) => {
-                const fechaSeleccionadaMillis = date.toMillis();
-                const hoyMillis = DateTime.now().startOf('day').toMillis();
-                
-                if (fechaSeleccionadaMillis < hoyMillis) {
-                    if (!confirm("Has seleccionado una fecha en el pasado. ¿Estás seguro de que quieres continuar?")) {
-                        picker.clearSelection(); 
-                    }
-                }
-            }
-        });
-    }
-// --- ¡¡¡FIN DEL BLOQUE A REEMPLAZAR!!! ---
-
-function activarLogicaBilingue(visibleGroup) {
-    const langTabs = visibleGroup.querySelectorAll('.lang-tab-btn');
-    const langContents = visibleGroup.querySelectorAll('.lang-content');
-    langTabs.forEach(tab => {
-        // Usamos .replaceWith(cloneNode(true)) para limpiar listeners
-        const newTab = tab.cloneNode(true);
-        tab.parentNode.replaceChild(newTab, tab);
-
-        newTab.addEventListener('click', (e) => {
-            e.preventDefault(); 
-            const lang = newTab.dataset.lang;
-            visibleGroup.querySelectorAll('.lang-tab-btn').forEach(t => {
-                t.style.color = '';
-                t.style.border = '';
-                t.classList.remove('active');
-            });
-            // Necesitamos buscar los tabs de nuevo dentro del grupo visible
-            //visibleGroup.querySelectorAll('.lang-tab-btn').forEach(t => t.classList.remove('active'));
-            newTab.classList.add('active');
-            visibleGroup.querySelectorAll('.lang-content').forEach(c => {
-                c.classList.toggle('active', c.dataset.langContent === lang);
-            });
-        });
-    });
     
-    const translateBtn = visibleGroup.querySelector('.btn-translate[data-lang-group="en"]');
-    if (translateBtn) {
-        // Limpiamos listener
-const translateBtn = visibleGroup.querySelector('.btn-translate[data-lang-group="en"]');
-    if (translateBtn) {
-        // Limpiamos listener
-        const newTranslateBtn = translateBtn.cloneNode(true);
-        translateBtn.parentNode.replaceChild(newTranslateBtn, translateBtn);
+    // 2. Listener Tipo
+    sel.addEventListener('change', () => {
+        document.querySelectorAll('.form-fields-group').forEach(g => g.classList.remove('visible'));
+        const target = document.getElementById(`fields-${sel.value.startsWith('vino')?'vino':sel.value}`);
+        if(target) {
+            target.classList.add('visible');
+            activarLogicaBilingue(target);
+            btnActions.style.display = 'block';
+        } else {
+            btnActions.style.display = 'none';
+        }
+    });
+
+    // 3. Submit
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const tipo = sel.value;
+        const tipoPlantilla = tipo.startsWith('vino') ? 'vino' : tipo;
+        const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
+        const btn = form.querySelector('.btn-primary');
         
-        newTranslateBtn.addEventListener('click', async (e) => { // <-- AGREGAMOS 'async'
-            e.preventDefault();
-            const langGroupES = visibleGroup.querySelector('.lang-content[data-lang-content="es"]');
-            const langGroupEN = visibleGroup.querySelector('.lang-content[data-lang-content="en"]');
-            const campos = ['titulo', 'descripcion', 'region', 'pais', 'varietal', 'crianza'];
-            
-            // 1. Deshabilitar botón mientras traduce
-            newTranslateBtn.disabled = true;
-            newTranslateBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Traduciendo...";
-
-            for (const campo of campos) {
-                const inputES = langGroupES.querySelector(`[id$="-${campo}-es"]`); 
-                const inputEN = langGroupEN.querySelector(`[id$="-${campo}-en"]`); 
-                
-                // 2. Solo traducir si existe el campo en ES y está vacío en EN
-                if (inputES && inputEN && inputES.value && inputEN.value.trim() === '') {
-                    const textoES = inputES.value;
-                    
-                    try {
-                        // LLAMADA A LA RUTA DE TRADUCCIÓN INTELIGENTE
-                        const response = await fetch('/api/traducir', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
-                            body: JSON.stringify({ texto: textoES, targetLang: 'en' })
-                        });
-                        
-                        const data = await response.json();
-                        
-                        if (data.success && data.translatedText) {
-                            inputEN.value = data.translatedText;
-                        } else {
-                            console.error(`Error al traducir ${campo}:`, data.message || 'Fallo desconocido');
-                            inputEN.value = `[ERROR: ${textoES}]`; // Deja un indicador de fallo
-                        }
-                    } catch (error) {
-                        console.error(`Error de red al traducir ${campo}:`, error);
-                        inputEN.value = `[ERROR DE CONEXIÓN: ${textoES}]`; 
-                    }
-                }
-            }
-            
-            // 3. Re-habilitar botón
-            newTranslateBtn.disabled = false;
-            newTranslateBtn.innerHTML = "<i class='bx bxs-magic-wand'></i> Sugerir traducción para todos los campos";
-        });
-    }
-    }
-}
-function resetearFormularioCarta() {
-    const form = document.getElementById('form-alta-producto');
-    if (!form) return;
-    form.reset();
-    document.getElementById('smart-form-container').querySelectorAll('.form-fields-group').forEach(group => {
-        group.classList.remove('visible');
-    });
-    document.getElementById('form-actions-producto').style.display = 'none';
-    document.getElementById('producto-tipo').value = "";
-    modoEdicion = false;
-    idProductoEdicion = null; 
-    form.classList.remove('modo-edicion');
-    const tabContent = document.getElementById('alta-producto');
-    if (tabContent) {
-        tabContent.querySelector('h3').textContent = "Crear Nuevo Producto";
-    }
-    const infoImg = document.getElementById('info-img-actual-prod');
-    if (infoImg) infoImg.remove();
-
-    // Reseteamos el botón de submit, que se quedaba "tildado"
-    const btnSubmit = form.querySelector('.btn-primary');
-    if (btnSubmit) {
-        btnSubmit.disabled = false;
-        // ¡Cuidado! Tuve que escapar las comillas de 'bx bxs-save'
-        btnSubmit.innerHTML = "<i class=\'bx bxs-save\'></i> Guardar Producto";
-    }
-    
-    // ¡IMPORTANTE!
-    // Volvemos a inicializar el formulario para re-adjuntar los listeners
-    // al formulario reseteado.
-    //inicializarFormularioCarta();
-}
-
-// --- LÓGICA DE BÚSQUEDA Y VISIBILIDAD (CARTA) ---
-// (Corregido con _id)
-
-async function fetchProductosData() {
-    try {
-        // --- INICIO DEL ARREGLO ---
-        // Esta es la ruta correcta para OBTENER productos
-        const response = await fetch('/api/productos', { 
-             headers: {
-                'Authorization': getAuthToken()
-            }
-        });
-        // --- FIN DEL ARREGLO ---
-
-        if (!response.ok) {
-            if (response.status === 401 || response.status === 403) {
-                 alert("Error de autenticación. Saliendo...");
-                 document.getElementById('logout-btn').click();
-                 return;
-            }
-            // Usamos el texto de la respuesta si está disponible
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || 'No se pudo cargar los archivos de carta desde la API.');
-        }
-        
-        const data = await response.json(); 
-        
-        if (!data.es || !data.es.productos) {
-            console.log("Datos recibidos de /api/productos:", data);
-            throw new Error("La API no devolvió 'productos' para ES");
-        }
-        adminProductos = data.es.productos; 
-        adminProductos_EN = data.en.productos; 
-        
-        renderizarResultadosProductos();
-        
-    } catch (error) {
-        console.error(error);
-        alert(`Error fatal: ${error.message}`); // Mostramos el mensaje de error real
-    }
-}
-
-function inicializarPanelesBusquedaProductos() {
-    const inputs = document.querySelectorAll('#form-busqueda-producto .form-input');
-    
-    // --- ¡¡ARREGLO!! (Línea 1) ---
-    // Volvemos a definir 'container' aquí
-    const container = document.getElementById('prod-resultados-container');
-    
-    inputs.forEach(input => {
-        const eventType = (input.tagName === 'SELECT') ? 'change' : 'input';
-        input.addEventListener(eventType, renderizarResultadosProductos);
-    });
-
-    // Listener para el botón "Modificar" (Este ya lo tenías)
-    container.addEventListener('click', (e) => {
-        const botonMod = e.target.closest('.btn-card-modificar');
-        if (botonMod) {
-            const idMongo = botonMod.dataset.id;
-            const producto = adminProductos.find(p => p._id === idMongo);
-            if (producto) {
-                prellenarFormularioCarta(producto);
+        // Validación simple EN
+        const inputsEN = formGroup.querySelectorAll('.lang-content[data-lang-content="en"] [required]');
+        for (const i of inputsEN) {
+            if (!i.value.trim()) {
+                alert("Faltan campos en Inglés por completar.");
+                formGroup.querySelector('.lang-tab-btn[data-lang="en"]').click();
+                i.focus();
+                return;
             }
         }
-    });
 
-    // --- ¡¡ARREGLO!! (Línea 2) ---
-    // Este es el nuevo listener para el "Smart Switch"
-    container.addEventListener('change', async (e) => {
-        // Verificamos que sea el switch (el input checkbox)
-        if (e.target.matches('.visibility-switch input[type="checkbox"]')) {
-            const switchInput = e.target;
-            const idMongo = switchInput.dataset.id;
-            const nuevoEstado = switchInput.checked;
-            const card = switchInput.closest('.card-resultado');
+        btn.disabled = true;
+        btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Procesando...";
 
-            // 1. Deshabilitamos el switch y damos feedback visual
-            switchInput.disabled = true;
-            card.style.opacity = '0.5';
-
-            try {
-                const response = await fetch(`/api/productos/visibilidad/${idMongo}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': getAuthToken()
-                    },
-                    body: JSON.stringify({ visualizacion: nuevoEstado })
+        try {
+            const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
+            
+            // Imagen Upload
+            let imgUrl = producto_es.imagen; 
+            if (producto_es.archivoImagen) {
+                const b64 = await toBase64(producto_es.archivoImagen);
+                const res = await fetch('/api/imagenes/subir', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
+                    body: JSON.stringify({ data: b64 })
                 });
-                
-                if (!response.ok) throw new Error('Error de red al actualizar');
-                
-                // 2. Éxito: Actualizamos el estado visual de la card
-                card.classList.toggle('deshabilitado', !nuevoEstado);
-
-                // 3. (CRÍTICO) Actualizamos el dato local
-                const productoEnCache = adminProductos.find(p => p._id === idMongo);
-                if (productoEnCache) {
-                    productoEnCache.visualizacion = nuevoEstado;
-                }
-                
-            } catch (error) {
-                console.error(error);
-                alert("Error al guardar la visibilidad. Revirtiendo.");
-                // 4. Error: Revertimos el switch
-                switchInput.checked = !nuevoEstado;
-            } finally {
-                // 5. Siempre rehabilitamos el switch y la opacidad
-                switchInput.disabled = false;
-                card.style.opacity = '1';
+                const json = await res.json();
+                if(!json.success) throw new Error(json.message);
+                imgUrl = json.url;
+            } else if (modoEdicion) {
+                const orig = adminProductos.find(p => p._id === idProductoEdicion);
+                imgUrl = orig ? orig.imagen : 'bebidaSinFoto.jpg';
             }
-        }
-    });
-    // --- FIN DEL CÓDIGO NUEVO ---
-}
 
-// --- INICIO DE LA NUEVA FUNCIÓN ---
-function inicializarModalImagenes() {
-    const modal = document.getElementById('modal-imagenes');
-    const abrirBtn = document.getElementById('btn-elegir-img');
-    const cerrarBtn = document.getElementById('cerrar-modal-imagenes');
-    const searchInput = document.getElementById('search-tags-modal');
-    const formBuscador = document.getElementById('form-buscador-imagenes');
-    const resultadosContainer = document.getElementById('resultados-imagenes');
-    const spinner = document.getElementById('loading-spinner-img');
+            producto_es.imagen = imgUrl;
+            producto_en.imagen = imgUrl;
+            delete producto_es.archivoImagen; delete producto_en.archivoImagen;
 
-    // Abre el modal al hacer clic en el botón
-    if (abrirBtn) {
-        abrirBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            modal.style.display = 'flex';
-            // Cargamos todas las imágenes al abrir el modal (búsqueda vacía)
-            buscarImagenes(''); 
-        });
-    }
+            const url = modoEdicion ? `/api/productos/modificar/${idProductoEdicion}` : '/api/productos/crear';
+            const method = modoEdicion ? 'PUT' : 'POST';
 
-    // Cierra el modal
-    if (cerrarBtn) {
-        cerrarBtn.addEventListener('click', () => {
-            modal.style.display = 'none';
-        });
-    }
-    
-    // Lógica de búsqueda al escribir
-    if (searchInput) {
-        let timeout = null;
-        searchInput.addEventListener('input', () => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                buscarImagenes(searchInput.value.trim());
-            }, 500); // 500ms de debounce
-        });
-        
-        // Prevenir submit del formulario de búsqueda
-        formBuscador.addEventListener('submit', (e) => e.preventDefault());
-    }
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
+                body: JSON.stringify({ producto_es, producto_en })
+            });
 
-    // Maneja la selección de una imagen
-    if (resultadosContainer) {
-        resultadosContainer.addEventListener('click', (e) => {
-            const imgElement = e.target.closest('.card-imagen-preexistente img');
-            if (imgElement) {
-                const urlSeleccionada = imgElement.getAttribute('data-url');
-                const tagsSeleccionados = imgElement.getAttribute('data-tags');
-
-                // 1. Asigna URL y limpia file input
-                const urlInput = document.getElementById('evento-imagen-url-seleccionada');
-                const fileInput = document.getElementById('evento-imagen-upload');
-                
-                if (urlInput) urlInput.value = urlSeleccionada;
-                if (fileInput) fileInput.value = ''; 
-
-                // 2. Cargar Tags y BLOQUEAR edición (Fase 1 Fix)
-                tags = tagsSeleccionados ? tagsSeleccionados.split(',') : [];
-                renderizarTags();
-                deshabilitarEdicionTags(); // <--- ¡AQUÍ ESTÁ LA MAGIA!
-
-                // 3. Feedback visual
-                const infoImg = document.getElementById('info-img-actual');
-                if (infoImg) infoImg.remove();
-
-                const fieldsetImagen = document.getElementById('fieldset-imagen');
-                const infoHtml = `
-                    <div id="info-img-actual" class="info-imagen-actual" style="border-color: #4CAF50;">
-                        <strong style="color: #4CAF50;">Imagen Vinculada:</strong> Visualización OK.
-                        <br>
-                        <small>Has seleccionado una imagen existente. Los tags son fijos.</small>
-                    </div>
-                `;
-                fieldsetImagen.insertAdjacentHTML('afterbegin', infoHtml);
-
-                modal.style.display = 'none';
-            }
-        });
-    }
-}
-
-// Función que realiza el fetch a la nueva API
-async function buscarImagenes(query) {
-    const resultadosContainer = document.getElementById('resultados-imagenes');
-    const spinner = document.getElementById('loading-spinner-img');
-    
-    spinner.style.display = 'block';
-    resultadosContainer.innerHTML = '';
-    
-    try {
-        const response = await fetch(`/api/imagenes?q=${encodeURIComponent(query)}`, {
-            headers: { 'Authorization': getAuthToken() }
-        });
-        
-        if (!response.ok) throw new Error('Error al buscar en la API de imágenes.');
-        
-        const data = await response.json();
-        
-        if (data.imagenes.length === 0) {
-            resultadosContainer.innerHTML = `<p style="text-align: center; color: #9E9E9E; margin-top: 2rem;">No se encontraron imágenes con los tags: "${query}".</p>`;
-            return;
-        }
-
-        const cardsHtml = data.imagenes.map(img => `
-            <div class="card-imagen-preexistente" style="text-align: center; cursor: pointer;">
-                <img src="${img.url}" alt="Imagen guardada" data-url="${img.url}" data-tags="${img.tags.join(',')}"
-                     style="width: 100px; height: 100px; object-fit: cover; border-radius: 5px; margin-bottom: 0.5rem; border: 2px solid #353535;">
-                <p style="font-size: 0.8rem; color: #E0E0E0;">Tags: ${img.tags.join(', ')}</p>
-            </div>
-        `).join('');
-        
-        resultadosContainer.innerHTML = `<div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">${cardsHtml}</div>`;
-
-    } catch (error) {
-        console.error("Error al cargar imágenes:", error);
-        resultadosContainer.innerHTML = `<p style="text-align: center; color: #B71C1C; margin-top: 2rem;">Error al conectar con el servidor.</p>`;
-    } finally {
-        spinner.style.display = 'none';
-    }
-}
-// --- FIN DE LA NUEVA FUNCIÓN ---
-
-// (renderizarResultadosProductos no cambia)
-function renderizarResultadosProductos() {
-    const contenedor = document.getElementById('prod-resultados-container');
-    if (!contenedor) return;
-    const filtros = {
-        titulo: document.getElementById('prod-search-titulo').value.toLowerCase(),
-        tipo: document.getElementById('prod-search-tipo').value,
-    };
-    const eventosFiltrados = adminProductos.filter(prod => { 
-        const checkTitulo = !filtros.titulo || (prod.titulo && prod.titulo.toLowerCase().includes(filtros.titulo));
-        const checkTipo = !filtros.tipo || prod.tipo === filtros.tipo;
-        return checkTitulo && checkTipo;
-    });
-    contenedor.innerHTML = eventosFiltrados.map(prod => crearTarjetaResultadoProducto(prod)).join('');
-}
-
-function crearTarjetaResultadoProducto(prod) {
-    let imgRuta;
-    if (prod.imagen && (prod.imagen.startsWith('http') || prod.imagen.startsWith('https'))) {
-        imgRuta = prod.imagen; // URL de Cloudinary
-    } else if (prod.imagen) {
-        imgRuta = `../img/${prod.imagen}`; // Archivo local (ej: bebidaSinFoto.jpg)
-    } else {
-        imgRuta = `../img/bebidaSinFoto.jpg`; // Fallback
-    }
-    const precio = formatarPrecio(prod.precioCopa || prod.precioBotella || prod.precioPinta);
-    
-    const estaHabilitado = (prod.visualizacion === undefined) ? true : prod.visualizacion; 
-    const deshabilitadoClass = estaHabilitado ? '' : 'deshabilitado';
-    const switchChecked = estaHabilitado ? 'checked' : '';
-
-    return `
-    <div class="card-resultado ${deshabilitadoClass}" id="prod-card-${prod._id}">
-        <div class="card-resultado-header">
-            <img src="${imgRuta}" alt="${prod.titulo}" class="card-resultado-img">
-            <div class="card-resultado-info">
-                <h4>${prod.titulo}</h4>
-                <p>${prod.tipo}</p>
-                <p class="tipo-regular">Precio: ${precio}</p>
-            </div>
-        </div>
-        
-        <div class="card-resultado-footer">
-            <button class="btn btn-card btn-card-modificar" data-id="${prod._id}">
-                <i class='bx bxs-pencil'></i> Modificar
-            </button>
+            if (!res.ok) throw new Error("Error servidor");
+            alert(modoEdicion ? "Producto Modificado" : "Producto Creado");
             
-            <div class="visibility-switch">
-                <label class="switch">
-                    <input type="checkbox" data-id="${prod._id}" ${switchChecked}>
-                    <span class="slider"></span>
-                </label>
-            </div>
-        </div>
-    </div>
-    `;
-}
+            fetchProductosData();
+            resetearFormularioCarta();
 
-function prellenarFormularioCarta(prod) {
-    //inicializarFormularioCarta();
-    modoEdicion = true;
-    idProductoEdicion = prod._id; 
-    
-    const form = document.getElementById('form-alta-producto');
-    form.classList.add('modo-edicion');
-    
-    const tabContent = document.getElementById('alta-producto');
-    if (tabContent) { 
-        tabContent.querySelector('h3').textContent = `Modificando: ${prod.titulo}`;
-    }
-    form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Modificaciones";
-
-    console.log("SIMULACIÓN: Guardando copia de seguridad de producto...", prod);
-
-    const selectorTipo = document.getElementById('producto-tipo');
-    selectorTipo.value = prod.tipo;
-    selectorTipo.dispatchEvent(new Event('change'));
-    
-    const tipoPlantilla = prod.tipo.startsWith('vino') ? 'vino' : prod.tipo;
-    const visibleGroup = document.getElementById(`fields-${tipoPlantilla}`);
-    
-    const prod_es = adminProductos.find(p => p._id === prod._id); 
-    const prod_en = adminProductos_EN.find(p => p._id === prod._id); 
-    
-    if (!prod_es || !prod_en) {
-        alert("Error: No se pudo encontrar el producto en ambos idiomas.");
-        return;
-    }
-
-    (visibleGroup.querySelector('#producto-titulo') || {}).value = prod_es.titulo || '';
-    (visibleGroup.querySelector('#producto-precio-copa') || {}).value = prod_es.precioCopa || '';
-    (visibleGroup.querySelector('#producto-precio-botella') || {}).value = prod_es.precioBotella || '';
-    (visibleGroup.querySelector('#producto-precio-cana') || {}).value = prod_es.precioCana || '';
-    (visibleGroup.querySelector('#producto-precio-pinta') || {}).value = prod_es.precioPinta || '';
-    (visibleGroup.querySelector('#producto-productor') || {}).value = prod_es.productor || '';
-    (visibleGroup.querySelector('#producto-ano') || {}).value = prod_es.ano || '';
-    (visibleGroup.querySelector('#producto-abv') || {}).value = prod_es.abv || '';
-    (visibleGroup.querySelector('#producto-ibu') || {}).value = prod_es.ibu || '';
-    (visibleGroup.querySelector('#producto-destacado') || {}).checked = prod_es.destacado || false;
-    (visibleGroup.querySelector('#producto-titulo-es') || {}).value = prod_es.titulo || ''; 
-    (visibleGroup.querySelector('#producto-descripcion-es') || {}).value = prod_es.descripcion || '';
-    (visibleGroup.querySelector('#producto-region-es') || {}).value = prod_es.region || '';
-    (visibleGroup.querySelector('#producto-pais-es') || {}).value = prod_es.pais || '';
-    (visibleGroup.querySelector('#producto-varietal-es') || {}).value = prod_es.varietal || '';
-    (visibleGroup.querySelector('#producto-crianza-es') || {}).value = prod_es.crianza || '';
-    (visibleGroup.querySelector('#producto-titulo-en') || {}).value = prod_en.titulo || ''; 
-    (visibleGroup.querySelector('#producto-descripcion-en') || {}).value = prod_en.descripcion || '';
-    (visibleGroup.querySelector('#producto-region-en') || {}).value = prod_en.region || '';
-    (visibleGroup.querySelector('#producto-pais-en') || {}).value = prod_en.pais || '';
-    (visibleGroup.querySelector('#producto-varietal-en') || {}).value = prod_en.varietal || '';
-    (visibleGroup.querySelector('#producto-crianza-en') || {}).value = prod_en.crianza || '';
-    const infoImg = document.getElementById('info-img-actual-prod');
-    if (infoImg) infoImg.remove();
-    if (prod.imagen && prod.imagen !== 'bebidaSinFoto.jpg') {
-        const infoHtml = `
-            <div id="info-img-actual-prod" class="info-imagen-actual">
-                <strong>Imagen Actual:</strong> ${prod.imagen}
-                <br>
-                <small>Sube un archivo nuevo para reemplazarla, o déjalo vacío para conservarla.</small>
-            </div>
-        `;
-        const formSection = visibleGroup.querySelector('.form-section');
-        if (formSection) {
-            formSection.insertAdjacentHTML('afterbegin', infoHtml);
+        } catch (err) {
+            console.error(err);
+            alert("Error: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = modoEdicion ? "Guardar Cambios" : "Guardar Producto";
         }
-    }
-    
-    document.querySelector('.tab-link[data-tab="alta-producto"]').click();
-    form.scrollIntoView({ behavior: 'smooth' });
+    });
 }
 
-// --- ¡ARREGLO! Arreglo Bug Guardar Carta ---
+function activarLogicaBilingue(group) {
+    // Tabs
+    group.querySelectorAll('.lang-tab-btn').forEach(btn => {
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        newBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            group.querySelectorAll('.lang-tab-btn').forEach(b => b.classList.remove('active'));
+            group.querySelectorAll('.lang-content').forEach(c => c.classList.remove('active'));
+            newBtn.classList.add('active');
+            group.querySelector(`.lang-content[data-lang-content="${newBtn.dataset.lang}"]`).classList.add('active');
+        });
+    });
+    // Translate Button (Placeholder por ahora)
+    const btnTrans = group.querySelector('.btn-translate');
+    if(btnTrans) {
+        const newTrans = btnTrans.cloneNode(true);
+        btnTrans.parentNode.replaceChild(newTrans, btnTrans);
+        newTrans.addEventListener('click', async (e) => {
+            e.preventDefault();
+            alert("Traducción automática pendiente de configurar.");
+        });
+    }
+}
+
 function recolectarDatosProducto(formGroup, tipo) {
-
-    // --- 1. DATOS ÚNICOS (No se traducen) ---
-    const datosUnicos = {
+    const fileInp = formGroup.querySelector('input[type="file"]');
+    const unicos = {
         tipo: tipo,
-        visualizacion: true, // Siempre visible al crear
-        destacado: (formGroup.querySelector('#producto-destacado') || {}).checked || false,
-        
-        // ¡ARREGLO! Comprobamos si el input de imagen existe antes de leerlo
-        imagen: null, 
-
+        visualizacion: true,
+        destacado: formGroup.querySelector('#producto-destacado')?.checked || false,
         precioCopa: parseFloat(formGroup.querySelector('#producto-precio-copa')?.value) || null,
         precioBotella: parseFloat(formGroup.querySelector('#producto-precio-botella')?.value) || null,
         precioCana: parseFloat(formGroup.querySelector('#producto-precio-cana')?.value) || null,
         precioPinta: parseFloat(formGroup.querySelector('#producto-precio-pinta')?.value) || null,
         abv: parseFloat(formGroup.querySelector('#producto-abv')?.value) || null,
         ibu: parseInt(formGroup.querySelector('#producto-ibu')?.value) || null,
-        productor: (formGroup.querySelector('#producto-productor') || {}).value || null,
-        ano: (formGroup.querySelector('#producto-ano') || {}).value || null,
-        tituloUnico: (formGroup.querySelector('#producto-titulo') || {}).value || null
+        productor: formGroup.querySelector('#producto-productor')?.value || null,
+        ano: formGroup.querySelector('#producto-ano')?.value || null,
+        archivoImagen: fileInp?.files[0] || null,
+        imagen: (tipo === 'coctel' || tipo.startsWith('vino')) ? 'bebidaSinFoto.jpg' : null
     };
-
-// --- Lógica de Imagen (MODIFICADA PARA CLOUDINARY) ---
-        const inputFile = formGroup.querySelector('#producto-imagen-upload');
-
-    if (inputFile && inputFile.files && inputFile.files.length > 0) {
-        datosUnicos.archivoImagen = inputFile.files[0]; // <-- Pasamos el objeto File
-        datosUnicos.imagen = null; // Lo ponemos en null por ahora
-    } else {
-        datosUnicos.archivoImagen = null;
-            // Fallback si no hay archivo
-        if (tipo === 'coctel' || tipo.startsWith('vino')) {
-            datosUnicos.imagen = 'bebidaSinFoto.jpg';
-        } else {
-            datosUnicos.imagen = null;
-        }
-    }
-
-    // --- 2. DATOS TRADUCIBLES (ES) ---
-    const datosES = {
-        titulo: formGroup.querySelector('#producto-titulo-es')?.value || '',
+    
+    // Datos ES
+    const es = { ...unicos,
+        titulo: formGroup.querySelector('#producto-titulo-es')?.value || formGroup.querySelector('#producto-titulo')?.value || '',
         descripcion: formGroup.querySelector('#producto-descripcion-es')?.value || '',
         region: formGroup.querySelector('#producto-region-es')?.value || null,
         pais: formGroup.querySelector('#producto-pais-es')?.value || null,
         varietal: formGroup.querySelector('#producto-varietal-es')?.value || null,
-        crianza: formGroup.querySelector('#producto-crianza-es')?.value || null,
+        crianza: formGroup.querySelector('#producto-crianza-es')?.value || null
     };
-
-    // --- 3. DATOS TRADUCIBLES (EN) ---
-    const datosEN = {
-        titulo: formGroup.querySelector('#producto-titulo-en')?.value || '',
+    // Datos EN
+    const en = { ...unicos,
+        titulo: formGroup.querySelector('#producto-titulo-en')?.value || formGroup.querySelector('#producto-titulo')?.value || '',
         descripcion: formGroup.querySelector('#producto-descripcion-en')?.value || '',
         region: formGroup.querySelector('#producto-region-en')?.value || null,
         pais: formGroup.querySelector('#producto-pais-en')?.value || null,
         varietal: formGroup.querySelector('#producto-varietal-en')?.value || null,
-        crianza: formGroup.querySelector('#producto-crianza-en')?.value || null,
+        crianza: formGroup.querySelector('#producto-crianza-en')?.value || null
     };
 
-    // --- 4. LÓGICA DE TÍTULO HÍBRIDO (Tu requisito) ---
-    if (tipo === 'coctel' || tipo === 'sinAlcohol') {
-        datosUnicos.tituloUnico = null; 
-    } else {
-        // ¡ARREGLO! Usamos el tituloUnico como fallback
-        datosES.titulo = datosUnicos.tituloUnico || datosES.titulo;
-        datosEN.titulo = datosUnicos.tituloUnico || datosEN.titulo;
+    return { producto_es: es, producto_en: en };
+}
+
+function resetearFormularioCarta() {
+    const form = document.getElementById('form-alta-producto');
+    if(form) form.reset();
+    modoEdicion = false;
+    idProductoEdicion = null;
+    document.getElementById('form-actions-producto').style.display = 'none';
+    document.querySelectorAll('.form-fields-group').forEach(g => g.classList.remove('visible'));
+    if(document.getElementById('info-img-actual-prod')) document.getElementById('info-img-actual-prod').remove();
+    
+    const btnSubmit = form.querySelector('.btn-primary');
+    if(btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Producto"; }
+
+    // Reset tabs a Español
+    document.querySelectorAll('.lang-tab-btn[data-lang="es"]').forEach(b => b.click());
+    
+    const tab = document.querySelector('.tab-link[data-tab="alta-producto"]');
+    if(tab) {
+        tab.click();
+        document.getElementById('alta-producto-titulo').textContent = "Crear Nuevo Producto";
+    }
+}
+
+async function fetchProductosData() {
+    try {
+        const res = await fetch('/api/productos', { headers: { 'Authorization': getAuthToken() }});
+        if(!res.ok) throw new Error("Error API Productos");
+        const data = await res.json();
+        adminProductos = data.es.productos || [];
+        adminProductos_EN = data.en.productos || [];
+        renderizarResultadosProductos();
+    } catch(e) { console.error(e); }
+}
+
+function inicializarPanelesBusquedaProductos() {
+    const container = document.getElementById('prod-resultados-container');
+    const inputs = document.querySelectorAll('#form-busqueda-producto .form-input');
+    if(!container) return;
+    
+    inputs.forEach(i => i.addEventListener(i.tagName === 'SELECT' ? 'change' : 'input', renderizarResultadosProductos));
+    
+    container.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-card-modificar');
+        if(btn) prellenarFormularioCarta(adminProductos.find(p => p._id === btn.dataset.id));
+    });
+    
+    // Smart Switch Visibilidad
+    container.addEventListener('change', async (e) => {
+        if (e.target.matches('.visibility-switch input')) {
+            const id = e.target.dataset.id;
+            const checked = e.target.checked;
+            const card = e.target.closest('.card-resultado');
+            e.target.disabled = true;
+            card.style.opacity = '0.5';
+
+            try {
+                await fetch(`/api/productos/visibilidad/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
+                    body: JSON.stringify({ visualizacion: checked })
+                });
+                adminProductos.find(p => p._id === id).visualizacion = checked;
+                card.classList.toggle('deshabilitado', !checked);
+            } catch(err) {
+                e.target.checked = !checked;
+                alert("Error al cambiar visibilidad");
+            } finally {
+                e.target.disabled = false;
+                card.style.opacity = '1';
+            }
+        }
+    });
+}
+
+function renderizarResultadosProductos() {
+    const cont = document.getElementById('prod-resultados-container');
+    if(!cont) return;
+    
+    const titulo = document.getElementById('prod-search-titulo').value.toLowerCase();
+    const tipo = document.getElementById('prod-search-tipo').value;
+    
+    const list = adminProductos.filter(p => 
+        (!titulo || p.titulo.toLowerCase().includes(titulo)) &&
+        (!tipo || p.tipo === tipo)
+    );
+    
+    cont.innerHTML = list.length ? list.map(p => crearTarjetaResultadoProducto(p)).join('') : '<p style="text-align:center;color:#ccc;">Sin resultados</p>';
+}
+
+function crearTarjetaResultadoProducto(p) {
+    let img = `<div style="width:80px;height:80px;background:#555;border-radius:5px;"></div>`;
+    if(p.imagen) {
+        const src = p.imagen.startsWith('http') ? p.imagen : `../img/${p.imagen}`;
+        img = `<img src="${src}" style="width:80px;height:80px;object-fit:cover;border-radius:5px;">`;
+    }
+    
+    const checked = p.visualizacion !== false ? 'checked' : '';
+    const disabledClass = p.visualizacion === false ? 'deshabilitado' : '';
+
+    return `
+    <div class="card-resultado ${disabledClass}" style="margin-bottom:1rem;">
+        <div class="card-resultado-header" style="display:flex;gap:10px;padding:10px;">
+            ${img}
+            <div style="overflow:hidden;">
+                <h4 style="margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.titulo}</h4>
+                <p style="margin:5px 0 0;color:#ccc;font-size:0.9rem;">${p.tipo} | ${formatarPrecio(p.precioCopa || p.precioBotella)}</p>
+            </div>
+        </div>
+        <div class="card-resultado-footer" style="padding:10px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #444;">
+            <button class="btn btn-card btn-card-modificar" data-id="${p._id}" style="padding:5px 10px;">Modificar</button>
+            <div class="visibility-switch">
+                <label class="switch">
+                    <input type="checkbox" data-id="${p._id}" ${checked}>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>`;
+}
+
+function prellenarFormularioCarta(p) {
+    modoEdicion = true;
+    idProductoEdicion = p._id;
+    const sel = document.getElementById('producto-tipo');
+    sel.value = p.tipo;
+    sel.dispatchEvent(new Event('change'));
+    
+    // Llenar datos en pestaña ES
+    const formGroup = document.querySelector('.form-fields-group.visible');
+    
+    // Mapeo rápido de campos comunes
+    const mapFields = {
+        '#producto-titulo': p.titulo,
+        '#producto-titulo-es': p.titulo,
+        '#producto-precio-copa': p.precioCopa,
+        '#producto-precio-botella': p.precioBotella,
+        '#producto-precio-cana': p.precioCana,
+        '#producto-precio-pinta': p.precioPinta,
+        '#producto-productor': p.productor,
+        '#producto-ano': p.ano,
+        '#producto-abv': p.abv,
+        '#producto-ibu': p.ibu,
+        '#producto-descripcion-es': p.descripcion,
+        '#producto-region-es': p.region,
+        '#producto-pais-es': p.pais,
+        '#producto-varietal-es': p.varietal,
+        '#producto-crianza-es': p.crianza
+    };
+
+    for (const [sel, val] of Object.entries(mapFields)) {
+        const el = formGroup.querySelector(sel);
+        if(el && val !== null) el.value = val;
     }
 
-    // 5. Combinamos y devolvemos
-    const producto_es = { ...datosUnicos, ...datosES };
-    const producto_en = { ...datosUnicos, ...datosEN };
-    
-    delete producto_es.tituloUnico;
-    delete producto_en.tituloUnico;
+    if(formGroup.querySelector('#producto-destacado')) formGroup.querySelector('#producto-destacado').checked = p.destacado;
 
-    return { producto_es, producto_en };
+    // Llenar datos en pestaña EN
+    const p_en = adminProductos_EN.find(en => en._id === p._id);
+    if(p_en) {
+        const mapFieldsEN = {
+            '#producto-titulo-en': p_en.titulo,
+            '#producto-descripcion-en': p_en.descripcion,
+            '#producto-region-en': p_en.region,
+            '#producto-pais-en': p_en.pais,
+            '#producto-varietal-en': p_en.varietal,
+            '#producto-crianza-en': p_en.crianza
+        };
+        for (const [sel, val] of Object.entries(mapFieldsEN)) {
+            const el = formGroup.querySelector(sel);
+            if(el && val !== null) el.value = val;
+        }
+    }
+
+    // Imagen
+    const infoImg = document.getElementById('info-img-actual-prod');
+    if (infoImg) infoImg.remove();
+    if (p.imagen && p.imagen !== 'bebidaSinFoto.jpg') {
+        const urlImg = p.imagen.startsWith('http') ? p.imagen : `../img/${p.imagen}`;
+        formGroup.querySelector('.form-section').insertAdjacentHTML('afterbegin', 
+            `<div id="info-img-actual-prod" class="info-imagen-actual">
+                <strong>Imagen Actual:</strong> <a href="${urlImg}" target="_blank">Ver</a>
+                <br><small>Sube un archivo para reemplazar.</small>
+            </div>`);
+    }
+
+    document.querySelector('.tab-link[data-tab="alta-producto"]').click();
+    document.getElementById('form-alta-producto').scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('alta-producto-titulo').textContent = `Modificando: ${p.titulo}`;
+    document.getElementById('form-alta-producto').querySelector('.btn-primary').innerHTML = "Guardar Cambios";
 }
-});
 
-// --- FUNCIÓN AYUDANTE PARA CLOUDINARY ---
-// Convierte un objeto File (de un input) a un string Base64
-function toBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
+// ==========================================
+// 7. MODAL IMÁGENES
+// ==========================================
+function inicializarModalImagenes() {
+    const modal = document.getElementById('modal-imagenes');
+    const btn = document.getElementById('btn-elegir-img');
+    const close = document.getElementById('cerrar-modal-imagenes');
+    const container = document.getElementById('resultados-imagenes');
+    
+    if(btn) btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        modal.style.display = 'flex';
+        buscarImagenes('');
     });
+    if(close) close.addEventListener('click', () => modal.style.display = 'none');
+    
+    if(container) container.addEventListener('click', (e) => {
+        const img = e.target.closest('img');
+        if(img) {
+            document.getElementById('evento-imagen-url-seleccionada').value = img.dataset.url;
+            document.getElementById('evento-imagen-upload').value = '';
+            tags = img.dataset.tags.split(',');
+            renderizarTags();
+            deshabilitarEdicionTags();
+            modal.style.display = 'none';
+            
+            const fs = document.getElementById('fieldset-imagen');
+            const old = document.getElementById('info-img-actual');
+            if(old) old.remove();
+            fs.insertAdjacentHTML('afterbegin', `<div id="info-img-actual" class="info-imagen-actual" style="border-color:#4CAF50;"><strong style="color:#4CAF50;">Imagen Vinculada</strong></div>`);
+        }
+    });
+    
+    const search = document.getElementById('search-tags-modal');
+    if(search) search.addEventListener('input', (e) => {
+        setTimeout(() => buscarImagenes(e.target.value), 500);
+    });
+}
+
+async function buscarImagenes(q) {
+    const res = await fetch(`/api/imagenes?q=${q}`, { headers: {'Authorization': getAuthToken()}});
+    const data = await res.json();
+    const html = data.imagenes.map(i => `
+        <div style="margin:5px;cursor:pointer;display:inline-block;text-align:center;">
+            <img src="${i.url}" data-url="${i.url}" data-tags="${i.tags.join(',')}" style="width:100px;height:100px;object-fit:cover;border-radius:5px;border:2px solid #444;">
+            <div style="font-size:0.7rem;color:#aaa;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.tags[0]}</div>
+        </div>`).join('');
+    document.getElementById('resultados-imagenes').innerHTML = html || '<p style="text-align:center;color:#888;">Sin resultados</p>';
 }
