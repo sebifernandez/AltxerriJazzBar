@@ -36,208 +36,32 @@ function toBase64(file) {
 // 2. PLANTILLAS HTML (CARTA)
 // ==========================================
 const plantillasBloques = {
-    unicos_titulo_marca: `
-        <div class="form-group">
-            <label for="producto-titulo">Título / Nombre (Marca) *</label>
-            <input type="text" id="producto-titulo" class="form-input" placeholder="Ej: Jack Daniel's" required>
-        </div>`,
-    unicos_precios_copa_botella: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-copa">Precio (Copa)</label>
-                    <input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 10">
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-botella">Precio (Botella)</label>
-                    <input type="number" step="0.01" id="producto-precio-botella" class="form-input" placeholder="Ej: 40">
-                </div>
-            </div>
-        </div>`,
-    unicos_precios_cana_pinta: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-cana">Precio (Caña) *</label>
-                    <input type="number" step="0.01" id="producto-precio-cana" class="form-input" placeholder="Ej: 4" required>
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-pinta">Precio (Pinta) *</label>
-                    <input type="number" step="0.01" id="producto-precio-pinta" class="form-input" placeholder="Ej: 7" required>
-                </div>
-            </div>
-        </div>`,
-    unicos_precios_botella_solo: `
-        <div class="form-group">
-            <label for="producto-precio-botella">Precio (Unidad) *</label>
-            <input type="number" step="0.01" id="producto-precio-botella" class="form-input" placeholder="Ej: 7" required>
-        </div>`,
-    unicos_precios_copa_solo: `
-        <div class="form-group">
-            <label for="producto-precio-copa">Precio (Copa) *</label>
-            <input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 8" required>
-        </div>`,
-    unicos_precios_copa_botella_destilado: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-cana">Precio (Chupito) *</label>
-                    <input type="number" step="0.01" id="producto-precio-cana" class="form-input" placeholder="Ej: 4" required>
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-precio-copa">Precio (Vaso)</label>
-                    <input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 8">
-                </div>
-            </div>
-        </div>`,
-    unicos_cerveza_datos: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-abv">ABV (%)</label>
-                    <input type="number" step="0.1" id="producto-abv" class="form-input" placeholder="Ej: 5.0">
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-ibu">IBU</label>
-                    <input type="number" id="producto-ibu" class="form-input" placeholder="Ej: 12">
-                </div>
-            </div>
-        </div>`,
-    unicos_vino_datos: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-productor">Bodega (Productor)</label>
-                    <input type="text" id="producto-productor" class="form-input" placeholder="Ej: Luca Wines">
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-ano">Año</label>
-                    <input type="text" id="producto-ano" class="form-input" placeholder="Ej: 2021">
-                </div>
-            </div>
-        </div>`,
-    unicos_destilado_datos: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-productor">Productor</label>
-                    <input type="text" id="producto-productor" class="form-input" placeholder="Ej: Jack Daniel Distillery">
-                </div>
-            </div>
-        </div>`,
-    unicos_imagen_coctel: `
-        <div class="form-section">
-            <h4>Imagen de la Card (¡Obligatoria para Cocteles!)</h4>
-            <div class="form-group">
-                <label for="producto-imagen-upload">Subir Imagen *</label>
-                <input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required>
-            </div>
-        </div>`,
-    unicos_imagen_vino: `
-        <div class="form-section">
-            <h4>Imagen del Producto (¡Obligatoria para Vinos!)</h4>
-            <div class="form-group">
-                <label for="producto-imagen-upload">Subir Imagen *</label>
-                <input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required>
-            </div>
-        </div>`,
-    unicos_vino_destacado: `
-        <div class="form-group-checkbox-inline">
-            <input type="checkbox" id="producto-destacado">
-            <label for="producto-destacado">Marcar como "Vino Destacado de la Semana"</label>
-        </div>`,
+    unicos_titulo_marca: `<div class="form-group"><label for="producto-titulo">Título / Nombre (Marca) *</label><input type="text" id="producto-titulo" class="form-input" placeholder="Ej: Jack Daniel's" required></div>`,
+    unicos_precios_copa_botella: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-precio-copa">Precio (Copa)</label><input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 10"></div></div><div class="form-col"><div class="form-group"><label for="producto-precio-botella">Precio (Botella)</label><input type="number" step="0.01" id="producto-precio-botella" class="form-input" placeholder="Ej: 40"></div></div></div>`,
+    unicos_precios_cana_pinta: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-precio-cana">Precio (Caña) *</label><input type="number" step="0.01" id="producto-precio-cana" class="form-input" placeholder="Ej: 4" required></div></div><div class="form-col"><div class="form-group"><label for="producto-precio-pinta">Precio (Pinta) *</label><input type="number" step="0.01" id="producto-precio-pinta" class="form-input" placeholder="Ej: 7" required></div></div></div>`,
+    unicos_precios_botella_solo: `<div class="form-group"><label for="producto-precio-botella">Precio (Unidad) *</label><input type="number" step="0.01" id="producto-precio-botella" class="form-input" placeholder="Ej: 7" required></div>`,
+    unicos_precios_copa_solo: `<div class="form-group"><label for="producto-precio-copa">Precio (Copa) *</label><input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 8" required></div>`,
+    unicos_precios_copa_botella_destilado: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-precio-cana">Precio (Chupito) *</label><input type="number" step="0.01" id="producto-precio-cana" class="form-input" placeholder="Ej: 4" required></div></div><div class="form-col"><div class="form-group"><label for="producto-precio-copa">Precio (Vaso)</label><input type="number" step="0.01" id="producto-precio-copa" class="form-input" placeholder="Ej: 8"></div></div></div>`,
+    unicos_cerveza_datos: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-abv">ABV (%)</label><input type="number" step="0.1" id="producto-abv" class="form-input" placeholder="Ej: 5.0"></div></div><div class="form-col"><div class="form-group"><label for="producto-ibu">IBU</label><input type="number" id="producto-ibu" class="form-input" placeholder="Ej: 12"></div></div></div>`,
+    unicos_vino_datos: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-productor">Bodega (Productor)</label><input type="text" id="producto-productor" class="form-input" placeholder="Ej: Luca Wines"></div></div><div class="form-col"><div class="form-group"><label for="producto-ano">Año</label><input type="text" id="producto-ano" class="form-input" placeholder="Ej: 2021"></div></div></div>`,
+    unicos_destilado_datos: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-productor">Productor</label><input type="text" id="producto-productor" class="form-input" placeholder="Ej: Jack Daniel Distillery"></div></div></div>`,
+    unicos_imagen_coctel: `<div class="form-section"><h4>Imagen de la Card (¡Obligatoria para Cocteles!)</h4><div class="form-group"><label for="producto-imagen-upload">Subir Imagen *</label><input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required></div></div>`,
+    unicos_imagen_vino: `<div class="form-section"><h4>Imagen del Producto (¡Obligatoria para Vinos!)</h4><div class="form-group"><label for="producto-imagen-upload">Subir Imagen *</label><input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required></div></div>`,
+    unicos_vino_destacado: `<div class="form-group-checkbox-inline"><input type="checkbox" id="producto-destacado"><label for="producto-destacado">Marcar como "Vino Destacado de la Semana"</label></div>`,
 
-    trad_es_titulo: `
-        <div class="form-group">
-            <label for="producto-titulo-es">Título (ES) *</label>
-            <input type="text" id="producto-titulo-es" class="form-input" required>
-        </div>`,
-    trad_es_descripcion: `
-        <div class="form-group">
-            <label for="producto-descripcion-es">Descripción (ES) *</label>
-            <textarea id="producto-descripcion-es" class="form-input" style="min-height: 100px;" required></textarea>
-        </div>`,
-    trad_es_region_pais: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-region-es">Región (ES)</label>
-                    <input type="text" id="producto-region-es" class="form-input">
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-pais-es">País (ES)</label>
-                    <input type="text" id="producto-pais-es" class="form-input">
-                </div>
-            </div>
-        </div>`,
-    trad_es_varietal_vino: `
-        <div class="form-group">
-            <label for="producto-varietal-es">Varietal (ES)</label>
-            <input type="text" id="producto-varietal-es" class="form-input">
-        </div>`,
-    trad_es_crianza_vino: `
-        <div class="form-group">
-            <label for="producto-crianza-es">Crianza (ES)</label>
-            <input type="text" id="producto-crianza-es" class="form-input" placeholder="Ej: 14 meses en barricas">
-        </div>`,
-    trad_es_crianza_destilado: `
-        <div class="form-group">
-            <label for="producto-crianza-es">Crianza (ES)</label>
-            <input type="text" id="producto-crianza-es" class="form-input" placeholder="Ej: En barricas nuevas...">
-        </div>`,
+    trad_es_titulo: `<div class="form-group"><label for="producto-titulo-es">Título (ES) *</label><input type="text" id="producto-titulo-es" class="form-input" required></div>`,
+    trad_es_descripcion: `<div class="form-group"><label for="producto-descripcion-es">Descripción (ES) *</label><textarea id="producto-descripcion-es" class="form-input" style="min-height: 100px;" required></textarea></div>`,
+    trad_es_region_pais: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-region-es">Región (ES)</label><input type="text" id="producto-region-es" class="form-input"></div></div><div class="form-col"><div class="form-group"><label for="producto-pais-es">País (ES)</label><input type="text" id="producto-pais-es" class="form-input"></div></div></div>`,
+    trad_es_varietal_vino: `<div class="form-group"><label for="producto-varietal-es">Varietal (ES)</label><input type="text" id="producto-varietal-es" class="form-input"></div>`,
+    trad_es_crianza_vino: `<div class="form-group"><label for="producto-crianza-es">Crianza (ES)</label><input type="text" id="producto-crianza-es" class="form-input" placeholder="Ej: 14 meses en barricas"></div>`,
+    trad_es_crianza_destilado: `<div class="form-group"><label for="producto-crianza-es">Crianza (ES)</label><input type="text" id="producto-crianza-es" class="form-input" placeholder="Ej: En barricas nuevas..."></div>`,
     
-    trad_en_titulo: `
-        <div class="form-group">
-            <label for="producto-titulo-en">Título (EN) *</label>
-            <input type="text" id="producto-titulo-en" class="form-input" required>
-        </div>`,
-    trad_en_descripcion: `
-        <div class="form-group">
-            <label for="producto-descripcion-en">Descripción (EN) *</label>
-            <textarea id="producto-descripcion-en" class="form-input" style="min-height: 100px;" required></textarea>
-        </div>`,
-    trad_en_region_pais: `
-        <div class="form-grid">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-region-en">Región (EN)</label>
-                    <input type="text" id="producto-region-en" class="form-input">
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="producto-pais-en">País (EN)</label>
-                    <input type="text" id="producto-pais-en" class="form-input">
-                </div>
-            </div>
-        </div>`,
-    trad_en_varietal_vino: `
-        <div class="form-group">
-            <label for="producto-varietal-en">Varietal (EN)</label>
-            <input type="text" id="producto-varietal-en" class="form-input">
-        </div>`,
-    trad_en_crianza_vino: `
-        <div class="form-group">
-            <label for="producto-crianza-en">Crianza (EN)</label>
-            <input type="text" id="producto-crianza-en" class="form-input" placeholder="Ej: 14 months in barrels">
-        </div>`,
-    trad_en_crianza_destilado: `
-        <div class="form-group">
-            <label for="producto-crianza-en">Crianza (EN)</label>
-            <input type="text" id="producto-crianza-en" class="form-input" placeholder="Ej: In new barrels...">
-        </div>`,
+    trad_en_titulo: `<div class="form-group"><label for="producto-titulo-en">Título (EN) *</label><input type="text" id="producto-titulo-en" class="form-input" required></div>`,
+    trad_en_descripcion: `<div class="form-group"><label for="producto-descripcion-en">Descripción (EN) *</label><textarea id="producto-descripcion-en" class="form-input" style="min-height: 100px;" required></textarea></div>`,
+    trad_en_region_pais: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-region-en">Región (EN)</label><input type="text" id="producto-region-en" class="form-input"></div></div><div class="form-col"><div class="form-group"><label for="producto-pais-en">País (EN)</label><input type="text" id="producto-pais-en" class="form-input"></div></div></div>`,
+    trad_en_varietal_vino: `<div class="form-group"><label for="producto-varietal-en">Varietal (EN)</label><input type="text" id="producto-varietal-en" class="form-input"></div>`,
+    trad_en_crianza_vino: `<div class="form-group"><label for="producto-crianza-en">Crianza (EN)</label><input type="text" id="producto-crianza-en" class="form-input" placeholder="Ej: 14 months in barrels"></div>`,
+    trad_en_crianza_destilado: `<div class="form-group"><label for="producto-crianza-en">Crianza (EN)</label><input type="text" id="producto-crianza-en" class="form-input" placeholder="Ej: In new barrels..."></div>`,
     
     bilingue_wrapper: (html_es, html_en) => `
         <div class="form-section-bilingue">
@@ -246,13 +70,9 @@ const plantillasBloques = {
                 <button type="button" class="lang-tab-btn" data-lang="en">Inglés</button>
             </div>
             <div class="form-bilingue-grid">
-                <div class="lang-content lang-col-es active" data-lang-content="es">
-                    ${html_es}
-                </div>
+                <div class="lang-content lang-col-es active" data-lang-content="es">${html_es}</div>
                 <div class="lang-content lang-col-en" data-lang-content="en">
-                    <button type="button" class="btn-translate" data-lang-group="en">
-                        <i class='bx bxs-magic-wand'></i> Sugerir traducción
-                    </button>
+                    <button type="button" class="btn-translate" data-lang-group="en"><i class='bx bxs-magic-wand'></i> Sugerir traducción</button>
                     ${html_en}
                 </div>
             </div>
@@ -260,77 +80,12 @@ const plantillasBloques = {
 };
 
 const plantillasFormCarta = {
-    coctel: `
-        <div class="form-section">
-            <h4>Datos Únicos</h4>
-            ${plantillasBloques.unicos_precios_copa_solo}
-            ${plantillasBloques.unicos_imagen_coctel}
-        </div>
-        ${plantillasBloques.bilingue_wrapper(
-            plantillasBloques.trad_es_titulo + plantillasBloques.trad_es_descripcion,
-            plantillasBloques.trad_en_titulo + plantillasBloques.trad_en_descripcion
-        )}
-    `,
-    sinAlcohol: `
-        <div class="form-section">
-            <h4>Datos Únicos</h4>
-            ${plantillasBloques.unicos_precios_botella_solo}
-        </div>
-        ${plantillasBloques.bilingue_wrapper(
-            plantillasBloques.trad_es_titulo + plantillasBloques.trad_es_descripcion,
-            plantillasBloques.trad_en_titulo + plantillasBloques.trad_en_descripcion
-        )}
-    `,
-    cervezaBarril: `
-        <div class="form-section">
-            <h4>Datos Únicos</h4>
-            ${plantillasBloques.unicos_titulo_marca}
-            ${plantillasBloques.unicos_precios_cana_pinta}
-            ${plantillasBloques.unicos_cerveza_datos}
-        </div>
-        ${plantillasBloques.bilingue_wrapper(
-            plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_descripcion,
-            plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_descripcion
-        )}
-    `,
-    cervezaEnvasada: `
-        <div class="form-section">
-            <h4>Datos Únicos</h4>
-            ${plantillasBloques.unicos_titulo_marca}
-            ${plantillasBloques.unicos_precios_botella_solo}
-            ${plantillasBloques.unicos_cerveza_datos}
-        </div>
-        ${plantillasBloques.bilingue_wrapper(
-            plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_descripcion,
-            plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_descripcion
-        )}
-    `,
-    vino: `
-        ${plantillasBloques.unicos_vino_destacado}
-        <div class="form-section">
-            <h4>Datos Únicos</h4>
-            ${plantillasBloques.unicos_titulo_marca}
-            ${plantillasBloques.unicos_vino_datos}
-            ${plantillasBloques.unicos_precios_copa_botella}
-            ${plantillasBloques.unicos_imagen_vino}
-        </div>
-        ${plantillasBloques.bilingue_wrapper(
-            plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_varietal_vino + plantillasBloques.trad_es_crianza_vino + plantillasBloques.trad_es_descripcion,
-            plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_varietal_vino + plantillasBloques.trad_en_crianza_vino + plantillasBloques.trad_en_descripcion
-        )}
-    `,
-    destilado: `
-        <div class="form-section">
-            <h4>Datos Únicos</h4>
-            ${plantillasBloques.unicos_titulo_marca}
-            ${plantillasBloques.unicos_precios_copa_botella_destilado}
-            ${plantillasBloques.unicos_destilado_datos}
-        </div>
-        ${plantillasBloques.bilingue_wrapper(
-            plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_crianza_destilado + plantillasBloques.trad_es_descripcion,
-            plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_crianza_destilado + plantillasBloques.trad_en_descripcion
-        )}
-    `
+    coctel: `<div class="form-section"><h4>Datos Únicos</h4>${plantillasBloques.unicos_precios_copa_solo}${plantillasBloques.unicos_imagen_coctel}</div>${plantillasBloques.bilingue_wrapper(plantillasBloques.trad_es_titulo + plantillasBloques.trad_es_descripcion, plantillasBloques.trad_en_titulo + plantillasBloques.trad_en_descripcion)}`,
+    sinAlcohol: `<div class="form-section"><h4>Datos Únicos</h4>${plantillasBloques.unicos_precios_botella_solo}</div>${plantillasBloques.bilingue_wrapper(plantillasBloques.trad_es_titulo + plantillasBloques.trad_es_descripcion, plantillasBloques.trad_en_titulo + plantillasBloques.trad_en_descripcion)}`,
+    cervezaBarril: `<div class="form-section"><h4>Datos Únicos</h4>${plantillasBloques.unicos_titulo_marca}${plantillasBloques.unicos_precios_cana_pinta}${plantillasBloques.unicos_cerveza_datos}</div>${plantillasBloques.bilingue_wrapper(plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_descripcion, plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_descripcion)}`,
+    cervezaEnvasada: `<div class="form-section"><h4>Datos Únicos</h4>${plantillasBloques.unicos_titulo_marca}${plantillasBloques.unicos_precios_botella_solo}${plantillasBloques.unicos_cerveza_datos}</div>${plantillasBloques.bilingue_wrapper(plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_descripcion, plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_descripcion)}`,
+    vino: `${plantillasBloques.unicos_vino_destacado}<div class="form-section"><h4>Datos Únicos</h4>${plantillasBloques.unicos_titulo_marca}${plantillasBloques.unicos_vino_datos}${plantillasBloques.unicos_precios_copa_botella}${plantillasBloques.unicos_imagen_vino}</div>${plantillasBloques.bilingue_wrapper(plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_varietal_vino + plantillasBloques.trad_es_crianza_vino + plantillasBloques.trad_es_descripcion, plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_varietal_vino + plantillasBloques.trad_en_crianza_vino + plantillasBloques.trad_en_descripcion)}`,
+    destilado: `<div class="form-section"><h4>Datos Únicos</h4>${plantillasBloques.unicos_titulo_marca}${plantillasBloques.unicos_precios_copa_botella_destilado}${plantillasBloques.unicos_destilado_datos}</div>${plantillasBloques.bilingue_wrapper(plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_crianza_destilado + plantillasBloques.trad_es_descripcion, plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_crianza_destilado + plantillasBloques.trad_en_descripcion)}`
 };
 
 // ==========================================
@@ -363,20 +118,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     errorMessage.textContent = data.message;
                 }
             } catch (error) {
-                console.error(error);
-                errorMessage.textContent = 'Error de conexión. Intenta de nuevo.';
+                errorMessage.textContent = 'Error de conexión.';
             }
         });
     } 
     // --- DASHBOARD ---
     else if (dashboardContainer) {
-        // Auth Check
         if (localStorage.getItem('altxerri_auth') !== 'true') {
             window.location.href = 'index.html';
             return; 
         }
         
-        // Logout
         document.getElementById('logout-btn').addEventListener('click', (e) => {
             e.preventDefault();
             localStorage.removeItem('altxerri_auth');
@@ -384,15 +136,11 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = 'index.html';
         });
 
-        // Navegación Sidebar y Tabs
         inicializarNavegacion();
-
-        // Inicializadores de Módulos
         inicializarFormularioAlta();
         inicializarFormularioCarta();
         inicializarModalImagenes();
         
-        // Cargas iniciales
         fetchEventosData(); 
         fetchProductosData(); 
         inicializarPanelesBusquedaEventos();
@@ -419,9 +167,7 @@ function inicializarNavegacion() {
             link.classList.add('active');
             contentSections.forEach(section => {
                 section.classList.remove('active');
-                if (section.id === targetId) {
-                    section.classList.add('active');
-                }
+                if (section.id === targetId) section.classList.add('active');
             });
             if (sidebar.classList.contains('open')) sidebar.classList.remove('open');
         });
@@ -438,28 +184,13 @@ function inicializarNavegacion() {
         link.addEventListener('click', () => {
             const targetId = link.getAttribute('data-tab');
             const parentSection = link.closest('.content-section');
-
             parentSection.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
             link.classList.add('active');
+            parentSection.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(targetId).classList.add('active');
 
-            parentSection.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-                if (content.id === targetId) {
-                    content.classList.add('active');
-                }
-            });
-            
-            if (targetId === 'alta-evento') {
-                if (!modoEdicion) {
-                    crearCalendarioAlta();
-                }
-            }
-            
-            if (targetId === 'alta-producto') {
-                if (!modoEdicion) {
-                    resetearFormularioCarta(); 
-                }
-            }
+            if (targetId === 'alta-evento' && !modoEdicion) crearCalendarioAlta();
+            if (targetId === 'alta-producto' && !modoEdicion) resetearFormularioCarta();
         });
     });
 }
@@ -643,7 +374,7 @@ function inicializarFormularioAlta() {
 
             if (!modoEdicion && adminEventos.some(ev => ev.fecha === payload.fecha)) {
                 if (!confirm("Ya existe evento en esta fecha. ¿Crear igual?")) {
-                    btn.disabled = false; return;
+                    btn.disabled = false; btn.innerHTML = "Guardar Evento"; return;
                 }
             }
 
@@ -749,7 +480,99 @@ function inicializarPanelesBusquedaEventos() {
     const inputs = document.querySelectorAll('.form-busqueda .form-input');
     inputs.forEach(i => i.addEventListener(i.tagName === 'SELECT' ? 'change' : 'input', renderizarResultadosEventos));
     
-    // Delegación de eventos para botones (Modificar / Eliminar)
+    // Delegación de eventos para botones
+    const containers = [document.getElementById('mod-resultados-container'), document.getElementById('baja-resultados-container')];
+    containers.forEach(c => {
+        if(c) c.addEventListener('click', (e) => {
+            const btnMod = e.target.closest('.btn-card-modificar');
+            const btnDel = e.target.closest('.btn-card-eliminar');
+            if (btnMod) prellenarFormularioModEvento(adminEventos.find(ev => ev._id === btnMod.dataset.id));
+            if (btnDel) eliminarEvento(adminEventos.find(ev => ev._id === btnDel.dataset.id), btnDel);
+        });
+    });
+}
+
+function renderizarTags() {
+    const container = document.getElementById('tag-container');
+    if (!container) return;
+    container.querySelectorAll('.tag-item').forEach(e => e.remove());
+    tags.slice().reverse().forEach(tag => {
+        const el = document.createElement('span');
+        el.className = 'tag-item';
+        el.innerHTML = `${tag} <span class="remove-tag-btn" data-tag="${tag}">&times;</span>`;
+        container.prepend(el);
+    });
+}
+
+function crearCalendarioAlta() {
+    const input = document.getElementById('evento-fecha');
+    if (!input) return;
+    if (picker) { picker.destroy(); picker = null; }
+    picker = new Litepicker({
+        element: input, format: 'YYYY-MM-DD', lang: 'es-ES',
+        buttonText: { previousMonth: '<', nextMonth: '>', reset: 'x', apply: 'Ok' },
+        onselected: (date) => {
+            if (date.toMillis() < DateTime.now().startOf('day').toMillis()) {
+                if (!confirm("Fecha pasada. ¿Seguro?")) picker.clearSelection();
+            }
+        }
+    });
+}
+
+function habilitarEdicionTags() {
+    const cont = document.getElementById('tag-container');
+    const inp = document.getElementById('evento-tags');
+    if (cont) cont.classList.remove('disabled');
+    if (inp) { inp.disabled = false; inp.placeholder = "Escribe tags..."; }
+}
+function deshabilitarEdicionTags() {
+    const cont = document.getElementById('tag-container');
+    const inp = document.getElementById('evento-tags');
+    if (cont) cont.classList.add('disabled');
+    if (inp) { inp.disabled = true; inp.placeholder = "Tags fijos (Imagen preexistente)"; }
+}
+
+function resetearFormularioAlta() {
+    const form = document.getElementById('form-alta-evento');
+    if (!form) return;
+    form.reset();
+    tags = [];
+    renderizarTags();
+    habilitarEdicionTags();
+    document.getElementById('fieldset-imagen').disabled = false;
+    document.getElementById('evento-titulo').disabled = false;
+    document.getElementById('evento-imagen-url-seleccionada').value = '';
+    
+    modoEdicion = false;
+    idEventoEdicion = null;
+    form.classList.remove('modo-edicion');
+    document.getElementById('alta-evento').querySelector('h3').textContent = "Crear Nuevo Evento";
+    form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Evento";
+    
+    const infoImg = document.getElementById('info-img-actual');
+    if(infoImg) infoImg.remove();
+    
+    crearCalendarioAlta();
+}
+
+// ==========================================
+// 5. RENDERIZADO Y BÚSQUEDA (EVENTOS)
+// ==========================================
+
+async function fetchEventosData() {
+    try {
+        const res = await fetch('/api/eventos', { headers: { 'Authorization': getAuthToken() }});
+        if (!res.ok) throw new Error("Error API Eventos");
+        adminEventos = await res.json();
+        renderizarResultadosEventos();
+    } catch (e) { console.error(e); }
+}
+
+function inicializarPanelesBusquedaEventos() {
+    const inputs = document.querySelectorAll('.form-busqueda .form-input');
+    inputs.forEach(i => i.addEventListener(i.tagName === 'SELECT' ? 'change' : 'input', renderizarResultadosEventos));
+    
+    // Delegación de eventos para botones
     const containers = [document.getElementById('mod-resultados-container'), document.getElementById('baja-resultados-container')];
     containers.forEach(c => {
         if(c) c.addEventListener('click', (e) => {
@@ -771,7 +594,6 @@ function renderizarResultadosEventos() {
     const fMod = { t: getVal('mod-search-titulo'), d: getVal('mod-search-fecha'), k: getVal('mod-search-tipo') };
     const fBaja = { t: getVal('baja-search-titulo'), d: getVal('baja-search-fecha'), k: getVal('baja-search-tipo') };
 
-    // Filtro Seguro
     const filter = (list, f) => list.filter(ev => {
         const tit = (ev.titulo || '').toLowerCase();
         const tipo = (ev.tipoEvento || '').toLowerCase();
@@ -779,7 +601,6 @@ function renderizarResultadosEventos() {
         return (!f.t || tit.includes(f.t)) && (!f.d || fecha === f.d) && (!f.k || tipo === f.k);
     }).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
 
-    // Generador HTML Seguro
     const htmlSafe = (ev, action) => {
         let img = `<div style="width:80px;height:80px;background:#555;display:flex;align-items:center;justify-content:center;">Sin</div>`;
         if(ev.imagen && ev.imagen.length > 3) {
@@ -804,14 +625,12 @@ function renderizarResultadosEventos() {
         </div>`;
     };
 
-    // Renderizar Modificación
     const listMod = filter(adminEventos, fMod);
     contMod.innerHTML = listMod.length ? listMod.map(ev => htmlSafe(ev, 'modificar')).join('') : '<p style="color:#ccc;text-align:center;">Sin resultados</p>';
     contMod.style.display = 'grid'; 
     contMod.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, 1fr))'; 
     contMod.style.gap = '1rem';
 
-    // Renderizar Baja
     const listBaja = filter(adminEventos, fBaja);
     contBaja.innerHTML = listBaja.length ? listBaja.map(ev => htmlSafe(ev, 'eliminar')).join('') : '<p style="color:#ccc;text-align:center;">Sin resultados</p>';
     contBaja.style.display = 'grid'; 
@@ -825,37 +644,30 @@ function prellenarFormularioModEvento(ev) {
     const form = document.getElementById('form-alta-evento');
     form.classList.add('modo-edicion');
     document.getElementById('alta-evento').querySelector('h3').textContent = "Modificando Evento";
-    form.querySelector('.btn-primary').innerHTML = "<i class='bx bxs-save'></i> Guardar Cambios";
+    form.querySelector('.btn-primary').innerHTML = "Guardar Cambios";
 
-    // Datos Básicos
     document.getElementById('evento-fecha').value = ev.fecha;
     document.getElementById('evento-tipo').value = ev.tipoEvento;
     document.getElementById('evento-titulo').value = ev.titulo || '';
     document.getElementById('evento-descripcion').value = ev.descripcion || '';
     
-    // Datos Inglés
     document.getElementById('evento-titulo-en').value = ev.titulo_en || ev.titulo || '';
     document.getElementById('evento-descripcion-en').value = ev.descripcion_en || ev.descripcion || '';
     
-    // Links
     document.getElementById('evento-live').value = ev.live || '';
     document.getElementById('evento-concierto').value = ev.concierto || '';
 
-    // Checkbox Mismo Contenido
     const checkMismo = document.getElementById('evento-mismo-contenido');
     if(checkMismo) {
-        // Si son iguales o si el inglés estaba vacío (migración), marcamos check
         const esIgual = (ev.titulo === (ev.titulo_en || ev.titulo)) && (ev.descripcion === (ev.descripcion_en || ev.descripcion));
         checkMismo.checked = esIgual;
         checkMismo.dispatchEvent(new Event('change'));
     }
 
-    // Calendario
     if (picker) picker.destroy();
     crearCalendarioAlta();
     setTimeout(() => { if(picker) picker.setDate(ev.fecha); }, 100);
 
-    // Tags e Imagen
     tags = ev.imgReferencia || [];
     renderizarTags();
     
@@ -864,9 +676,8 @@ function prellenarFormularioModEvento(ev) {
     const infoOld = document.getElementById('info-img-actual');
     if(infoOld) infoOld.remove();
 
-    document.getElementById('evento-tipo').dispatchEvent(new Event('change')); // Refresca estado de inputs según tipo
+    document.getElementById('evento-tipo').dispatchEvent(new Event('change')); 
 
-    // Solo gestionamos imagen si no es Cerrado/Privado (que ya lo maneja el dispatchEvent)
     if (!['Cerrado', 'Privado'].includes(ev.tipoEvento)) {
         if(ev.imagen === 'imgBandaGenerica.jpg') {
             checkGen.checked = true;
@@ -914,7 +725,6 @@ function inicializarFormularioCarta() {
     const sel = document.getElementById('producto-tipo');
     const btnActions = document.getElementById('form-actions-producto');
 
-    // 1. Inyectar Plantillas (Solo una vez)
     if (container.children.length === 0) {
         for (const t in plantillasFormCarta) {
             const div = document.createElement('div');
@@ -925,7 +735,6 @@ function inicializarFormularioCarta() {
         }
     }
     
-    // 2. Listener Tipo
     sel.addEventListener('change', () => {
         document.querySelectorAll('.form-fields-group').forEach(g => g.classList.remove('visible'));
         const target = document.getElementById(`fields-${sel.value.startsWith('vino')?'vino':sel.value}`);
@@ -938,7 +747,6 @@ function inicializarFormularioCarta() {
         }
     });
 
-    // 3. Submit
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const tipo = sel.value;
@@ -946,7 +754,6 @@ function inicializarFormularioCarta() {
         const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
         const btn = form.querySelector('.btn-primary');
         
-        // Validación simple EN
         const inputsEN = formGroup.querySelectorAll('.lang-content[data-lang-content="en"] [required]');
         for (const i of inputsEN) {
             if (!i.value.trim()) {
@@ -963,7 +770,6 @@ function inicializarFormularioCarta() {
         try {
             const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
             
-            // Imagen Upload
             let imgUrl = producto_es.imagen; 
             if (producto_es.archivoImagen) {
                 const b64 = await toBase64(producto_es.archivoImagen);
@@ -1004,13 +810,12 @@ function inicializarFormularioCarta() {
             alert("Error: " + err.message);
         } finally {
             btn.disabled = false;
-            btn.innerHTML = modoEdicion ? "Guardar Cambios" : "Guardar Producto";
+            btn.innerHTML = "Guardar Producto";
         }
     });
 }
 
 function activarLogicaBilingue(group) {
-    // Tabs
     group.querySelectorAll('.lang-tab-btn').forEach(btn => {
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
@@ -1022,7 +827,6 @@ function activarLogicaBilingue(group) {
             group.querySelector(`.lang-content[data-lang-content="${newBtn.dataset.lang}"]`).classList.add('active');
         });
     });
-    // Translate Button (Placeholder por ahora)
     const btnTrans = group.querySelector('.btn-translate');
     if(btnTrans) {
         const newTrans = btnTrans.cloneNode(true);
@@ -1052,7 +856,6 @@ function recolectarDatosProducto(formGroup, tipo) {
         imagen: (tipo === 'coctel' || tipo.startsWith('vino')) ? 'bebidaSinFoto.jpg' : null
     };
     
-    // Datos ES
     const es = { ...unicos,
         titulo: formGroup.querySelector('#producto-titulo-es')?.value || formGroup.querySelector('#producto-titulo')?.value || '',
         descripcion: formGroup.querySelector('#producto-descripcion-es')?.value || '',
@@ -1061,7 +864,6 @@ function recolectarDatosProducto(formGroup, tipo) {
         varietal: formGroup.querySelector('#producto-varietal-es')?.value || null,
         crianza: formGroup.querySelector('#producto-crianza-es')?.value || null
     };
-    // Datos EN
     const en = { ...unicos,
         titulo: formGroup.querySelector('#producto-titulo-en')?.value || formGroup.querySelector('#producto-titulo')?.value || '',
         descripcion: formGroup.querySelector('#producto-descripcion-en')?.value || '',
@@ -1086,7 +888,6 @@ function resetearFormularioCarta() {
     const btnSubmit = form.querySelector('.btn-primary');
     if(btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = "<i class='bx bxs-save'></i> Guardar Producto"; }
 
-    // Reset tabs a Español
     document.querySelectorAll('.lang-tab-btn[data-lang="es"]').forEach(b => b.click());
     
     const tab = document.querySelector('.tab-link[data-tab="alta-producto"]');
@@ -1119,7 +920,6 @@ function inicializarPanelesBusquedaProductos() {
         if(btn) prellenarFormularioCarta(adminProductos.find(p => p._id === btn.dataset.id));
     });
     
-    // Smart Switch Visibilidad
     container.addEventListener('change', async (e) => {
         if (e.target.matches('.visibility-switch input')) {
             const id = e.target.dataset.id;
@@ -1200,10 +1000,8 @@ function prellenarFormularioCarta(p) {
     sel.value = p.tipo;
     sel.dispatchEvent(new Event('change'));
     
-    // Llenar datos en pestaña ES
     const formGroup = document.querySelector('.form-fields-group.visible');
     
-    // Mapeo rápido de campos comunes
     const mapFields = {
         '#producto-titulo': p.titulo,
         '#producto-titulo-es': p.titulo,
@@ -1229,7 +1027,6 @@ function prellenarFormularioCarta(p) {
 
     if(formGroup.querySelector('#producto-destacado')) formGroup.querySelector('#producto-destacado').checked = p.destacado;
 
-    // Llenar datos en pestaña EN
     const p_en = adminProductos_EN.find(en => en._id === p._id);
     if(p_en) {
         const mapFieldsEN = {
@@ -1246,7 +1043,6 @@ function prellenarFormularioCarta(p) {
         }
     }
 
-    // Imagen
     const infoImg = document.getElementById('info-img-actual-prod');
     if (infoImg) infoImg.remove();
     if (p.imagen && p.imagen !== 'bebidaSinFoto.jpg') {
