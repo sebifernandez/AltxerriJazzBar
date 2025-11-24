@@ -1367,3 +1367,102 @@ body {
     background-color: #fff !important;
     color: #000 !important;
 }
+
+/* 1. Estirar las Cards (Desktop) */
+.event-card {
+    /* Altura mínima mayor para que no se vean "achanchadas" */
+    min-height: 500px !important; 
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+}
+
+.card-image {
+    /* La imagen ocupa el 55% de la altura, el resto es texto/botones */
+    height: 55% !important; 
+    flex-shrink: 0 !important;
+}
+
+.card-content {
+    height: 45% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 1rem 1rem 80px 1rem !important; /* 80px abajo para dejar espacio a los botones */
+    position: relative !important; /* Clave para fijar botones */
+    overflow: hidden !important; /* Si el texto es eterno, que no rompa la card */
+}
+
+/* 2. Fijar Botones al Fondo (Absolute) */
+.btn-reservar, .btn-adicional {
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 85% !important; /* Que no toquen los bordes */
+    text-align: center !important;
+}
+
+/* Botón Principal (Reservar / Finalizado) */
+.btn-reservar {
+    bottom: 45px !important; /* Un poco más arriba */
+    z-index: 5 !important;
+}
+
+/* Botón Adicional (Vivo / Archivo) */
+.btn-adicional {
+    bottom: 10px !important; /* Pegado al fondo */
+    margin-top: 0 !important; /* Quitamos margen viejo */
+    z-index: 6 !important;
+}
+
+/* Si solo hay un botón (Reservar), que se quede en su lugar. 
+   Si están los dos, se apilan gracias a los "bottom" distintos. */
+
+/* 3. Limpieza de Eventos Privados/Cerrados (Adiós borde amarillo) */
+.event-card.special {
+    border: 1px solid #444 !important; /* Borde gris sutil en vez de amarillo punteado */
+    background-color: #222 !important; /* Fondo oscuro uniforme */
+}
+
+/* Quitamos el fondo amarillo o estilos raros al texto */
+.event-card.special h3, 
+.event-card.special p {
+    background: transparent !important;
+    color: #fff !important;
+}
+
+/* El link de Instagram en amarillo sí lo dejamos para que resalte */
+.special-links a {
+    color: #FFD700 !important;
+}
+
+
+/* 4. Ajustes Mobile (Botones chicos y Cards altas) */
+@media (max-width: 900px) {
+    .event-card {
+        min-height: 450px !important; /* Altura generosa en móvil */
+    }
+
+    /* Achicar botones en móvil */
+    .btn-reservar, .btn-adicional, .btn-newsletter {
+        font-size: 0.8rem !important; /* Letra más chica */
+        padding: 0.4rem 0.5rem !important; /* Menos relleno */
+        height: auto !important; /* Altura automática */
+        min-height: 35px !important;
+    }
+    
+    /* Ajuste específico para Newsletter en navbar móvil */
+    #nav-btn-newsletter {
+        font-size: 0.8rem !important;
+        padding: 0.3rem 0.6rem !important;
+    }
+
+    /* Ajuste de posiciones para móvil */
+    .btn-reservar { bottom: 50px !important; }
+    .btn-adicional { bottom: 10px !important; }
+    
+    /* Texto de descripción que no se corte */
+    .card-content p {
+        font-size: 0.9rem !important;
+        line-height: 1.4 !important;
+    }
+}
