@@ -123,34 +123,50 @@ function renderizarNavbar(navData, lang) {
     if (!container) return;
 
     let html = '';
+    
+    // 1. Enlaces normales
     navData.items.forEach(item => {
-        // 1. FIX CARTA: Si el link contiene 'carta', se abre en nueva pestaña
         const targetAttr = item.link.includes('carta') ? 'target="_blank"' : '';
         html += `<a href="${item.link}" ${targetAttr}>${item.texto}</a>`;
     });
 
-    // 2. FIX MOBILE: Botón de idioma ADENTRO de la lista (último item)
-    // Usamos una clase específica 'btn-lang-list' para darle estilo
+    // 2. Botón Newsletter (AHORA DENTRO DE LA LISTA)
+    // Usamos un ID específico para el listener
+    html += `<button class="btn-newsletter" id="nav-btn-newsletter-list" style="height: 40px; padding: 0 1.5rem; margin-left: 1rem;">${navData.btnExtra}</button>`;
+
+    // 3. Botón Idioma (SOLO PARA MÓVIL - Se oculta en desktop por CSS)
     html += `
-        <button class="btn-newsletter btn-lang-list" id="btn-lang-toggle" style="background: #000; border: 1px solid #fff;">
+        <button class="btn-newsletter btn-lang-list" id="btn-lang-mobile" style="background: #000; border: 1px solid #fff;">
             ${lang === 'es' ? 'ENG' : 'ESP'}
         </button>
     `;
     
     container.innerHTML = html;
 
-    // 3. Actualizar el texto del botón Newsletter (que está fuera, junto a la hamburguesa)
-    setText('nav-btn-newsletter', navData.btnExtra);
+    // 4. Actualizar texto del botón de Escritorio (El que está fijo en HTML)
+    const desktopLangBtn = document.getElementById('btn-lang-desktop');
+    if(desktopLangBtn) {
+        desktopLangBtn.textContent = lang === 'es' ? 'ENG' : 'ESP';
+    }
 
-    // Re-asignar listener del botón de idioma (ahora está dentro del container)
-    const btnLang = document.getElementById('btn-lang-toggle');
-    if(btnLang) btnLang.addEventListener('click', toggleIdioma);
+    // 5. Asignar Listeners (Delegación simple)
+    // Newsletter de la lista
+    document.getElementById('nav-btn-newsletter-list')?.addEventListener('click', openNewsletter);
+    
+    // Idioma Móvil
+    document.getElementById('btn-lang-mobile')?.addEventListener('click', toggleIdioma);
+    
+    // Idioma Escritorio (Si no tiene listener, se lo ponemos. Si ya tiene, no pasa nada)
+    if(desktopLangBtn) desktopLangBtn.onclick = toggleIdioma; 
 
-    // Re-asignar listener para cerrar menú en móvil al hacer clic
-    const links = container.querySelectorAll('a');
+    // Cerrar menú al hacer clic en enlaces
+    const links = container.querySelectorAll('a, button');
     links.forEach(link => {
         link.addEventListener('click', () => {
-            container.classList.remove('active');
+            // No cerramos si es el botón de idioma, para que vean el cambio
+            if (link.id !== 'btn-lang-mobile') {
+                container.classList.remove('active');
+            }
         });
     });
 }

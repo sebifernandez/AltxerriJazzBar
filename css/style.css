@@ -1472,3 +1472,49 @@ body {
         line-height: 1.4 !important;
     }
 }
+
+/* --- FIX ENROQUE BOTONES (Desktop vs Mobile) --- */
+
+/* Por defecto (Desktop): Ocultamos el botón de idioma de la lista (móvil) */
+#btn-lang-mobile {
+    display: none !important;
+}
+
+/* Estilo del botón de idioma Desktop */
+#btn-lang-desktop {
+    background: #000 !important;
+    border: 1px solid #fff !important;
+    color: #fff !important;
+    width: 60px;
+    height: 40px;
+    padding: 0;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+#btn-lang-desktop:hover {
+    background: #fff !important;
+    color: #000 !important;
+}
+
+/* En MÓVIL */
+@media (max-width: 900px) {
+    /* Ocultamos el de escritorio */
+    #btn-lang-desktop {
+        display: none !important;
+    }
+    
+    /* Mostramos el de la lista (móvil) */
+    #btn-lang-mobile {
+        display: block !important;
+        margin: 1rem auto !important; /* Centrado */
+        width: 100px !important;
+    }
+
+    /* Ajuste para que el Newsletter en la lista se vea bien */
+    #nav-btn-newsletter-list {
+        margin: 0.5rem 0;
+        width: 100%;
+    }
+}
