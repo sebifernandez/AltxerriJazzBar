@@ -1518,3 +1518,28 @@ body {
         width: 100%;
     }
 }
+
+/* --- FIX NEWSLETTER HÍBRIDO (Desktop vs Mobile) --- */
+
+/* 1. Estado Base (Desktop): Ocultamos el de móvil */
+#nav-btn-newsletter-mobile {
+    display: none !important;
+}
+
+/* 2. Estado Mobile (Menos de 900px) */
+@media (max-width: 900px) {
+    
+    /* Mostramos el botón Newsletter Móvil junto a la hamburguesa */
+    #nav-btn-newsletter-mobile {
+        display: inline-block !important;
+        font-size: 0.8rem;
+        padding: 0.3rem 0.6rem;
+        margin-right: 5px;
+        height: auto;
+    }
+
+    /* Ocultamos el botón Newsletter de la lista desplegable (para no tenerlo duplicado) */
+    #nav-btn-newsletter-list {
+        display: none !important;
+    }
+}

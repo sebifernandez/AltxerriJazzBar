@@ -130,11 +130,10 @@ function renderizarNavbar(navData, lang) {
         html += `<a href="${item.link}" ${targetAttr}>${item.texto}</a>`;
     });
 
-    // 2. Botón Newsletter (AHORA DENTRO DE LA LISTA)
-    // Usamos un ID específico para el listener
+    // 2. Botón Newsletter de la LISTA (Solo visible en Desktop por CSS)
     html += `<button class="btn-newsletter" id="nav-btn-newsletter-list" style="height: 40px; padding: 0 1.5rem; margin-left: 1rem;">${navData.btnExtra}</button>`;
 
-    // 3. Botón Idioma (SOLO PARA MÓVIL - Se oculta en desktop por CSS)
+    // 3. Botón Idioma MÓVIL (Dentro de la lista)
     html += `
         <button class="btn-newsletter btn-lang-list" id="btn-lang-mobile" style="background: #000; border: 1px solid #fff;">
             ${lang === 'es' ? 'ENG' : 'ESP'}
@@ -143,27 +142,25 @@ function renderizarNavbar(navData, lang) {
     
     container.innerHTML = html;
 
-    // 4. Actualizar texto del botón de Escritorio (El que está fijo en HTML)
+    // 4. Actualizar textos de botones FIJOS (Header)
     const desktopLangBtn = document.getElementById('btn-lang-desktop');
-    if(desktopLangBtn) {
-        desktopLangBtn.textContent = lang === 'es' ? 'ENG' : 'ESP';
-    }
+    const mobileNewsBtn = document.getElementById('nav-btn-newsletter-mobile'); // <--- NUEVO
 
-    // 5. Asignar Listeners (Delegación simple)
-    // Newsletter de la lista
+    if(desktopLangBtn) desktopLangBtn.textContent = lang === 'es' ? 'ENG' : 'ESP';
+    if(mobileNewsBtn) mobileNewsBtn.textContent = navData.btnExtra; // <--- NUEVO: Traduce el botón móvil
+
+    // 5. Asignar Listeners
     document.getElementById('nav-btn-newsletter-list')?.addEventListener('click', openNewsletter);
-    
-    // Idioma Móvil
     document.getElementById('btn-lang-mobile')?.addEventListener('click', toggleIdioma);
-    
-    // Idioma Escritorio (Si no tiene listener, se lo ponemos. Si ya tiene, no pasa nada)
     if(desktopLangBtn) desktopLangBtn.onclick = toggleIdioma; 
+    
+    // Listener para el nuevo botón móvil
+    if(mobileNewsBtn) mobileNewsBtn.addEventListener('click', openNewsletter);
 
     // Cerrar menú al hacer clic en enlaces
     const links = container.querySelectorAll('a, button');
     links.forEach(link => {
         link.addEventListener('click', () => {
-            // No cerramos si es el botón de idioma, para que vean el cambio
             if (link.id !== 'btn-lang-mobile') {
                 container.classList.remove('active');
             }
