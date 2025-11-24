@@ -1543,3 +1543,37 @@ body {
         display: none !important;
     }
 }
+
+/* --- FIX TEXTO SUPERPUESTO (Móviles pequeños) --- */
+@media (max-width: 550px) {
+    /* Ajuste del Título */
+    .event-card h3 {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.3rem !important;
+        /* Aseguramos que el título no ocupe más de 2 líneas */
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        flex-shrink: 0 !important; /* Que no se aplaste */
+    }
+
+    /* Ajuste de la Descripción (Privado o Regular) */
+    .card-content p {
+        font-size: 0.85rem !important;
+        line-height: 1.3 !important;
+        margin-bottom: 0 !important;
+        
+        /* MAGIA: Corta el texto a las 3 líneas con "..." */
+        display: -webkit-box !important;
+        -webkit-line-clamp: 3 !important; 
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+    }
+
+    /* Ajuste extra para el contenedor de texto */
+    .card-content {
+        justify-content: flex-start !important; /* Alinea todo arriba */
+        gap: 0.5rem !important; /* Espacio entre elementos */
+    }
+}
