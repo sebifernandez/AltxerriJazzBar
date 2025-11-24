@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
         inicializarFormularioAlta();
         inicializarFormularioCarta();
         inicializarModalImagenes();
-        
+        inicializarGestorWeb();
         fetchEventosData(); 
         fetchProductosData(); 
         inicializarPanelesBusquedaEventos();
@@ -1131,4 +1131,160 @@ async function buscarImagenes(q) {
             <div style="font-size:0.7rem;color:#aaa;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.tags[0]}</div>
         </div>`).join('');
     document.getElementById('resultados-imagenes').innerHTML = html || '<p style="text-align:center;color:#888;">Sin resultados</p>';
+}
+
+// =========================================================
+// 8. GESTIÓN DE CONTENIDO WEB (GALERÍA) - NUEVO MÓDULO
+// =========================================================
+
+let imagenesGaleria = []; // Estado local de las fotos
+
+// Inicializador (Llamar en el DOMContentLoaded)
+function inicializarGestorWeb() {
+    const btnSubir = document.getElementById('btn-nueva-foto-galeria');
+    const inputSubir = document.getElementById('input-foto-galeria');
+
+    // Listener para botón de subir
+    if (btnSubir && inputSubir) {
+        btnSubir.addEventListener('click', () => inputSubir.click());
+        
+        inputSubir.addEventListener('change', async () => {
+            if (inputSubir.files.length > 0) {
+                await subirYAgregarFoto(inputSubir.files[0]);
+                inputSubir.value = ''; // Reset
+            }
+        });
+    }
+
+    // Cargar las fotos al iniciar
+    fetchContenidoGaleria();
+}
+
+// 1. Traer datos de MongoDB
+async function fetchContenidoGaleria() {
+    try {
+        // Usamos la ruta pública de lectura (es más rápido que crear una nueva privada)
+        const res = await fetch('/api/contenido/home'); 
+        const data = await res.json();
+        
+        if (data.es && data.es.datos && data.es.datos.galeria) {
+            imagenesGaleria = data.es.datos.galeria.imagenes || [];
+            renderizarGaleriaAdmin();
+        }
+    } catch (error) {
+        console.error("Error cargando galería:", error);
+        document.getElementById('galeria-grid').innerHTML = '<p>Error al cargar.</p>';
+    }
+}
+
+// 2. Renderizar (Pintar) las fotos en el Admin
+function renderizarGaleriaAdmin() {
+    const grid = document.getElementById('galeria-grid');
+    if (!grid) return;
+
+    if (imagenesGaleria.length === 0) {
+        grid.innerHTML = '<p style="color:#ccc;">No hay imágenes en el carrusel.</p>';
+        return;
+    }
+
+    grid.innerHTML = imagenesGaleria.map((url, index) => {
+        // Detectar si es URL completa o local
+        const src = url.startsWith('http') ? url : `../img/${url}`;
+        
+        return `
+        <div class="galeria-item" style="position: relative; border: 1px solid #444; border-radius: 8px; overflow: hidden; aspect-ratio: 16/9;">
+            <img src="${src}" style="width: 100%; height: 100%; object-fit: cover;">
+            
+            <button onclick="eliminarFotoGaleria(${index})" 
+                    style="position: absolute; top: 5px; right: 5px; background: rgba(200,0,0,0.8); color: white; border: none; border-radius: 4px; cursor: pointer; padding: 5px;">
+                <i class='bx bxs-trash'></i>
+            </button>
+        </div>`;
+    }).join('');
+}
+
+// 3. Subir a Cloudinary y Guardar en Mongo
+async function subirYAgregarFoto(file) {
+    const btn = document.getElementById('btn-nueva-foto-galeria');
+    const txtOriginal = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Subiendo...";
+
+    try {
+        // A. Subir a Cloudinary
+        const base64 = await toBase64(file);
+        const resCloud = await fetch('/api/imagenes/subir', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
+            body: JSON.stringify({ data: base64 })
+        });
+        const dataCloud = await resCloud.json();
+        if (!dataCloud.success) throw new Error("Falló subida a Cloudinary");
+
+        // B. Agregar al array local
+        imagenesGaleria.push(dataCloud.url);
+
+        // C. Guardar cambios en MongoDB
+        await guardarCambiosGaleria();
+        
+        renderizarGaleriaAdmin();
+        alert("Imagen subida y guardada correctamente.");
+
+    } catch (error) {
+        console.error(error);
+        alert("Error: " + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = txtOriginal;
+    }
+}
+
+// 4. Eliminar foto
+window.eliminarFotoGaleria = async function(index) {
+    if (!confirm("¿Seguro que quieres eliminar esta foto del carrusel?")) return;
+
+    imagenesGaleria.splice(index, 1); // Quitar del array
+    renderizarGaleriaAdmin(); // Actualizar vista rapido
+    
+    try {
+        await guardarCambiosGaleria(); // Guardar en BD
+    } catch (error) {
+        alert("Error al guardar el cambio en la base de datos.");
+        fetchContenidoGaleria(); // Revertir si falló
+    }
+};
+
+// 5. Guardar en MongoDB (Actualiza ES y EN)
+async function guardarCambiosGaleria() {
+    // Necesitamos leer el objeto HOME completo actual para no borrar los textos
+    // Como ya tenemos imagenesGaleria actualizado, solo necesitamos la estructura base.
+    // Para simplificar y no hacer mil fetchs, vamos a hacer un "Patch" inteligente:
+    
+    // Paso 1: Traer el objeto HOME actual de la BD
+    const res = await fetch('/api/contenido/home');
+    const data = await res.json();
+    
+    if (!data.es || !data.en) throw new Error("No se pudo leer la configuración actual.");
+
+    // Paso 2: Actualizar SOLO el array de imágenes en ambos idiomas
+    const homeES = data.es.datos;
+    const homeEN = data.en.datos;
+
+    homeES.galeria.imagenes = imagenesGaleria;
+    homeEN.galeria.imagenes = imagenesGaleria; // Mismas fotos para inglés
+
+    // Paso 3: Enviar actualizaciones
+    const p1 = fetch('/api/contenido/modificar', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
+        body: JSON.stringify({ uid: 'home_es', datos: homeES })
+    });
+
+    const p2 = fetch('/api/contenido/modificar', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
+        body: JSON.stringify({ uid: 'home_en', datos: homeEN })
+    });
+
+    await Promise.all([p1, p2]);
 }

@@ -30,6 +30,9 @@
                 <a href="#" class="nav-link" data-target="gestion-carta">
                     <i class='bx bxs-drink'></i> <span>Carta</span>
                 </a>
+                <a href="#" class="nav-link" data-target="gestion-web">
+                    <i class='bx bxs-photo-album'></i> <span>Web / Galería</span>
+                </a>
             </nav>
             
             <div class="sidebar-footer">
@@ -58,6 +61,11 @@
                         <i class='bx bxs-drink'></i>
                         <h3>Gestionar Carta</h3>
                         <p>Editar categorías, productos y precios del menú.</p>
+                    </div>
+                    <div class="dash-card" data-target="gestion-web">
+                        <i class='bx bxs-photo-album'></i>
+                        <h3>Galería y Web</h3>
+                        <p>Administrar fotos del carrusel y textos.</p>
                     </div>
                 </div>
             </section>
@@ -312,6 +320,28 @@
                     </div>
                 </div>
                 
+            </section>
+
+            <section id="gestion-web" class="content-section">
+                <h2>Gestión de Contenido Web</h2>
+                
+                <div class="tabs">
+                    <button class="tab-link active" data-tab="admin-galeria">Galería de Imágenes</button>
+                    </div>
+
+                <div id="admin-galeria" class="tab-content active">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h3>Fotos del Carrusel (Home)</h3>
+                        <button class="btn btn-primary" id="btn-nueva-foto-galeria">
+                            <i class='bx bxs-cloud-upload'></i> Subir Nueva Foto
+                        </button>
+                        <input type="file" id="input-foto-galeria" accept="image/*" style="display: none;">
+                    </div>
+
+                    <div id="galeria-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.5rem;">
+                        <p>Cargando imágenes...</p>
+                    </div>
+                </div>
             </section>
             
         </main>
