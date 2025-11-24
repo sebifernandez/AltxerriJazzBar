@@ -92,6 +92,11 @@ function aplicarIdioma(lang) {
     setPlaceholder('newsletterEmail', textos.newsletter.phMail);
     setText('newsletter-btn-enviar', textos.newsletter.btnSuscribir);
 
+    // 8. Renderizar Galería Dinámica (NUEVO)
+    if (textos.galeria && textos.galeria.imagenes) {
+        renderizarGaleria(textos.galeria.imagenes);
+    }
+
     // 7. Actualizar Carrusel de Eventos (si ya se cargaron)
     if (eventos.length > 0) {
         inicializarEventos(); 
@@ -523,63 +528,102 @@ track.addEventListener('touchend', (e) => {
 // 6. GALERÍA Y MODALES
 // ======================================================
 
-// GALERÍA
-const galleryTrack = document.querySelector('.gallery-track');
-const gallerySlides = document.querySelectorAll('.gallery-slide');
+// GALERÍA DINÁMICA
+const galleryTrack = document.getElementById('gallery-track');
+const galleryIndicatorsContainer = document.getElementById('gallery-indicators');
 const leftGalleryBtn = document.querySelector('.left-gallery-btn');
 const rightGalleryBtn = document.querySelector('.right-gallery-btn');
-const galleryIndicatorsContainer = document.querySelector('.gallery-indicators');
-let currentGalleryIndex = 0;
-const totalSlides = gallerySlides ? gallerySlides.length : 0;
 
-function createIndicators() {
-    galleryIndicatorsContainer.innerHTML = '';
-    for (let i = 0; i < totalSlides; i++) {
-        const indicator = document.createElement('div');
-        indicator.classList.add('indicator');
-        indicator.addEventListener('click', () => moveToSlide(i));
-        galleryIndicatorsContainer.appendChild(indicator);
+let currentGalleryIndex = 0;
+let totalGallerySlides = 0;
+let galleryInterval;
+
+function renderizarGaleria(imagenes) {
+    if (!galleryTrack || !imagenes || imagenes.length === 0) return;
+
+    // 1. Limpiar
+    galleryTrack.innerHTML = '';
+    if(galleryIndicatorsContainer) galleryIndicatorsContainer.innerHTML = '';
+    
+    // 2. Generar Slides
+    imagenes.forEach((imgSrc, index) => {
+        // Si no empieza con http, asumimos que está en img/
+        const ruta = imgSrc.startsWith('http') ? imgSrc : `img/${imgSrc}`;
+        
+        const img = document.createElement('img');
+        img.src = ruta;
+        img.className = 'gallery-slide';
+        img.alt = `Galería imagen ${index + 1}`;
+        galleryTrack.appendChild(img);
+
+        // Generar Indicador
+        if(galleryIndicatorsContainer) {
+            const dot = document.createElement('div');
+            dot.className = 'indicator';
+            dot.addEventListener('click', () => moveToGallerySlide(index));
+            galleryIndicatorsContainer.appendChild(dot);
+        }
+    });
+
+    totalGallerySlides = imagenes.length;
+    currentGalleryIndex = 0;
+    moveToGallerySlide(0);
+
+    // Reiniciar Intervalo
+    if (galleryInterval) clearInterval(galleryInterval);
+    galleryInterval = setInterval(() => moveToGallerySlide(currentGalleryIndex + 1), 4000);
+}
+
+function moveToGallerySlide(index) {
+    if (totalGallerySlides === 0) return;
+
+    if (index >= totalGallerySlides) index = 0;
+    else if (index < 0) index = totalGallerySlides - 1;
+
+    currentGalleryIndex = index;
+    const offset = -currentGalleryIndex * 100;
+    galleryTrack.style.transform = `translateX(${offset}vw)`;
+
+    // Actualizar indicadores
+    if(galleryIndicatorsContainer) {
+        const dots = galleryIndicatorsContainer.querySelectorAll('.indicator');
+        dots.forEach((dot, i) => dot.classList.toggle('active', i === currentGalleryIndex));
     }
 }
 
-function moveToSlide(index) {
-    if (index >= totalSlides) index = 0;
-    else if (index < 0) index = totalSlides - 1;
-    currentGalleryIndex = index;
-    const offset = -currentGalleryIndex * 100; 
-    if(galleryTrack) galleryTrack.style.transform = `translateX(${offset}vw)`;
-    updateIndicators();
-}
-
-function updateIndicators() {
-    const indicators = document.querySelectorAll('.gallery-indicators .indicator');
-    indicators.forEach((indicator, index) => {
-        indicator.classList.toggle('active', index === currentGalleryIndex);
+// Listeners Botones Galería
+if (leftGalleryBtn) {
+    // Clonar para limpiar listeners viejos si se recarga
+    const newLeft = leftGalleryBtn.cloneNode(true);
+    leftGalleryBtn.parentNode.replaceChild(newLeft, leftGalleryBtn);
+    newLeft.addEventListener('click', () => {
+        moveToGallerySlide(currentGalleryIndex - 1);
+        if(galleryInterval) clearInterval(galleryInterval); // Pausa auto al interactuar
     });
 }
 
-if (galleryTrack) {
-    if (leftGalleryBtn) leftGalleryBtn.addEventListener('click', () => moveToSlide(currentGalleryIndex - 1));
-    if (rightGalleryBtn) rightGalleryBtn.addEventListener('click', () => moveToSlide(currentGalleryIndex + 1));
-    createIndicators();
-    moveToSlide(0); 
-    setInterval(() => moveToSlide(currentGalleryIndex + 1), 4000);
+if (rightGalleryBtn) {
+    const newRight = rightGalleryBtn.cloneNode(true);
+    rightGalleryBtn.parentNode.replaceChild(newRight, rightGalleryBtn);
+    newRight.addEventListener('click', () => {
+        moveToGallerySlide(currentGalleryIndex + 1);
+        if(galleryInterval) clearInterval(galleryInterval);
+    });
 }
 
-// MODAL CALENDARIO
-const modalCalendario = document.getElementById("modalCalendario");
-const btnAbrirCal = document.getElementById("abrirCalendario");
-const btnCerrarCal = document.getElementById("cerrarCalendario");
-const filtroCal = document.getElementById("filtroEstado");
-const inputBusquedaCal = document.getElementById("busquedaEventos");
-const calendarioDiv = document.getElementById("calendario");
-const detalleEvento = document.getElementById("detalleEvento");
-
-if (btnAbrirCal) btnAbrirCal.addEventListener("click", () => modalCalendario.style.display = "block");
-if (btnCerrarCal) btnCerrarCal.addEventListener("click", () => modalCalendario.style.display = "none");
-window.addEventListener("click", e => {
-  if (e.target === modalCalendario) modalCalendario.style.display = "none";
-});
+// Swipe Mobile Galería
+let galleryStartX = 0;
+if (galleryTrack) {
+    galleryTrack.addEventListener('touchstart', (e) => { galleryStartX = e.touches[0].clientX; });
+    galleryTrack.addEventListener('touchend', (e) => {
+        const diff = galleryStartX - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 50) {
+            if (diff > 0) moveToGallerySlide(currentGalleryIndex + 1);
+            else moveToGallerySlide(currentGalleryIndex - 1);
+            if(galleryInterval) clearInterval(galleryInterval);
+        }
+    });
+}
 
 function inicializarCalendario() {
     // Asegurarse de que Litepicker existe

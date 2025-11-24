@@ -138,7 +138,12 @@ const DATOS_SEMILLA = [
             },
             galeria: { 
                 titulo: "Galería", 
-                subtitulo: "Un recorrido visual por nuestras noches de Jazz, arte y buen ambiente." 
+                subtitulo: "Un recorrido visual por nuestras noches de Jazz, arte y buen ambiente.",
+                // AGREGAMOS ESTO: Lista inicial de imágenes
+                imagenes: [
+                    "banda1.jpg", "banda2.jpg", "banda3.jpeg", 
+                    "banda4.jpeg", "banda5.jpeg", "banda6.jpeg"
+                ]
             },
             parallax: { 
                 titulo: "Suscríbete a nuestras novedades y vive la experiencia Altxerri Jazz Bar", 
@@ -213,7 +218,12 @@ const DATOS_SEMILLA = [
             },
             galeria: { 
                 titulo: "Gallery", 
-                subtitulo: "A visual journey through our nights of Jazz, art, and good vibes." 
+                subtitulo: "A visual journey through our nights of Jazz, art, and good vibes.",
+                // AGREGAMOS ESTO: Lista inicial de imágenes
+                imagenes: [
+                    "banda1.jpg", "banda2.jpg", "banda3.jpeg", 
+                    "banda4.jpeg", "banda5.jpeg", "banda6.jpeg"
+                ]
             },
             parallax: { 
                 titulo: "Subscribe to our news and live the Altxerri Jazz Bar experience", 
@@ -808,6 +818,33 @@ router.get('/contenido/home', async (req, res) => {
     } catch (error) {
         console.error("Error en GET /contenido/home:", error);
         res.status(500).json({ success: false, message: 'Error al leer contenido home' });
+    }
+});
+
+// --- NUEVA RUTA: MODIFICAR CONTENIDO WEB (Home, Carta UI, etc.) ---
+router.put('/contenido/modificar', checkAuth, async (req, res) => {
+    try {
+        const db = await connectToDb();
+        const { uid, datos } = req.body; // Recibimos el ID (ej: "home_es") y los datos nuevos
+
+        if (!uid || !datos) {
+            return res.status(400).json({ success: false, message: "Faltan datos." });
+        }
+
+        const resultado = await db.collection('contenido_web').updateOne(
+            { uid: uid },
+            { $set: { datos: datos } } // Actualizamos todo el objeto 'datos'
+        );
+
+        if (resultado.matchedCount === 0) {
+            return res.status(404).json({ success: false, message: "Contenido no encontrado." });
+        }
+
+        res.json({ success: true, message: "Contenido actualizado correctamente." });
+
+    } catch (error) {
+        console.error("Error en PUT /contenido/modificar:", error);
+        res.status(500).json({ success: false, message: "Error interno al guardar contenido." });
     }
 });
 
