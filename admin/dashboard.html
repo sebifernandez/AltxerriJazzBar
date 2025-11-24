@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="admin.css">
     <link rel="icon" type="image/x-icon" href="../img/favicon.ico">
     <link href='https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css' rel='stylesheet'>
-    <link href='https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css' rel='stylesheet'>
     <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/litepicker/dist/css/litepicker.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script>
@@ -71,13 +70,12 @@
                     <button class="tab-link" data-tab="baja-evento">Baja</button>
                 </div>
                 
-<div id="alta-evento" class="tab-content active">
+                <div id="alta-evento" class="tab-content active">
                     <h3>Crear Nuevo Evento</h3>
                     
                     <form id="form-alta-evento" class="form-alta-evento">
                         
                         <div class="form-grid">
-
                             <div class="form-col">
                                 <div class="form-group">
                                     <label for="evento-fecha">Fecha del Evento *</label>
@@ -134,42 +132,43 @@
                                     <textarea id="evento-descripcion-en" class="form-input" placeholder="Ej: Entry 10€" style="min-height: 80px;" disabled></textarea>
                                 </div>
                             </div>
+                        </div>
 
-<div class="form-section">
-    <h4>Gestión de Imagen</h4>
-    
-    <div class="form-group-checkbox">
-        <input type="checkbox" id="evento-img-generica">
-        <label for="evento-img-generica">Usar imagen genérica (imgBandaGenerica.jpg)</label>
-    </div>
-    
-    <fieldset id="fieldset-imagen" class="form-grid">
-        
-        <div class="form-col">
-            <div class="form-group">
-                <label for="evento-imagen-upload">Subir Nueva Imagen</label>
-                <input type="file" id="evento-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp">
-            </div>
-            <div class="form-group">
-                <button type="button" id="btn-elegir-img" class="btn btn-secondary">
-                    <i class='bx bx-images'></i> Elegir Imagen Preexistente
-                </button>
-            </div>
-        </div>
+                        <div class="form-section">
+                            <h4>Gestión de Imagen</h4>
+                            
+                            <div class="form-group-checkbox">
+                                <input type="checkbox" id="evento-img-generica">
+                                <label for="evento-img-generica">Usar imagen genérica (imgBandaGenerica.jpg)</label>
+                            </div>
+                            
+                            <fieldset id="fieldset-imagen" class="form-grid">
+                                
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="evento-imagen-upload">Subir Nueva Imagen</label>
+                                        <input type="file" id="evento-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp">
+                                    </div>
+                                    <div class="form-group">
+                                        <button type="button" id="btn-elegir-img" class="btn btn-secondary">
+                                            <i class='bx bx-images'></i> Elegir Imagen Preexistente
+                                        </button>
+                                    </div>
+                                </div>
 
-        <input type="hidden" id="evento-imagen-url-seleccionada"> 
-        
-        <div class="form-col">
-            <div class="form-group">
-                <label for="evento-tags">Referencias de Imagen (Tags) *</label>
-                <div class="tag-container" id="tag-container">
-                    <input type="text" id="evento-tags" placeholder="Escribe y presiona Enter (Ej: Pedro Asnar)...">
-                </div>
-            </div>
-        </div>
-        
-    </fieldset>
-</div>
+                                <input type="hidden" id="evento-imagen-url-seleccionada"> 
+                                
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="evento-tags">Referencias de Imagen (Tags) *</label>
+                                        <div class="tag-container" id="tag-container">
+                                            <input type="text" id="evento-tags" placeholder="Escribe y presiona Enter (Ej: Pedro Asnar)...">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                            </fieldset>
+                        </div>
                         
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary"><i class='bx bxs-save'></i> Guardar Evento</button>
@@ -245,7 +244,7 @@
                 </div>
             </section>
 
-<section id="gestion-carta" class="content-section">
+            <section id="gestion-carta" class="content-section">
                 <h2>Gestión de Carta</h2>
                 <div class="tabs">
                     <button class="tab-link active" data-tab="alta-producto">Alta de Producto</button>
@@ -309,15 +308,6 @@
                         </div>
                     </form>
                     
-                    <!-- <div class="form-actions" id="visibility-mode-container">
-                        <button type="button" id="btn-toggle-visibility" class="btn btn-secondary">
-                            <i class='bx bx-toggle-left'></i> Activar Modo Visibilidad
-                        </button>
-                        <button type="button" id="btn-confirm-visibility" class="btn btn-primary" style="display: none;">
-                            <i class='bx bxs-save'></i> Confirmar Cambios de Visibilidad
-                        </button>
-                    </div> -->
-
                     <div class="resultados-container" id="prod-resultados-container">
                     </div>
                 </div>
@@ -328,29 +318,29 @@
     </div>
 
     <div id="modal-imagenes" class="modal-buscador-imagenes">
-    <div class="modal-contenido">
-        <div class="modal-header">
-            <h3>Buscador de Imágenes Guardadas</h3>
-            <span class="cerrar-modal" id="cerrar-modal-imagenes">&times;</span>
-        </div>
-        
-        <form id="form-buscador-imagenes" class="form-busqueda" style="margin-top: 1rem;">
-            <div class="form-group">
-                <label for="search-tags-modal">Buscar por Tags (Ej: Pedro, Saxofón)</label>
-                <input type="text" id="search-tags-modal" class="form-input" placeholder="Escribe tags para buscar...">
+        <div class="modal-contenido">
+            <div class="modal-header">
+                <h3>Buscador de Imágenes Guardadas</h3>
+                <span class="cerrar-modal" id="cerrar-modal-imagenes">&times;</span>
             </div>
-        </form>
-        
-        <div class="resultados-container" id="resultados-imagenes">
-            <p style="text-align: center; color: #9E9E9E; margin-top: 2rem;">Escribe en el campo de búsqueda para empezar.</p>
-        </div>
-        
-        <div id="loading-spinner-img" style="text-align: center; color: #E0E0E0; margin-top: 2rem; display: none;">
-            <i class='bx bx-loader-alt bx-spin' style="font-size: 2rem;"></i> Cargando...
-        </div>
+            
+            <form id="form-buscador-imagenes" class="form-busqueda" style="margin-top: 1rem;">
+                <div class="form-group">
+                    <label for="search-tags-modal">Buscar por Tags (Ej: Pedro, Saxofón)</label>
+                    <input type="text" id="search-tags-modal" class="form-input" placeholder="Escribe tags para buscar...">
+                </div>
+            </form>
+            
+            <div class="resultados-container" id="resultados-imagenes">
+                <p style="text-align: center; color: #9E9E9E; margin-top: 2rem;">Escribe en el campo de búsqueda para empezar.</p>
+            </div>
+            
+            <div id="loading-spinner-img" style="text-align: center; color: #E0E0E0; margin-top: 2rem; display: none;">
+                <i class='bx bx-loader-alt bx-spin' style="font-size: 2rem;"></i> Cargando...
+            </div>
 
+        </div>
     </div>
-</div>
     
     <script src="admin.js"></script>
 </body>

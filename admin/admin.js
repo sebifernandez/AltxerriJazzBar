@@ -1,16 +1,17 @@
+/* --- ADMIN.JS (Versión 5.3 - FINAL - PARTE 1/3) --- */
+
 // ==========================================
 // 1. VARIABLES GLOBALES Y UTILIDADES
 // ==========================================
 const { DateTime } = luxon; 
 let adminEventos = []; 
-let modoEdicion = false; 
-let idEventoEdicion = null; 
-
 let adminProductos = []; 
 let adminProductos_EN = []; 
-let modoVisibilidad = false; 
-let idProductoEdicion = null;
 
+// Variables de Estado
+let modoEdicion = false; 
+let idEventoEdicion = null; 
+let idProductoEdicion = null;
 let tags = []; 
 let picker; 
 
@@ -23,6 +24,7 @@ function formatarPrecio(precio) {
     return `${precio}€`;
 }
 
+// Convertir File a Base64
 function toBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -195,6 +197,9 @@ function inicializarNavegacion() {
     });
 }
 
+// PARTE 2
+/* --- ADMIN.JS (PARTE 2/3 - EVENTOS ALTA Y FORMULARIO) --- */
+
 // ==========================================
 // 4. GESTIÓN DE EVENTOS (ALTA, BAJA, MOD)
 // ==========================================
@@ -275,16 +280,28 @@ function inicializarFormularioAlta() {
         }
     });
 
-    // Tipo Evento
+    // Tipo Evento (CORREGIDO: Deshabilita campos EN/ES si es privado)
     tipoEventoSelect.addEventListener('change', () => {
         const esEspecial = ['Privado', 'Cerrado'].includes(tipoEventoSelect.value);
+        
+        // Deshabilitar campos de texto
         tituloES.disabled = esEspecial;
+        tituloEN.disabled = esEspecial;
+        descES.disabled = esEspecial;
+        descEN.disabled = esEspecial;
+        
+        // Deshabilitar links e imagen
         document.getElementById('evento-live').disabled = esEspecial;
         document.getElementById('evento-concierto').disabled = esEspecial;
         checkGenerica.disabled = esEspecial;
         fieldsetImagen.disabled = esEspecial;
+        
         if(esEspecial) {
             tituloES.value = '';
+            tituloEN.value = '';
+            descES.value = '';
+            descEN.value = '';
+            
             checkGenerica.checked = false;
             if(inputArchivo) inputArchivo.value = '';
             tags = [];
@@ -449,6 +466,9 @@ function resetearFormularioAlta() {
     habilitarEdicionTags();
     document.getElementById('fieldset-imagen').disabled = false;
     document.getElementById('evento-titulo').disabled = false;
+    document.getElementById('evento-titulo-en').disabled = false; // Reactivar EN
+    document.getElementById('evento-descripcion').disabled = false; // Reactivar desc
+    document.getElementById('evento-descripcion-en').disabled = false; // Reactivar desc EN
     document.getElementById('evento-imagen-url-seleccionada').value = '';
     
     modoEdicion = false;
@@ -462,35 +482,8 @@ function resetearFormularioAlta() {
     
     crearCalendarioAlta();
 }
-
-// ==========================================
-// 5. RENDERIZADO Y BÚSQUEDA (EVENTOS)
-// ==========================================
-
-async function fetchEventosData() {
-    try {
-        const res = await fetch('/api/eventos', { headers: { 'Authorization': getAuthToken() }});
-        if (!res.ok) throw new Error("Error API Eventos");
-        adminEventos = await res.json();
-        renderizarResultadosEventos();
-    } catch (e) { console.error(e); }
-}
-
-function inicializarPanelesBusquedaEventos() {
-    const inputs = document.querySelectorAll('.form-busqueda .form-input');
-    inputs.forEach(i => i.addEventListener(i.tagName === 'SELECT' ? 'change' : 'input', renderizarResultadosEventos));
-    
-    // Delegación de eventos para botones
-    const containers = [document.getElementById('mod-resultados-container'), document.getElementById('baja-resultados-container')];
-    containers.forEach(c => {
-        if(c) c.addEventListener('click', (e) => {
-            const btnMod = e.target.closest('.btn-card-modificar');
-            const btnDel = e.target.closest('.btn-card-eliminar');
-            if (btnMod) prellenarFormularioModEvento(adminEventos.find(ev => ev._id === btnMod.dataset.id));
-            if (btnDel) eliminarEvento(adminEventos.find(ev => ev._id === btnDel.dataset.id), btnDel);
-        });
-    });
-}
+// PARTE 3
+/* --- ADMIN.JS (PARTE 3/3 - FINAL) --- */
 
 function renderizarTags() {
     const container = document.getElementById('tag-container');
@@ -541,6 +534,9 @@ function resetearFormularioAlta() {
     habilitarEdicionTags();
     document.getElementById('fieldset-imagen').disabled = false;
     document.getElementById('evento-titulo').disabled = false;
+    document.getElementById('evento-titulo-en').disabled = false; // Reactivar EN
+    document.getElementById('evento-descripcion').disabled = false; // Reactivar desc
+    document.getElementById('evento-descripcion-en').disabled = false; // Reactivar desc EN
     document.getElementById('evento-imagen-url-seleccionada').value = '';
     
     modoEdicion = false;
@@ -572,7 +568,7 @@ function inicializarPanelesBusquedaEventos() {
     const inputs = document.querySelectorAll('.form-busqueda .form-input');
     inputs.forEach(i => i.addEventListener(i.tagName === 'SELECT' ? 'change' : 'input', renderizarResultadosEventos));
     
-    // Delegación de eventos para botones
+    // Delegación de eventos para botones (Modificar / Eliminar)
     const containers = [document.getElementById('mod-resultados-container'), document.getElementById('baja-resultados-container')];
     containers.forEach(c => {
         if(c) c.addEventListener('click', (e) => {
@@ -594,6 +590,7 @@ function renderizarResultadosEventos() {
     const fMod = { t: getVal('mod-search-titulo'), d: getVal('mod-search-fecha'), k: getVal('mod-search-tipo') };
     const fBaja = { t: getVal('baja-search-titulo'), d: getVal('baja-search-fecha'), k: getVal('baja-search-tipo') };
 
+    // Filtro Seguro
     const filter = (list, f) => list.filter(ev => {
         const tit = (ev.titulo || '').toLowerCase();
         const tipo = (ev.tipoEvento || '').toLowerCase();
@@ -601,6 +598,7 @@ function renderizarResultadosEventos() {
         return (!f.t || tit.includes(f.t)) && (!f.d || fecha === f.d) && (!f.k || tipo === f.k);
     }).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
 
+    // Generador HTML Seguro
     const htmlSafe = (ev, action) => {
         let img = `<div style="width:80px;height:80px;background:#555;display:flex;align-items:center;justify-content:center;">Sin</div>`;
         if(ev.imagen && ev.imagen.length > 3) {
@@ -625,12 +623,15 @@ function renderizarResultadosEventos() {
         </div>`;
     };
 
+    // Renderizar Modificación
     const listMod = filter(adminEventos, fMod);
     contMod.innerHTML = listMod.length ? listMod.map(ev => htmlSafe(ev, 'modificar')).join('') : '<p style="color:#ccc;text-align:center;">Sin resultados</p>';
+    // Forzamos estilos para evitar invisibilidad
     contMod.style.display = 'grid'; 
     contMod.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, 1fr))'; 
     contMod.style.gap = '1rem';
 
+    // Renderizar Baja
     const listBaja = filter(adminEventos, fBaja);
     contBaja.innerHTML = listBaja.length ? listBaja.map(ev => htmlSafe(ev, 'eliminar')).join('') : '<p style="color:#ccc;text-align:center;">Sin resultados</p>';
     contBaja.style.display = 'grid'; 
@@ -646,28 +647,35 @@ function prellenarFormularioModEvento(ev) {
     document.getElementById('alta-evento').querySelector('h3').textContent = "Modificando Evento";
     form.querySelector('.btn-primary').innerHTML = "Guardar Cambios";
 
+    // Datos Básicos
     document.getElementById('evento-fecha').value = ev.fecha;
     document.getElementById('evento-tipo').value = ev.tipoEvento;
     document.getElementById('evento-titulo').value = ev.titulo || '';
     document.getElementById('evento-descripcion').value = ev.descripcion || '';
     
+    // Datos Inglés
     document.getElementById('evento-titulo-en').value = ev.titulo_en || ev.titulo || '';
     document.getElementById('evento-descripcion-en').value = ev.descripcion_en || ev.descripcion || '';
     
+    // Links
     document.getElementById('evento-live').value = ev.live || '';
     document.getElementById('evento-concierto').value = ev.concierto || '';
 
+    // Checkbox Mismo Contenido
     const checkMismo = document.getElementById('evento-mismo-contenido');
     if(checkMismo) {
+        // Si son iguales o si el inglés estaba vacío (migración), marcamos check
         const esIgual = (ev.titulo === (ev.titulo_en || ev.titulo)) && (ev.descripcion === (ev.descripcion_en || ev.descripcion));
         checkMismo.checked = esIgual;
         checkMismo.dispatchEvent(new Event('change'));
     }
 
+    // Calendario
     if (picker) picker.destroy();
     crearCalendarioAlta();
     setTimeout(() => { if(picker) picker.setDate(ev.fecha); }, 100);
 
+    // Tags e Imagen
     tags = ev.imgReferencia || [];
     renderizarTags();
     
@@ -676,8 +684,9 @@ function prellenarFormularioModEvento(ev) {
     const infoOld = document.getElementById('info-img-actual');
     if(infoOld) infoOld.remove();
 
-    document.getElementById('evento-tipo').dispatchEvent(new Event('change')); 
+    document.getElementById('evento-tipo').dispatchEvent(new Event('change')); // Refresca estado de inputs según tipo
 
+    // Solo gestionamos imagen si no es Cerrado/Privado (que ya lo maneja el dispatchEvent)
     if (!['Cerrado', 'Privado'].includes(ev.tipoEvento)) {
         if(ev.imagen === 'imgBandaGenerica.jpg') {
             checkGen.checked = true;
@@ -725,6 +734,7 @@ function inicializarFormularioCarta() {
     const sel = document.getElementById('producto-tipo');
     const btnActions = document.getElementById('form-actions-producto');
 
+    // 1. Inyectar Plantillas (Solo una vez)
     if (container.children.length === 0) {
         for (const t in plantillasFormCarta) {
             const div = document.createElement('div');
@@ -735,6 +745,7 @@ function inicializarFormularioCarta() {
         }
     }
     
+    // 2. Listener Tipo
     sel.addEventListener('change', () => {
         document.querySelectorAll('.form-fields-group').forEach(g => g.classList.remove('visible'));
         const target = document.getElementById(`fields-${sel.value.startsWith('vino')?'vino':sel.value}`);
@@ -747,6 +758,7 @@ function inicializarFormularioCarta() {
         }
     });
 
+    // 3. Submit
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const tipo = sel.value;
@@ -754,6 +766,7 @@ function inicializarFormularioCarta() {
         const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
         const btn = form.querySelector('.btn-primary');
         
+        // Validación simple EN
         const inputsEN = formGroup.querySelectorAll('.lang-content[data-lang-content="en"] [required]');
         for (const i of inputsEN) {
             if (!i.value.trim()) {
@@ -770,6 +783,7 @@ function inicializarFormularioCarta() {
         try {
             const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
             
+            // Imagen Upload
             let imgUrl = producto_es.imagen; 
             if (producto_es.archivoImagen) {
                 const b64 = await toBase64(producto_es.archivoImagen);
@@ -816,6 +830,7 @@ function inicializarFormularioCarta() {
 }
 
 function activarLogicaBilingue(group) {
+    // Tabs
     group.querySelectorAll('.lang-tab-btn').forEach(btn => {
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
@@ -827,6 +842,7 @@ function activarLogicaBilingue(group) {
             group.querySelector(`.lang-content[data-lang-content="${newBtn.dataset.lang}"]`).classList.add('active');
         });
     });
+    // Translate Button (Placeholder por ahora)
     const btnTrans = group.querySelector('.btn-translate');
     if(btnTrans) {
         const newTrans = btnTrans.cloneNode(true);
@@ -856,6 +872,7 @@ function recolectarDatosProducto(formGroup, tipo) {
         imagen: (tipo === 'coctel' || tipo.startsWith('vino')) ? 'bebidaSinFoto.jpg' : null
     };
     
+    // Datos ES
     const es = { ...unicos,
         titulo: formGroup.querySelector('#producto-titulo-es')?.value || formGroup.querySelector('#producto-titulo')?.value || '',
         descripcion: formGroup.querySelector('#producto-descripcion-es')?.value || '',
@@ -864,6 +881,7 @@ function recolectarDatosProducto(formGroup, tipo) {
         varietal: formGroup.querySelector('#producto-varietal-es')?.value || null,
         crianza: formGroup.querySelector('#producto-crianza-es')?.value || null
     };
+    // Datos EN
     const en = { ...unicos,
         titulo: formGroup.querySelector('#producto-titulo-en')?.value || formGroup.querySelector('#producto-titulo')?.value || '',
         descripcion: formGroup.querySelector('#producto-descripcion-en')?.value || '',
@@ -920,6 +938,7 @@ function inicializarPanelesBusquedaProductos() {
         if(btn) prellenarFormularioCarta(adminProductos.find(p => p._id === btn.dataset.id));
     });
     
+    // Smart Switch Visibilidad
     container.addEventListener('change', async (e) => {
         if (e.target.matches('.visibility-switch input')) {
             const id = e.target.dataset.id;
@@ -1000,8 +1019,10 @@ function prellenarFormularioCarta(p) {
     sel.value = p.tipo;
     sel.dispatchEvent(new Event('change'));
     
+    // Llenar datos en pestaña ES
     const formGroup = document.querySelector('.form-fields-group.visible');
     
+    // Mapeo rápido de campos comunes
     const mapFields = {
         '#producto-titulo': p.titulo,
         '#producto-titulo-es': p.titulo,
@@ -1027,6 +1048,7 @@ function prellenarFormularioCarta(p) {
 
     if(formGroup.querySelector('#producto-destacado')) formGroup.querySelector('#producto-destacado').checked = p.destacado;
 
+    // Llenar datos en pestaña EN
     const p_en = adminProductos_EN.find(en => en._id === p._id);
     if(p_en) {
         const mapFieldsEN = {
@@ -1043,6 +1065,7 @@ function prellenarFormularioCarta(p) {
         }
     }
 
+    // Imagen
     const infoImg = document.getElementById('info-img-actual-prod');
     if (infoImg) infoImg.remove();
     if (p.imagen && p.imagen !== 'bebidaSinFoto.jpg') {
