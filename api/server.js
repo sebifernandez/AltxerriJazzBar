@@ -821,19 +821,25 @@ router.get('/contenido/home', async (req, res) => {
     }
 });
 
-// --- NUEVA RUTA: MODIFICAR CONTENIDO WEB (Home, Carta UI, etc.) ---
+// --- RUTA CORREGIDA: MODIFICAR CONTENIDO WEB ---
 router.put('/contenido/modificar', checkAuth, async (req, res) => {
     try {
         const db = await connectToDb();
-        const { uid, datos } = req.body; // Recibimos el ID (ej: "home_es") y los datos nuevos
+        const { uid, datos } = req.body; 
 
         if (!uid || !datos) {
             return res.status(400).json({ success: false, message: "Faltan datos." });
         }
+        
+        // LIMPIEZA IMPORTANTE: 
+        // MongoDB no permite modificar el campo inmutable '_id'. 
+        // Si el objeto 'datos' trae un _id (porque lo leímos de la BD), hay que quitarlo antes de guardar.
+        const datosAGuardar = { ...datos };
+        delete datosAGuardar._id;
 
         const resultado = await db.collection('contenido_web').updateOne(
             { uid: uid },
-            { $set: { datos: datos } } // Actualizamos todo el objeto 'datos'
+            { $set: datosAGuardar } // Guardamos los datos directamente, sin envolverlos en "datos"
         );
 
         if (resultado.matchedCount === 0) {

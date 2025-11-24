@@ -1160,15 +1160,19 @@ function inicializarGestorWeb() {
     fetchContenidoGaleria();
 }
 
-// 1. Traer datos de MongoDB
+// 1. Traer datos de MongoDB (CORREGIDA)
 async function fetchContenidoGaleria() {
     try {
-        // Usamos la ruta pública de lectura (es más rápido que crear una nueva privada)
         const res = await fetch('/api/contenido/home'); 
         const data = await res.json();
         
-        if (data.es && data.es.datos && data.es.datos.galeria) {
-            imagenesGaleria = data.es.datos.galeria.imagenes || [];
+        // CORRECCIÓN: Quitamos el .datos intermedio
+        if (data.es && data.es.galeria) {
+            imagenesGaleria = data.es.galeria.imagenes || [];
+            renderizarGaleriaAdmin();
+        } else {
+            // Si no hay galería, inicializamos vacío
+            imagenesGaleria = [];
             renderizarGaleriaAdmin();
         }
     } catch (error) {
@@ -1254,24 +1258,25 @@ window.eliminarFotoGaleria = async function(index) {
     }
 };
 
-// 5. Guardar en MongoDB (Actualiza ES y EN)
+// 5. Guardar en MongoDB (Actualiza ES y EN) (CORREGIDA)
 async function guardarCambiosGaleria() {
-    // Necesitamos leer el objeto HOME completo actual para no borrar los textos
-    // Como ya tenemos imagenesGaleria actualizado, solo necesitamos la estructura base.
-    // Para simplificar y no hacer mil fetchs, vamos a hacer un "Patch" inteligente:
-    
     // Paso 1: Traer el objeto HOME actual de la BD
     const res = await fetch('/api/contenido/home');
     const data = await res.json();
     
     if (!data.es || !data.en) throw new Error("No se pudo leer la configuración actual.");
 
-    // Paso 2: Actualizar SOLO el array de imágenes en ambos idiomas
-    const homeES = data.es.datos;
-    const homeEN = data.en.datos;
+    // Paso 2: Actualizar SOLO el array de imágenes
+    // CORRECCIÓN: Quitamos el .datos intermedio aquí también
+    const homeES = data.es;
+    const homeEN = data.en;
+
+    // Aseguramos que exista la estructura
+    if (!homeES.galeria) homeES.galeria = {};
+    if (!homeEN.galeria) homeEN.galeria = {};
 
     homeES.galeria.imagenes = imagenesGaleria;
-    homeEN.galeria.imagenes = imagenesGaleria; // Mismas fotos para inglés
+    homeEN.galeria.imagenes = imagenesGaleria; 
 
     // Paso 3: Enviar actualizaciones
     const p1 = fetch('/api/contenido/modificar', {
