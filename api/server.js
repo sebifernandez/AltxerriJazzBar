@@ -821,7 +821,7 @@ router.get('/contenido/home', async (req, res) => {
     }
 });
 
-// --- RUTA CORREGIDA: MODIFICAR CONTENIDO WEB ---
+// --- RUTA 1: MODIFICAR CONTENIDO WEB (CON BACKUP AUTOMÁTICO) ---
 router.put('/contenido/modificar', checkAuth, async (req, res) => {
     try {
         const db = await connectToDb();
@@ -831,22 +831,35 @@ router.put('/contenido/modificar', checkAuth, async (req, res) => {
             return res.status(400).json({ success: false, message: "Faltan datos." });
         }
         
-        // LIMPIEZA IMPORTANTE: 
-        // MongoDB no permite modificar el campo inmutable '_id'. 
-        // Si el objeto 'datos' trae un _id (porque lo leímos de la BD), hay que quitarlo antes de guardar.
+        // 1. BACKUP DE SEGURIDAD (La parte que te falta)
+        const versionActual = await db.collection('contenido_web').findOne({ uid: uid });
+        
+        if (versionActual) {
+            const copiaSeguridad = {
+                uid_original: uid,
+                datos_anteriores: versionActual.datos, // Guardamos lo que había antes
+                fecha_modificacion: new Date().toISOString(),
+                accion: "modificacion_contenido"
+            };
+            await db.collection('contenido_web_backup').insertOne(copiaSeguridad);
+            console.log(`Backup creado para ${uid}`);
+        }
+
+        // 2. GUARDAR CAMBIOS
+        // Limpiamos el _id para que no choque con Mongo
         const datosAGuardar = { ...datos };
-        delete datosAGuardar._id;
+        if (datosAGuardar._id) delete datosAGuardar._id;
 
         const resultado = await db.collection('contenido_web').updateOne(
             { uid: uid },
-            { $set: datosAGuardar } // Guardamos los datos directamente, sin envolverlos en "datos"
+            { $set: { datos: datosAGuardar } }
         );
 
         if (resultado.matchedCount === 0) {
             return res.status(404).json({ success: false, message: "Contenido no encontrado." });
         }
 
-        res.json({ success: true, message: "Contenido actualizado correctamente." });
+        res.json({ success: true, message: "Contenido actualizado y backup creado." });
 
     } catch (error) {
         console.error("Error en PUT /contenido/modificar:", error);
@@ -854,18 +867,17 @@ router.put('/contenido/modificar', checkAuth, async (req, res) => {
     }
 });
 
-// --- NUEVA RUTA: OBTENER HISTORIAL DE BACKUPS ---
+// --- RUTA 2: OBTENER HISTORIAL DE BACKUPS (Probablemente te falta) ---
 router.get('/contenido/backups/:uid', checkAuth, async (req, res) => {
     try {
         const db = await connectToDb();
         const uid = req.params.uid;
         
-        // Buscamos los backups de este contenido específico (ej: "home_es")
         const backups = await db.collection('contenido_web_backup')
             .find({ uid_original: uid })
-            .project({ fecha_modificacion: 1, datos_anteriores: 1 }) // Solo traemos fecha y datos
-            .sort({ fecha_modificacion: -1 }) // Del más reciente al más antiguo
-            .limit(20) // Limitamos a los últimos 20 para no saturar
+            .project({ fecha_modificacion: 1, datos_anteriores: 1 }) 
+            .sort({ fecha_modificacion: -1 }) 
+            .limit(20) 
             .toArray();
 
         res.json({ success: true, backups });
