@@ -264,7 +264,7 @@ function renderizarSeccionCocteles(productos, textosUI) {
 }
 
 /**
- * HELPER 1: Crea el renglón expandido con foto (Card integrada)
+ * HELPER 1: Crea el renglón expandido con foto (Estilo Card Apilada)
  */
 function createCoctelExpandedRow(prod, flexDirection) {
     let imgSrc = 'img/bebidaSinFoto.jpg';
@@ -274,16 +274,19 @@ function createCoctelExpandedRow(prod, flexDirection) {
     
     const precio = formatarPrecio(prod.precioCopa);
 
-    // Inyectamos el flex-direction calculado manualmente
+    // Determinamos la clase de layout basada en la dirección que nos pasa el loop
+    // flexDirection viene como 'row' (img izquierda) o 'row-reverse' (img derecha)
+    const layoutClass = (flexDirection === 'row') ? 'layout-img-texto' : 'layout-texto-img';
+
     return `
-    <div class="coctel-row-con-foto" style="flex-direction: ${flexDirection};">
+    <div class="coctel-row-con-foto ${layoutClass}">
         <div class="coctel-img-container">
             <img src="${imgSrc}" alt="${prod.titulo}" loading="lazy">
         </div>
         <div class="coctel-info">
             <div class="coctel-header">
                 <h3>${prod.titulo}</h3>
-                <span class="precio-destacado" style="font-size: 1.5rem; color: var(--color-primario-rojo); font-weight:bold;">${precio}</span>
+                <span class="precio-destacado">${precio}</span>
             </div>
             <p class="descripcion">${prod.descripcion || ''}</p>
         </div>
