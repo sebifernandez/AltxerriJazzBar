@@ -47,7 +47,7 @@ const plantillasBloques = {
     unicos_cerveza_datos: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-abv">ABV (%)</label><input type="number" step="0.1" id="producto-abv" class="form-input" placeholder="Ej: 5.0"></div></div><div class="form-col"><div class="form-group"><label for="producto-ibu">IBU</label><input type="number" id="producto-ibu" class="form-input" placeholder="Ej: 12"></div></div></div>`,
     unicos_vino_datos: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-productor">Bodega (Productor)</label><input type="text" id="producto-productor" class="form-input" placeholder="Ej: Luca Wines"></div></div><div class="form-col"><div class="form-group"><label for="producto-ano">Año</label><input type="text" id="producto-ano" class="form-input" placeholder="Ej: 2021"></div></div></div>`,
     unicos_destilado_datos: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-productor">Productor</label><input type="text" id="producto-productor" class="form-input" placeholder="Ej: Jack Daniel Distillery"></div></div></div>`,
-    unicos_imagen_coctel: `<div class="form-section"><h4>Imagen de la Card (¡Obligatoria para Cocteles!)</h4><div class="form-group"><label for="producto-imagen-upload">Subir Imagen *</label><input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required></div></div>`,
+    unicos_imagen_coctel: `<div class="form-section"><h4>Visualización en Carta</h4><div class="form-group-checkbox" style="background: var(--color-bg); padding: 1rem; border-radius: 8px; border: 1px solid #444;"><input type="checkbox" id="producto-mostrar-imagen"><label for="producto-mostrar-imagen" style="font-weight:bold; color:#FFC107;">Mostrar con Imagen Grande (Tipo Card)</label></div><div id="contenedor-imagen-coctel" style="display:none; margin-top:1rem; border-left: 3px solid #FFC107; padding-left: 1rem;"><div class="form-group"><label for="producto-imagen-upload">Subir Imagen</label><input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp"></div><p id="msg-imagen-existente" style="font-size:0.85rem; color:#aaa; display:none;">Imagen actual guardada: <strong style="color:#fff;">(Ninguna)</strong></p></div></div>`,
     unicos_imagen_vino: `<div class="form-section"><h4>Imagen del Producto (¡Obligatoria para Vinos!)</h4><div class="form-group"><label for="producto-imagen-upload">Subir Imagen *</label><input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required></div></div>`,
     unicos_vino_destacado: `<div class="form-group-checkbox-inline"><input type="checkbox" id="producto-destacado"><label for="producto-destacado">Marcar como "Vino Destacado de la Semana"</label></div>`,
 
@@ -857,10 +857,17 @@ function activarLogicaBilingue(group) {
 
 function recolectarDatosProducto(formGroup, tipo) {
     const fileInp = formGroup.querySelector('input[type="file"]');
+    
+    // NUEVO: Capturar el estado del toggle (solo existe en cócteles)
+    const toggleImagen = formGroup.querySelector('#producto-mostrar-imagen');
+    const mostrarImagen = toggleImagen ? toggleImagen.checked : true; // Por defecto true para otros tipos
+
     const unicos = {
         tipo: tipo,
         visualizacion: true,
         destacado: formGroup.querySelector('#producto-destacado')?.checked || false,
+        mostrarImagen: mostrarImagen, // <--- CAMPO NUEVO EN BD
+
         precioCopa: parseFloat(formGroup.querySelector('#producto-precio-copa')?.value) || null,
         precioBotella: parseFloat(formGroup.querySelector('#producto-precio-botella')?.value) || null,
         precioCana: parseFloat(formGroup.querySelector('#producto-precio-cana')?.value) || null,
@@ -870,10 +877,10 @@ function recolectarDatosProducto(formGroup, tipo) {
         productor: formGroup.querySelector('#producto-productor')?.value || null,
         ano: formGroup.querySelector('#producto-ano')?.value || null,
         archivoImagen: fileInp?.files[0] || null,
-        imagen: (tipo === 'coctel' || tipo.startsWith('vino')) ? 'bebidaSinFoto.jpg' : null
+        imagen: null // Se resuelve en el submit
     };
     
-    // Datos ES
+    // ES
     const es = { ...unicos,
         titulo: formGroup.querySelector('#producto-titulo-es')?.value || formGroup.querySelector('#producto-titulo')?.value || '',
         descripcion: formGroup.querySelector('#producto-descripcion-es')?.value || '',
@@ -882,7 +889,7 @@ function recolectarDatosProducto(formGroup, tipo) {
         varietal: formGroup.querySelector('#producto-varietal-es')?.value || null,
         crianza: formGroup.querySelector('#producto-crianza-es')?.value || null
     };
-    // Datos EN
+    // EN
     const en = { ...unicos,
         titulo: formGroup.querySelector('#producto-titulo-en')?.value || formGroup.querySelector('#producto-titulo')?.value || '',
         descripcion: formGroup.querySelector('#producto-descripcion-en')?.value || '',
@@ -1022,10 +1029,9 @@ function prellenarFormularioCarta(p) {
     sel.value = p.tipo;
     sel.dispatchEvent(new Event('change'));
     
-    // Llenar datos en pestaña ES
     const formGroup = document.querySelector('.form-fields-group.visible');
     
-    // Mapeo rápido de campos comunes
+    // Mapeo de campos... (Igual que antes)
     const mapFields = {
         '#producto-titulo': p.titulo,
         '#producto-titulo-es': p.titulo,
@@ -1051,7 +1057,27 @@ function prellenarFormularioCarta(p) {
 
     if(formGroup.querySelector('#producto-destacado')) formGroup.querySelector('#producto-destacado').checked = p.destacado;
 
-    // Llenar datos en pestaña EN
+    // NUEVO: Lógica del Toggle de Cóctel
+    const toggleImg = formGroup.querySelector('#producto-mostrar-imagen');
+    const msgImg = formGroup.querySelector('#msg-imagen-existente');
+
+    if (toggleImg) {
+        // Si p.mostrarImagen es undefined (productos viejos), asumimos true para compatibilidad, 
+        // o false si no tienen foto.
+        const tieneFoto = (p.imagen && p.imagen !== 'bebidaSinFoto.jpg');
+        toggleImg.checked = (p.mostrarImagen !== undefined) ? p.mostrarImagen : tieneFoto;
+        
+        // Disparamos el evento para mostrar/ocultar el input
+        toggleImg.dispatchEvent(new Event('change'));
+
+        // Mensaje de "Ya existe imagen"
+        if (tieneFoto && msgImg) {
+            msgImg.style.display = 'block';
+            msgImg.innerHTML = `Imagen actual guardada: <a href="${p.imagen.startsWith('http') ? p.imagen : '../img/'+p.imagen}" target="_blank" style="color:#FFC107;">Ver Imagen</a>`;
+        }
+    }
+
+    // Llenar datos EN...
     const p_en = adminProductos_EN.find(en => en._id === p._id);
     if(p_en) {
         const mapFieldsEN = {
@@ -1068,18 +1094,7 @@ function prellenarFormularioCarta(p) {
         }
     }
 
-    // Imagen
-    const infoImg = document.getElementById('info-img-actual-prod');
-    if (infoImg) infoImg.remove();
-    if (p.imagen && p.imagen !== 'bebidaSinFoto.jpg') {
-        const urlImg = p.imagen.startsWith('http') ? p.imagen : `../img/${p.imagen}`;
-        formGroup.querySelector('.form-section').insertAdjacentHTML('afterbegin', 
-            `<div id="info-img-actual-prod" class="info-imagen-actual">
-                <strong>Imagen Actual:</strong> <a href="${urlImg}" target="_blank">Ver</a>
-                <br><small>Sube un archivo para reemplazar.</small>
-            </div>`);
-    }
-
+    // Scrollear al formulario
     document.querySelector('.tab-link[data-tab="alta-producto"]').click();
     document.getElementById('form-alta-producto').scrollIntoView({ behavior: 'smooth' });
     document.getElementById('alta-producto-titulo').textContent = `Modificando: ${p.titulo}`;
