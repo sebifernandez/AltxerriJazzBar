@@ -143,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         inicializarFormularioCarta();
         inicializarModalImagenes();
         inicializarGestorWeb();
+        inicializarGestorTextos();
         fetchEventosData(); 
         fetchProductosData(); 
         inicializarPanelesBusquedaEventos();
@@ -1295,3 +1296,199 @@ async function guardarCambiosGaleria() {
 
     await Promise.all([p1, p2]);
 }
+
+// =========================================================
+// 9. GESTIÓN DE TEXTOS Y BACKUPS (NUEVO MÓDULO)
+// =========================================================
+
+let textosCache = { es: null, en: null };
+
+// Inicializar al cargar la página
+function inicializarGestorTextos() {
+    const selectorIdioma = document.getElementById('texto-idioma-select');
+    const formTextos = document.getElementById('form-textos-web');
+    const btnHistorial = document.getElementById('btn-ver-historial');
+    
+    // Cargar textos iniciales
+    cargarTextosParaEdicion('home_es'); // Por defecto ES
+
+    // Cambio de idioma en el selector
+    if(selectorIdioma) {
+        selectorIdioma.addEventListener('change', (e) => {
+            cargarTextosParaEdicion(e.target.value);
+        });
+    }
+
+    // Guardar Cambios
+    if(formTextos) {
+        formTextos.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await guardarTextosEditados();
+        });
+    }
+
+    // Botón Historial
+    if(btnHistorial) {
+        btnHistorial.addEventListener('click', (e) => {
+            e.preventDefault();
+            const uid = selectorIdioma.value;
+            abrirModalHistorial(uid);
+        });
+    }
+
+    // Botón Cerrar Modal Historial
+    document.getElementById('cerrar-modal-backups')?.addEventListener('click', () => {
+        document.getElementById('modal-backups').style.display = 'none';
+    });
+}
+
+// Cargar textos desde la API y llenar el formulario
+async function cargarTextosParaEdicion(uid) {
+    const form = document.getElementById('form-textos-web');
+    if(!form) return;
+
+    // Efecto de carga
+    form.style.opacity = '0.5';
+    
+    try {
+        const res = await fetch('/api/contenido/home');
+        const data = await res.json();
+        
+        // Cacheamos para usar después
+        textosCache.es = data.es.datos;
+        textosCache.en = data.en.datos;
+
+        const datos = (uid === 'home_es') ? data.es.datos : data.en.datos;
+        
+        if (!datos) throw new Error("No hay datos para este idioma.");
+
+        // Mapear campos (Aquí conectamos el JSON con los inputs)
+        // Hero
+        document.getElementById('txt-hero-titulo').value = datos.hero?.titulo || '';
+        document.getElementById('txt-hero-subtitulo').value = datos.hero?.subtitulo || '';
+        
+        // Historia
+        document.getElementById('txt-historia-titulo').value = datos.historia?.titulo || '';
+        document.getElementById('txt-historia-texto').value = datos.historia?.texto || '';
+        
+        // Parallax & News
+        document.getElementById('txt-parallax-titulo').value = datos.parallax?.titulo || '';
+        document.getElementById('txt-news-titulo').value = datos.newsletter?.titulo || '';
+        document.getElementById('txt-news-subtitulo').value = datos.newsletter?.subtitulo || '';
+        
+        // Ubicación
+        document.getElementById('txt-ubicacion-titulo').value = datos.ubicacion?.titulo || '';
+        document.getElementById('txt-ubicacion-subtitulo').value = datos.ubicacion?.subtitulo || '';
+        document.getElementById('txt-ubicacion-texto').value = datos.ubicacion?.texto || '';
+
+    } catch (error) {
+        console.error("Error cargando textos:", error);
+        alert("Error al cargar los textos.");
+    } finally {
+        form.style.opacity = '1';
+    }
+}
+
+// Guardar
+async function guardarTextosEditados() {
+    const uid = document.getElementById('texto-idioma-select').value;
+    const btn = document.querySelector('#form-textos-web .btn-primary');
+    
+    btn.disabled = true;
+    btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
+
+    try {
+        // Recuperamos la estructura base del cache para no perder otros datos (como galería)
+        const datosBase = (uid === 'home_es') ? textosCache.es : textosCache.en;
+        
+        // Actualizamos con los valores del form
+        datosBase.hero.titulo = document.getElementById('txt-hero-titulo').value;
+        datosBase.hero.subtitulo = document.getElementById('txt-hero-subtitulo').value;
+        
+        datosBase.historia.titulo = document.getElementById('txt-historia-titulo').value;
+        datosBase.historia.texto = document.getElementById('txt-historia-texto').value;
+        
+        datosBase.parallax.titulo = document.getElementById('txt-parallax-titulo').value;
+        datosBase.newsletter.titulo = document.getElementById('txt-news-titulo').value;
+        datosBase.newsletter.subtitulo = document.getElementById('txt-news-subtitulo').value;
+        
+        datosBase.ubicacion.titulo = document.getElementById('txt-ubicacion-titulo').value;
+        datosBase.ubicacion.subtitulo = document.getElementById('txt-ubicacion-subtitulo').value;
+        datosBase.ubicacion.texto = document.getElementById('txt-ubicacion-texto').value;
+
+        // Enviamos al servidor
+        const res = await fetch('/api/contenido/modificar', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
+            body: JSON.stringify({ uid: uid, datos: datosBase })
+        });
+
+        if (!res.ok) throw new Error("Error al guardar");
+        
+        alert("¡Textos actualizados correctamente! (Backup creado)");
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al guardar cambios.");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<i class='bx bxs-save'></i> Guardar Cambios de Texto";
+    }
+}
+
+// Lógica del Modal Historial
+async function abrirModalHistorial(uid) {
+    const modal = document.getElementById('modal-backups');
+    const lista = document.getElementById('lista-backups');
+    
+    modal.style.display = 'flex';
+    lista.innerHTML = '<p style="text-align:center;">Buscando copias de seguridad...</p>';
+
+    try {
+        const res = await fetch(`/api/contenido/backups/${uid}`, { 
+            headers: { 'Authorization': getAuthToken() }
+        });
+        const data = await res.json();
+
+        if (!data.backups || data.backups.length === 0) {
+            lista.innerHTML = '<p style="text-align:center;">No hay historial para este idioma.</p>';
+            return;
+        }
+
+        lista.innerHTML = data.backups.map(backup => {
+            const fecha = DateTime.fromISO(backup.fecha_modificacion).toFormat('dd/MM/yyyy HH:mm');
+            // Creamos un blob para descargar el JSON
+            const jsonString = JSON.stringify(backup.datos_anteriores, null, 2);
+            const blob = new Blob([jsonString], { type: "text/plain" });
+            const urlDescarga = URL.createObjectURL(blob);
+            const nombreArchivo = `backup_${uid}_${fecha.replace(/[\/:\s]/g, '-')}.txt`;
+
+            return `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #444;">
+                <div>
+                    <strong>${fecha} hs</strong>
+                    <br><small style="color:#aaa;">Versión anterior</small>
+                </div>
+                <a href="${urlDescarga}" download="${nombreArchivo}" class="btn btn-secondary" style="font-size:0.8rem; padding:5px 10px;">
+                    <i class='bx bxs-download'></i> Descargar .txt
+                </a>
+            </div>`;
+        }).join('');
+
+    } catch (error) {
+        lista.innerHTML = '<p style="color:red; text-align:center;">Error al cargar historial.</p>';
+    }
+}
+
+// Función UI para colapsar secciones del formulario
+window.toggleSection = function(header) {
+    const content = header.nextElementSibling;
+    const icon = header.querySelector('i');
+    if (content.style.display === "none") {
+        content.style.display = "block";
+        icon.classList.replace('bx-chevron-right', 'bx-chevron-down');
+    } else {
+        content.style.display = "none";
+        icon.classList.replace('bx-chevron-down', 'bx-chevron-right');
+    }
+};
