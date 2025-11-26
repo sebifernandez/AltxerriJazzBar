@@ -821,7 +821,7 @@ router.get('/contenido/home', async (req, res) => {
     }
 });
 
-// --- RUTA 1: MODIFICAR CONTENIDO WEB (CON BACKUP AUTOMÁTICO) ---
+// --- RUTA 1: MODIFICAR CONTENIDO WEB (CORREGIDA: BACKUP + GUARDADO PLANO) ---
 router.put('/contenido/modificar', checkAuth, async (req, res) => {
     try {
         const db = await connectToDb();
@@ -831,13 +831,18 @@ router.put('/contenido/modificar', checkAuth, async (req, res) => {
             return res.status(400).json({ success: false, message: "Faltan datos." });
         }
         
-        // 1. BACKUP DE SEGURIDAD (La parte que te falta)
+        // 1. BACKUP DE SEGURIDAD
+        // Buscamos el documento actual tal cual está
         const versionActual = await db.collection('contenido_web').findOne({ uid: uid });
         
         if (versionActual) {
+            // Quitamos el _id para que el backup sea limpio
+            const datosBackup = { ...versionActual };
+            delete datosBackup._id;
+
             const copiaSeguridad = {
                 uid_original: uid,
-                datos_anteriores: versionActual.datos, // Guardamos lo que había antes
+                datos_anteriores: datosBackup, // Guardamos todo el objeto plano
                 fecha_modificacion: new Date().toISOString(),
                 accion: "modificacion_contenido"
             };
@@ -845,18 +850,20 @@ router.put('/contenido/modificar', checkAuth, async (req, res) => {
             console.log(`Backup creado para ${uid}`);
         }
 
-        // 2. GUARDAR CAMBIOS
-        // Limpiamos el _id para que no choque con Mongo
+        // 2. GUARDAR CAMBIOS (FIX: GUARDADO PLANO)
         const datosAGuardar = { ...datos };
+        // Aseguramos que el UID esté en los datos para no perderlo
+        datosAGuardar.uid = uid;
         if (datosAGuardar._id) delete datosAGuardar._id;
 
         const resultado = await db.collection('contenido_web').updateOne(
             { uid: uid },
-            { $set: { datos: datosAGuardar } }
+            { $set: datosAGuardar } // <--- CORRECCIÓN: Guardamos directo, sin { datos: ... }
         );
 
         if (resultado.matchedCount === 0) {
-            return res.status(404).json({ success: false, message: "Contenido no encontrado." });
+            // Si no existe, lo creamos (Upsert manual para asegurar estructura)
+            await db.collection('contenido_web').insertOne(datosAGuardar);
         }
 
         res.json({ success: true, message: "Contenido actualizado y backup creado." });

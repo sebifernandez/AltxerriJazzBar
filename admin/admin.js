@@ -1342,54 +1342,51 @@ function inicializarGestorTextos() {
     });
 }
 
-// Cargar textos desde la API y llenar el formulario
+// Cargar textos desde la API y llenar el formulario (CORREGIDA)
 async function cargarTextosParaEdicion(uid) {
     const form = document.getElementById('form-textos-web');
     if(!form) return;
 
-    // Efecto de carga
     form.style.opacity = '0.5';
     
     try {
         const res = await fetch('/api/contenido/home');
         const data = await res.json();
         
-        // Cacheamos para usar después
-        textosCache.es = data.es.datos;
-        textosCache.en = data.en.datos;
+        // CORRECCIÓN: Quitamos .datos porque la API ya devuelve el objeto plano
+        textosCache.es = data.es || {};
+        textosCache.en = data.en || {};
 
-        const datos = (uid === 'home_es') ? data.es.datos : data.en.datos;
+        const datos = (uid === 'home_es') ? textosCache.es : textosCache.en;
         
-        if (!datos) throw new Error("No hay datos para este idioma.");
+        // Si el objeto está vacío, es que no cargó bien o no existe
+        if (Object.keys(datos).length === 0) {
+            console.warn("Datos vacíos para", uid);
+        }
 
-        // Mapear campos (Aquí conectamos el JSON con los inputs)
-        // Hero
+        // Mapear campos
         document.getElementById('txt-hero-titulo').value = datos.hero?.titulo || '';
         document.getElementById('txt-hero-subtitulo').value = datos.hero?.subtitulo || '';
         
-        // Historia
         document.getElementById('txt-historia-titulo').value = datos.historia?.titulo || '';
         document.getElementById('txt-historia-texto').value = datos.historia?.texto || '';
         
-        // Parallax & News
         document.getElementById('txt-parallax-titulo').value = datos.parallax?.titulo || '';
         document.getElementById('txt-news-titulo').value = datos.newsletter?.titulo || '';
         document.getElementById('txt-news-subtitulo').value = datos.newsletter?.subtitulo || '';
         
-        // Ubicación
         document.getElementById('txt-ubicacion-titulo').value = datos.ubicacion?.titulo || '';
         document.getElementById('txt-ubicacion-subtitulo').value = datos.ubicacion?.subtitulo || '';
         document.getElementById('txt-ubicacion-texto').value = datos.ubicacion?.texto || '';
 
     } catch (error) {
         console.error("Error cargando textos:", error);
-        alert("Error al cargar los textos.");
     } finally {
         form.style.opacity = '1';
     }
 }
 
-// Guardar
+// Guardar (CORREGIDA)
 async function guardarTextosEditados() {
     const uid = document.getElementById('texto-idioma-select').value;
     const btn = document.querySelector('#form-textos-web .btn-primary');
@@ -1398,10 +1395,17 @@ async function guardarTextosEditados() {
     btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Guardando...";
 
     try {
-        // Recuperamos la estructura base del cache para no perder otros datos (como galería)
+        // Recuperamos la base
         const datosBase = (uid === 'home_es') ? textosCache.es : textosCache.en;
         
-        // Actualizamos con los valores del form
+        // Aseguramos que existan los sub-objetos para no dar error de null
+        if(!datosBase.hero) datosBase.hero = {};
+        if(!datosBase.historia) datosBase.historia = {};
+        if(!datosBase.parallax) datosBase.parallax = {};
+        if(!datosBase.newsletter) datosBase.newsletter = {};
+        if(!datosBase.ubicacion) datosBase.ubicacion = {};
+
+        // Actualizamos valores
         datosBase.hero.titulo = document.getElementById('txt-hero-titulo').value;
         datosBase.hero.subtitulo = document.getElementById('txt-hero-subtitulo').value;
         
@@ -1416,7 +1420,7 @@ async function guardarTextosEditados() {
         datosBase.ubicacion.subtitulo = document.getElementById('txt-ubicacion-subtitulo').value;
         datosBase.ubicacion.texto = document.getElementById('txt-ubicacion-texto').value;
 
-        // Enviamos al servidor
+        // Enviar al servidor
         const res = await fetch('/api/contenido/modificar', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
@@ -1426,6 +1430,9 @@ async function guardarTextosEditados() {
         if (!res.ok) throw new Error("Error al guardar");
         
         alert("¡Textos actualizados correctamente! (Backup creado)");
+        
+        // Recargamos para verificar
+        cargarTextosParaEdicion(uid);
 
     } catch (error) {
         console.error(error);
