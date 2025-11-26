@@ -47,7 +47,7 @@ const plantillasBloques = {
     unicos_cerveza_datos: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-abv">ABV (%)</label><input type="number" step="0.1" id="producto-abv" class="form-input" placeholder="Ej: 5.0"></div></div><div class="form-col"><div class="form-group"><label for="producto-ibu">IBU</label><input type="number" id="producto-ibu" class="form-input" placeholder="Ej: 12"></div></div></div>`,
     unicos_vino_datos: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-productor">Bodega (Productor)</label><input type="text" id="producto-productor" class="form-input" placeholder="Ej: Luca Wines"></div></div><div class="form-col"><div class="form-group"><label for="producto-ano">Año</label><input type="text" id="producto-ano" class="form-input" placeholder="Ej: 2021"></div></div></div>`,
     unicos_destilado_datos: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-productor">Productor</label><input type="text" id="producto-productor" class="form-input" placeholder="Ej: Jack Daniel Distillery"></div></div></div>`,
-    unicos_imagen_coctel: `<div class="form-section"><h4>Visualización en Carta</h4><div class="form-group-checkbox" style="background: var(--color-bg); padding: 1rem; border-radius: 8px; border: 1px solid #444;"><input type="checkbox" id="producto-mostrar-imagen"><label for="producto-mostrar-imagen" style="font-weight:bold; color:#FFC107;">Mostrar con Imagen Grande (Tipo Card)</label></div><div id="contenedor-imagen-coctel" style="display:none; margin-top:1rem; border-left: 3px solid #FFC107; padding-left: 1rem;"><div class="form-group"><label for="producto-imagen-upload">Subir Imagen</label><input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp"></div><p id="msg-imagen-existente" style="font-size:0.85rem; color:#aaa; display:none;">Imagen actual guardada: <strong style="color:#fff;">(Ninguna)</strong></p></div></div>`,
+    unicos_imagen_coctel: `<div class="form-section"><h4>Visualización</h4><div style="background: var(--color-bg); padding: 1rem; border-radius: 8px; border: 1px solid #444; display: flex; align-items: center; justify-content: space-between;"><label for="producto-mostrar-imagen" style="font-weight:bold; color:#FFC107; margin:0; cursor:pointer;">Mostrar con Imagen (Card)</label><label class="switch"><input type="checkbox" id="producto-mostrar-imagen"><span class="slider"></span></label></div><div id="contenedor-imagen-coctel" style="display:none; margin-top:1rem; border-left: 3px solid #FFC107; padding-left: 1rem;"><div class="form-group"><label for="producto-imagen-upload">Subir Imagen</label><input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp"></div><p id="msg-imagen-existente" style="font-size:0.85rem; color:#aaa; display:none;">Imagen guardada: <strong style="color:#fff;">(Ninguna)</strong></p></div></div>`,
     unicos_imagen_vino: `<div class="form-section"><h4>Imagen del Producto (¡Obligatoria para Vinos!)</h4><div class="form-group"><label for="producto-imagen-upload">Subir Imagen *</label><input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required></div></div>`,
     unicos_vino_destacado: `<div class="form-group-checkbox-inline"><input type="checkbox" id="producto-destacado"><label for="producto-destacado">Marcar como "Vino Destacado de la Semana"</label></div>`,
 
@@ -735,7 +735,7 @@ function inicializarFormularioCarta() {
     const sel = document.getElementById('producto-tipo');
     const btnActions = document.getElementById('form-actions-producto');
 
-    // 1. Inyectar Plantillas (Solo una vez)
+    // 1. Inyectar Plantillas
     if (container.children.length === 0) {
         for (const t in plantillasFormCarta) {
             const div = document.createElement('div');
@@ -746,14 +746,33 @@ function inicializarFormularioCarta() {
         }
     }
     
-    // 2. Listener Tipo
+    // 2. Listener Tipo (Con lógica de Toggle)
     sel.addEventListener('change', () => {
         document.querySelectorAll('.form-fields-group').forEach(g => g.classList.remove('visible'));
-        const target = document.getElementById(`fields-${sel.value.startsWith('vino')?'vino':sel.value}`);
+        const tipoKey = sel.value.startsWith('vino') ? 'vino' : sel.value;
+        const target = document.getElementById(`fields-${tipoKey}`);
+        
         if(target) {
             target.classList.add('visible');
             activarLogicaBilingue(target);
             btnActions.style.display = 'block';
+
+            // --- LÓGICA TOGGLE CÓCTEL ---
+            if (tipoKey === 'coctel') {
+                const toggle = target.querySelector('#producto-mostrar-imagen');
+                const areaImg = target.querySelector('#contenedor-imagen-coctel');
+                if(toggle && areaImg) {
+                    // Limpiamos listener previo clonando
+                    const newToggle = toggle.cloneNode(true);
+                    toggle.parentNode.replaceChild(newToggle, toggle);
+                    
+                    newToggle.addEventListener('change', () => {
+                        areaImg.style.display = newToggle.checked ? 'block' : 'none';
+                    });
+                    // Estado inicial
+                    areaImg.style.display = newToggle.checked ? 'block' : 'none';
+                }
+            }
         } else {
             btnActions.style.display = 'none';
         }
@@ -767,11 +786,10 @@ function inicializarFormularioCarta() {
         const formGroup = document.getElementById(`fields-${tipoPlantilla}`);
         const btn = form.querySelector('.btn-primary');
         
-        // Validación simple EN
         const inputsEN = formGroup.querySelectorAll('.lang-content[data-lang-content="en"] [required]');
         for (const i of inputsEN) {
             if (!i.value.trim()) {
-                alert("Faltan campos en Inglés por completar.");
+                alert("Faltan campos en Inglés");
                 formGroup.querySelector('.lang-tab-btn[data-lang="en"]').click();
                 i.focus();
                 return;
@@ -784,9 +802,9 @@ function inicializarFormularioCarta() {
         try {
             const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
             
-            // Imagen Upload
             let imgUrl = producto_es.imagen; 
-            if (producto_es.archivoImagen) {
+            // Solo subimos si hay archivo Y el toggle (si existe) está activo
+            if (producto_es.mostrarImagen && producto_es.archivoImagen) {
                 const b64 = await toBase64(producto_es.archivoImagen);
                 const res = await fetch('/api/imagenes/subir', {
                     method: 'POST',
@@ -798,7 +816,8 @@ function inicializarFormularioCarta() {
                 imgUrl = json.url;
             } else if (modoEdicion) {
                 const orig = adminProductos.find(p => p._id === idProductoEdicion);
-                imgUrl = orig ? orig.imagen : 'bebidaSinFoto.jpg';
+                // Mantenemos la imagen vieja aunque ocultemos el toggle (para no perderla)
+                imgUrl = orig ? orig.imagen : null;
             }
 
             producto_es.imagen = imgUrl;
@@ -815,7 +834,7 @@ function inicializarFormularioCarta() {
             });
 
             if (!res.ok) throw new Error("Error servidor");
-            alert(modoEdicion ? "Producto Modificado" : "Producto Creado");
+            alert(modoEdicion ? "Guardado con éxito" : "Creado con éxito");
             
             fetchProductosData();
             resetearFormularioCarta();
@@ -857,17 +876,16 @@ function activarLogicaBilingue(group) {
 
 function recolectarDatosProducto(formGroup, tipo) {
     const fileInp = formGroup.querySelector('input[type="file"]');
+    // Capturamos el toggle
+    const toggle = formGroup.querySelector('#producto-mostrar-imagen');
     
-    // NUEVO: Capturar el estado del toggle (solo existe en cócteles)
-    const toggleImagen = formGroup.querySelector('#producto-mostrar-imagen');
-    const mostrarImagen = toggleImagen ? toggleImagen.checked : true; // Por defecto true para otros tipos
-
     const unicos = {
         tipo: tipo,
         visualizacion: true,
         destacado: formGroup.querySelector('#producto-destacado')?.checked || false,
-        mostrarImagen: mostrarImagen, // <--- CAMPO NUEVO EN BD
-
+        // Si existe el toggle, usamos su valor. Si no (vinos), true por defecto.
+        mostrarImagen: toggle ? toggle.checked : true, 
+        
         precioCopa: parseFloat(formGroup.querySelector('#producto-precio-copa')?.value) || null,
         precioBotella: parseFloat(formGroup.querySelector('#producto-precio-botella')?.value) || null,
         precioCana: parseFloat(formGroup.querySelector('#producto-precio-cana')?.value) || null,
@@ -877,10 +895,9 @@ function recolectarDatosProducto(formGroup, tipo) {
         productor: formGroup.querySelector('#producto-productor')?.value || null,
         ano: formGroup.querySelector('#producto-ano')?.value || null,
         archivoImagen: fileInp?.files[0] || null,
-        imagen: null // Se resuelve en el submit
+        imagen: null
     };
     
-    // ES
     const es = { ...unicos,
         titulo: formGroup.querySelector('#producto-titulo-es')?.value || formGroup.querySelector('#producto-titulo')?.value || '',
         descripcion: formGroup.querySelector('#producto-descripcion-es')?.value || '',
@@ -889,7 +906,6 @@ function recolectarDatosProducto(formGroup, tipo) {
         varietal: formGroup.querySelector('#producto-varietal-es')?.value || null,
         crianza: formGroup.querySelector('#producto-crianza-es')?.value || null
     };
-    // EN
     const en = { ...unicos,
         titulo: formGroup.querySelector('#producto-titulo-en')?.value || formGroup.querySelector('#producto-titulo')?.value || '',
         descripcion: formGroup.querySelector('#producto-descripcion-en')?.value || '',
@@ -1031,7 +1047,7 @@ function prellenarFormularioCarta(p) {
     
     const formGroup = document.querySelector('.form-fields-group.visible');
     
-    // Mapeo de campos... (Igual que antes)
+    // Campos comunes
     const mapFields = {
         '#producto-titulo': p.titulo,
         '#producto-titulo-es': p.titulo,
@@ -1057,27 +1073,36 @@ function prellenarFormularioCarta(p) {
 
     if(formGroup.querySelector('#producto-destacado')) formGroup.querySelector('#producto-destacado').checked = p.destacado;
 
-    // NUEVO: Lógica del Toggle de Cóctel
-    const toggleImg = formGroup.querySelector('#producto-mostrar-imagen');
+    // --- TOGGLE CÓCTEL ---
+    const toggle = formGroup.querySelector('#producto-mostrar-imagen');
     const msgImg = formGroup.querySelector('#msg-imagen-existente');
-
-    if (toggleImg) {
-        // Si p.mostrarImagen es undefined (productos viejos), asumimos true para compatibilidad, 
-        // o false si no tienen foto.
+    
+    if(toggle) {
+        // Si es antiguo y no tiene el campo, asumimos que SI muestra imagen si la tiene
         const tieneFoto = (p.imagen && p.imagen !== 'bebidaSinFoto.jpg');
-        toggleImg.checked = (p.mostrarImagen !== undefined) ? p.mostrarImagen : tieneFoto;
-        
-        // Disparamos el evento para mostrar/ocultar el input
-        toggleImg.dispatchEvent(new Event('change'));
+        toggle.checked = (p.mostrarImagen !== undefined) ? p.mostrarImagen : tieneFoto;
+        toggle.dispatchEvent(new Event('change'));
 
-        // Mensaje de "Ya existe imagen"
-        if (tieneFoto && msgImg) {
+        if(tieneFoto && msgImg) {
             msgImg.style.display = 'block';
-            msgImg.innerHTML = `Imagen actual guardada: <a href="${p.imagen.startsWith('http') ? p.imagen : '../img/'+p.imagen}" target="_blank" style="color:#FFC107;">Ver Imagen</a>`;
+            const url = p.imagen.startsWith('http') ? p.imagen : `../img/${p.imagen}`;
+            msgImg.innerHTML = `Imagen guardada: <a href="${url}" target="_blank" style="color:#FFC107;">Ver</a>`;
+        } else if (msgImg) {
+            msgImg.style.display = 'none';
         }
     }
 
-    // Llenar datos EN...
+    // Imagen Vinos (Sin toggle)
+    const infoImg = document.getElementById('info-img-actual-prod');
+    if (infoImg) infoImg.remove();
+    if (!toggle && p.imagen && p.imagen !== 'bebidaSinFoto.jpg') {
+        // Solo mostramos esto si NO es cóctel (porque cóctel usa el msgImg de arriba)
+        const urlImg = p.imagen.startsWith('http') ? p.imagen : `../img/${p.imagen}`;
+        formGroup.querySelector('.form-section').insertAdjacentHTML('afterbegin', 
+            `<div id="info-img-actual-prod" class="info-imagen-actual">Img: <a href="${urlImg}" target="_blank">Ver</a></div>`);
+    }
+
+    // Datos EN
     const p_en = adminProductos_EN.find(en => en._id === p._id);
     if(p_en) {
         const mapFieldsEN = {
@@ -1094,7 +1119,6 @@ function prellenarFormularioCarta(p) {
         }
     }
 
-    // Scrollear al formulario
     document.querySelector('.tab-link[data-tab="alta-producto"]').click();
     document.getElementById('form-alta-producto').scrollIntoView({ behavior: 'smooth' });
     document.getElementById('alta-producto-titulo').textContent = `Modificando: ${p.titulo}`;
@@ -1514,3 +1538,4 @@ window.toggleSection = function(header) {
         icon.classList.replace('bx-chevron-down', 'bx-chevron-right');
     }
 };
+
