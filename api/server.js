@@ -854,6 +854,27 @@ router.put('/contenido/modificar', checkAuth, async (req, res) => {
     }
 });
 
+// --- NUEVA RUTA: OBTENER HISTORIAL DE BACKUPS ---
+router.get('/contenido/backups/:uid', checkAuth, async (req, res) => {
+    try {
+        const db = await connectToDb();
+        const uid = req.params.uid;
+        
+        // Buscamos los backups de este contenido específico (ej: "home_es")
+        const backups = await db.collection('contenido_web_backup')
+            .find({ uid_original: uid })
+            .project({ fecha_modificacion: 1, datos_anteriores: 1 }) // Solo traemos fecha y datos
+            .sort({ fecha_modificacion: -1 }) // Del más reciente al más antiguo
+            .limit(20) // Limitamos a los últimos 20 para no saturar
+            .toArray();
+
+        res.json({ success: true, backups });
+    } catch (error) {
+        console.error("Error en GET /contenido/backups:", error);
+        res.status(500).json({ success: false, message: "Error al leer backups." });
+    }
+});
+
 app.use('/api', router);
 
 // Exportamos el "enchufe" final

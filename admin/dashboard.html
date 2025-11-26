@@ -344,13 +344,91 @@
                 </div>
 
                 <div id="admin-textos" class="tab-content">
-                    <div style="text-align: center; padding: 3rem; color: #aaa; border: 2px dashed #444; border-radius: 10px;">
-                        <i class='bx bx-text' style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                        <h3>Gestor de Textos en Construcción</h3>
-                        <p>Aquí podrás editar los textos de "Historia", "Hero" y más.</p>
-                        <p><em>(Próximamente en la Fase 2)</em></p>
+                        
+                        <div class="form-header-actions" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; background:var(--color-bg-light); padding:1rem; border-radius:10px;">
+                            <div class="form-group" style="margin-bottom:0; flex-grow:1; margin-right:1rem;">
+                                <label for="texto-idioma-select" style="display:inline-block; margin-right:10px;">Editando Idioma:</label>
+                                <select id="texto-idioma-select" class="form-input" style="width:auto; display:inline-block;">
+                                    <option value="home_es">Español (ES)</option>
+                                    <option value="home_en">Inglés (EN)</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-secondary" id="btn-ver-historial">
+                                <i class='bx bx-time-five'></i> Ver Historial / Backups
+                            </button>
+                        </div>
+
+                        <form id="form-textos-web">
+                            <div class="form-section" style="margin-top:0;">
+                                <h4 style="cursor:pointer;" onclick="toggleSection(this)">Hero (Inicio) <i class='bx bx-chevron-down'></i></h4>
+                                <div class="section-content"> <div class="form-group">
+                                        <label>Título Principal</label>
+                                        <input type="text" id="txt-hero-titulo" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Subtítulo (Admite &lt;br&gt;)</label>
+                                        <textarea id="txt-hero-subtitulo" class="form-input"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h4 style="cursor:pointer;" onclick="toggleSection(this)">Historia <i class='bx bx-chevron-down'></i></h4>
+                                <div class="section-content">
+                                    <div class="form-group">
+                                        <label>Título</label>
+                                        <input type="text" id="txt-historia-titulo" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Texto de Historia (Párrafo largo)</label>
+                                        <textarea id="txt-historia-texto" class="form-input" style="min-height:150px;"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h4 style="cursor:pointer;" onclick="toggleSection(this)">Banner Parallax & Newsletter <i class='bx bx-chevron-down'></i></h4>
+                                <div class="section-content">
+                                    <div class="form-group">
+                                        <label>Texto del Banner Parallax</label>
+                                        <input type="text" id="txt-parallax-titulo" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Título Modal Newsletter</label>
+                                        <input type="text" id="txt-news-titulo" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Subtítulo Modal Newsletter</label>
+                                        <textarea id="txt-news-subtitulo" class="form-input"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h4 style="cursor:pointer;" onclick="toggleSection(this)">Ubicación <i class='bx bx-chevron-down'></i></h4>
+                                <div class="section-content">
+                                    <div class="form-group">
+                                        <label>Título Sección</label>
+                                        <input type="text" id="txt-ubicacion-titulo" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Dirección (Línea 1 - Negrita)</label>
+                                        <input type="text" id="txt-ubicacion-subtitulo" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Ciudad / CP (Línea 2)</label>
+                                        <input type="text" id="txt-ubicacion-texto" class="form-input">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class='bx bxs-save'></i> Guardar Cambios de Texto
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                </div>
             </section>
             
         </main>
@@ -378,6 +456,18 @@
                 <i class='bx bx-loader-alt bx-spin' style="font-size: 2rem;"></i> Cargando...
             </div>
 
+        </div>
+    </div>
+
+    <div id="modal-backups" class="modal-buscador-imagenes">
+        <div class="modal-contenido" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Historial de Cambios</h3>
+                <span class="cerrar-modal" id="cerrar-modal-backups">&times;</span>
+            </div>
+            <div id="lista-backups" style="max-height: 400px; overflow-y: auto; margin-top:1rem;">
+                <p style="text-align:center; color:#999;">Cargando historial...</p>
+            </div>
         </div>
     </div>
     
