@@ -982,10 +982,12 @@ function renderizarResultadosProductos() {
 }
 
 function crearTarjetaResultadoProducto(p) {
-    let img = `<div style="width:80px;height:80px;background:#555;border-radius:5px;"></div>`;
-    if(p.imagen) {
-        const src = p.imagen.startsWith('http') ? p.imagen : `../img/${p.imagen}`;
-        img = `<img src="${src}" style="width:80px;height:80px;object-fit:cover;border-radius:5px;">`;
+    // LÓGICA VISUAL: Si tiene imagen, úsala. Si no, usa la genérica.
+    // (Esto no guarda nada en la BD, solo afecta cómo se ve aquí)
+    let srcImagen = '../img/bebidaSinFoto.jpg'; // Default
+    
+    if (p.imagen && p.imagen !== 'bebidaSinFoto.jpg' && p.imagen.trim() !== '') {
+        srcImagen = p.imagen.startsWith('http') ? p.imagen : `../img/${p.imagen}`;
     }
     
     const checked = p.visualizacion !== false ? 'checked' : '';
@@ -994,7 +996,7 @@ function crearTarjetaResultadoProducto(p) {
     return `
     <div class="card-resultado ${disabledClass}" style="margin-bottom:1rem;">
         <div class="card-resultado-header" style="display:flex;gap:10px;padding:10px;">
-            ${img}
+            <img src="${srcImagen}" style="width:80px;height:80px;object-fit:cover;border-radius:5px;">
             <div style="overflow:hidden;">
                 <h4 style="margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.titulo}</h4>
                 <p style="margin:5px 0 0;color:#ccc;font-size:0.9rem;">${p.tipo} | ${formatarPrecio(p.precioCopa || p.precioBotella)}</p>
