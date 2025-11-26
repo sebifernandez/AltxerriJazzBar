@@ -832,3 +832,82 @@ img {
 
 /* --- FIN DEL ARREGLO DE PRECIOS MÓVIL --- */
 }
+
+/* --- FIX CARTA HÍBRIDA (CÓCTELES) --- */
+
+/* 1. Contenedor de la lista de cócteles */
+#cocteles .productos-grid {
+    display: flex;
+    flex-direction: column; /* Uno abajo del otro, sin grilla */
+    gap: 0; /* Sin espacio entre elementos, se tocan */
+}
+
+/* 2. El "Renglón Expandido" (Cuando tiene foto) */
+.coctel-row-con-foto {
+    display: flex;
+    width: 100%;
+    min-height: 250px; /* Altura arbitraria pero mayor que la lista */
+    border-bottom: 1px solid var(--color-texto-secundario); /* Línea divisoria igual a la lista */
+    padding: 2rem 0;
+    align-items: center; /* Centrado vertical */
+    background: transparent; /* Sin fondo de tarjeta */
+    border-radius: 0; /* Cuadrado */
+    margin: 0;
+}
+
+/* Alternancia: Img Izquierda / Texto Derecha */
+.coctel-row-con-foto:nth-of-type(odd) {
+    flex-direction: row;
+}
+
+/* Alternancia: Texto Izquierda / Img Derecha */
+.coctel-row-con-foto:nth-of-type(even) {
+    flex-direction: row-reverse;
+}
+
+/* La Imagen dentro del renglón */
+.coctel-row-con-foto .coctel-img-container {
+    flex: 1;
+    display: flex;
+    justify-content: center; /* Centrado horizontal */
+    align-items: center;
+    padding: 1rem;
+}
+
+.coctel-row-con-foto img {
+    max-height: 200px; /* Que no sea gigante */
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    border-radius: 0; /* Sin bordes redondos en la foto tampoco */
+}
+
+/* El Texto dentro del renglón */
+.coctel-row-con-foto .coctel-info {
+    flex: 1.5; /* El texto ocupa un poco más que la foto */
+    padding: 0 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.coctel-row-con-foto h3 {
+    font-family: var(--fuente-titulos);
+    font-size: 1.5rem;
+    color: var(--color-primario-rojo);
+    margin-bottom: 0.5rem;
+}
+
+/* 3. Ajustes Mobile para el renglón expandido */
+@media (max-width: 768px) {
+    .coctel-row-con-foto, 
+    .coctel-row-con-foto:nth-of-type(odd), 
+    .coctel-row-con-foto:nth-of-type(even) {
+        flex-direction: column; /* Siempre uno arriba del otro en móvil */
+        text-align: center;
+    }
+    
+    .coctel-row-con-foto .coctel-img-container {
+        margin-bottom: 1rem;
+    }
+}

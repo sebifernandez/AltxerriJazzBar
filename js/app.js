@@ -214,12 +214,12 @@ function renderizarContenido(datos) {
     `;
 }
 
-// --- RENDERIZADOR: COCTELES (Cards) ---
+// --- RENDERIZADOR: COCTELES (Lógica Híbrida: Lista + Cards) ---
 
 function renderizarSeccionCocteles(productos, textosUI) {
-    const { titulosSeccion } = textosUI;
+    const { titulosSeccion, etiquetasPrecio } = textosUI;
 
-    // 1. Filtrar y ordenar productos
+    // 1. Filtrar y ordenar productos ALFABÉTICAMENTE
     const cocteles = productos
         .filter(p => p.tipo === 'coctel' && p.visualizacion)
         .sort((a, b) => a.titulo.localeCompare(b.titulo));
@@ -227,48 +227,94 @@ function renderizarSeccionCocteles(productos, textosUI) {
     // Si no hay cocteles, no mostramos nada
     if (cocteles.length === 0) return '';
 
-    // 2. Generar el HTML de las cards
-    const cardsHtml = cocteles.map((coctel, index) => {
-        // Lógica de alternancia: par (0, 2, 4...) o impar (1, 3, 5...)
-        const esPar = index % 2 === 0;
-        const claseLayout = esPar ? 'layout-img-texto' : 'layout-texto-img';
-        
-        // IMPORTANTE: Asumimos que las imágenes están en 'img/'
-        let rutaImagen = `img/${coctel.imagen}`; 
-        if (coctel.imagen && (coctel.imagen.startsWith('http') || coctel.imagen.startsWith('https'))) {
-            rutaImagen = coctel.imagen; // Ya es una URL de Cloudinary, la usamos directamente
+    // 2. Generar el HTML Híbrido
+    let htmlContent = '';
+    let contadorCards = 0; // Para alternar izquierda/derecha solo en las con foto
+
+    cocteles.forEach(coctel => {
+        // LEEMOS EL TOGGLE: ¿Tiene activado "Mostrar con Imagen"?
+        // (Si es undefined, asumimos false para que por defecto sea lista, salvo que quieras lo contrario)
+        const mostrarConFoto = coctel.mostrarImagen === true;
+
+        if (mostrarConFoto) {
+            contadorCards++;
+            // Si es impar (1, 3, 5) -> Imagen izquierda (row)
+            // Si es par (2, 4, 6) -> Imagen derecha (row-reverse)
+            const direccion = (contadorCards % 2 !== 0) ? 'row' : 'row-reverse';
+            
+            htmlContent += createCoctelExpandedRow(coctel, direccion);
         } else {
-            rutaImagen = `img/${coctel.imagen || 'bebidaSinFoto.jpg'}`; // Es un archivo local, agregamos 'img/'
+            // Renderizado tipo lista simple
+            htmlContent += createCoctelListItem(coctel, etiquetasPrecio);
         }
-        return `
-            <div class="card-coctel ${claseLayout}">
-                <div class="card-coctel-imagen">
-                    <img src="${rutaImagen}" alt="${coctel.titulo}">
-                </div>
-                <div class="card-coctel-textos">
-                    <h4 class="card-coctel-titulo">${coctel.titulo}</h4>
-                    <p class="card-coctel-descripcion">${coctel.descripcion}</p>
-                </div>
-                <div class="card-coctel-precio">
-                    <span>${coctel.precioCopa}€</span>
-                </div>
-            </div>
-        `;
-    }).join('');
+    });
 
     // 3. Devolver la sección completa
+    // Nota: Usamos .productos-grid pero en CSS le quitamos el gap y lo hacemos columna
     return `
         <section id="cocteles" class="seccion seccion-con-fondo" style="background-image: url('img/fondo_cocteles.jpg');">
             <div class="seccion-contenido">
                 <h2 class="seccion-titulo">${titulosSeccion.cocteles}</h2>
-                <div class="cocteles-container">
-                    ${cardsHtml}
+                <div class="productos-grid" style="display: flex; flex-direction: column; gap: 0;">
+                    ${htmlContent}
                 </div>
             </div>
         </section>
     `;
 }
 
+/**
+ * HELPER 1: Crea el renglón expandido con foto (Card integrada)
+ */
+function createCoctelExpandedRow(prod, flexDirection) {
+    let imgSrc = 'img/bebidaSinFoto.jpg';
+    if (prod.imagen) {
+         imgSrc = prod.imagen.startsWith('http') ? prod.imagen : `img/${prod.imagen}`;
+    }
+    
+    const precio = formatarPrecio(prod.precioCopa);
+
+    // Inyectamos el flex-direction calculado manualmente
+    return `
+    <div class="coctel-row-con-foto" style="flex-direction: ${flexDirection};">
+        <div class="coctel-img-container">
+            <img src="${imgSrc}" alt="${prod.titulo}" loading="lazy">
+        </div>
+        <div class="coctel-info">
+            <div class="coctel-header">
+                <h3>${prod.titulo}</h3>
+                <span class="precio-destacado" style="font-size: 1.5rem; color: var(--color-primario-rojo); font-weight:bold;">${precio}</span>
+            </div>
+            <p class="descripcion">${prod.descripcion || ''}</p>
+        </div>
+    </div>
+    `;
+}
+
+/**
+ * HELPER 2: Crea el item de lista simple (igual a cervezas)
+ */
+function createCoctelListItem(item, etiquetasPrecio) {
+    const precio = formatarPrecio(item.precioCopa);
+    const etiqueta = etiquetasPrecio.copa || 'Copa'; // Fallback por si acaso
+
+    return `
+        <div class="listado-item">
+            <div class="listado-item-textos">
+                <h4 class="listado-item-titulo">${item.titulo}</h4>
+                <div class="listado-item-descripcion-general">
+                    <p class="descripcion-general">${item.descripcion || ''}</p>
+                </div>
+            </div>
+            <div class="listado-item-precios precios-uno">
+                <span class="precio-item">
+                    ${precio}
+                    <span class="precio-etiqueta">(${etiqueta})</span>
+                </span>
+            </div>
+        </div>
+    `;
+}
 // --- RENDERIZADOR: SECCIONES DE LISTADO (Cervezas, Vinos, etc.) ---
 
 /**
