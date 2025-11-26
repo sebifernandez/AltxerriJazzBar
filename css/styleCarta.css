@@ -833,128 +833,134 @@ img {
 /* --- FIN DEL ARREGLO DE PRECIOS MÓVIL --- */
 }
 
-/* --- FIX CARTA HÍBRIDA V2 (Estilo Original Apilado) --- */
+/* --- FIX CARTA HÍBRIDA V3 (Ajustes de Altura, Texto y Esfumado Perfecto) --- */
 
 /* 1. Contenedor: Lista continua sin espacios */
 #cocteles .productos-grid {
     display: flex;
     flex-direction: column;
-    gap: 0; /* Pegados uno con otro */
+    gap: 0;
 }
 
 /* 2. El Renglón/Card (Base) */
 .coctel-row-con-foto {
     display: flex;
     width: 100%;
-    height: 300px; /* Altura fija para que la imagen luzca */
+    /* CAMBIO 1: Altura reducida un ~30% (de 300px a 220px) */
+    height: 220px; 
     position: relative;
     overflow: hidden;
-    background-color: var(--color-fondo-card, #1a1a1a); /* Fondo base oscuro */
-    border-bottom: 1px solid rgba(255,255,255,0.1); /* Separador sutil */
-    /* SIN border-radius para que parezca lista */
+    /* Fondo base sólido (IMPORTANTE para el esfumado) */
+    background-color: #1a1a1a; 
+    border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
 /* 3. Layout Alternado */
-/* Imagen Izquierda */
-.coctel-row-con-foto.layout-img-texto {
-    flex-direction: row;
-}
-/* Imagen Derecha */
-.coctel-row-con-foto.layout-texto-img {
-    flex-direction: row-reverse;
-}
+.coctel-row-con-foto.layout-img-texto { flex-direction: row; }
+.coctel-row-con-foto.layout-texto-img { flex-direction: row-reverse; }
 
-/* 4. La Imagen (Mitad del ancho) */
+/* 4. La Imagen */
 .coctel-img-container {
     width: 50%;
     height: 100%;
     position: relative;
     overflow: hidden;
+    /* Asegura que el contenedor de la imagen tenga el mismo fondo base */
+    background-color: #1a1a1a;
 }
 
 .coctel-img-container img {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Cubre todo el espacio sin deformarse */
-    object-position: center; /* Centrada */
+    object-fit: cover;
+    object-position: center;
     transition: transform 0.5s ease;
+    /* Truco para evitar líneas blancas en algunos navegadores al escalar */
+    backface-visibility: hidden;
 }
 
-/* Efecto Zoom suave al pasar el mouse */
 .coctel-row-con-foto:hover .coctel-img-container img {
     transform: scale(1.05);
 }
 
-/* 5. Los Degradados (El "Oscurecimiento" que pediste) */
+/* 5. Los Degradados (El "Esfumado Perfecto") */
 .coctel-img-container::after {
     content: '';
     position: absolute;
     top: 0; bottom: 0;
-    width: 100%; /* Degradado suave sobre la imagen */
+    /* Un poco más ancho para asegurar que cubra el borde */
+    width: 101%; 
     z-index: 1;
+    /* El truco: usar el MISMO color de fondo (#1a1a1a) para la parte opaca */
 }
 
-/* Si la imagen está a la IZQUIERDA, oscurecemos hacia la DERECHA (donde está el texto) */
+/* Si la imagen está a la IZQUIERDA, fundimos hacia la DERECHA */
 .coctel-row-con-foto.layout-img-texto .coctel-img-container::after {
-    background: linear-gradient(to right, transparent 0%, rgba(18,18,18, 1) 100%);
-    right: 0;
+    /* Empieza transparente y se vuelve sólido #1a1a1a hacia el borde derecho */
+    background: linear-gradient(to right, transparent 30%, #1a1a1a 98%);
+    right: -1px; /* Asegura solapamiento */
 }
 
-/* Si la imagen está a la DERECHA, oscurecemos hacia la IZQUIERDA */
+/* Si la imagen está a la DERECHA, fundimos hacia la IZQUIERDA */
 .coctel-row-con-foto.layout-texto-img .coctel-img-container::after {
-    background: linear-gradient(to left, transparent 0%, rgba(18,18,18, 1) 100%);
-    left: 0;
+    background: linear-gradient(to left, transparent 30%, #1a1a1a 98%);
+    left: -1px;
 }
 
-/* 6. El Texto (La otra mitad) */
+/* 6. El Texto (Ajustes de tamaño y color) */
 .coctel-info {
     width: 50%;
-    padding: 2rem 3rem;
+    /* CAMBIO 2: Padding reducido para el nuevo espacio */
+    padding: 1.5rem 2rem; 
     display: flex;
     flex-direction: column;
     justify-content: center;
-    z-index: 2; /* Por encima de cualquier sombra */
+    z-index: 2;
+    background-color: #1a1a1a; /* Asegura fondo sólido */
 }
 
-/* Header: Título y Precio en la misma línea */
 .coctel-header {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid var(--color-primario-rojo); /* Detalle de diseño */
+    margin-bottom: 0.8rem; /* Un poco menos de margen */
+    border-bottom: 1px solid var(--color-primario-rojo);
     padding-bottom: 0.5rem;
 }
 
 .coctel-header h3 {
     font-family: var(--fuente-titulos);
-    font-size: 1.8rem;
-    color: #fff; /* Blanco, no rojo */
+    /* CAMBIO 2: Fuente más chica (de 1.8 a 1.5rem) */
+    font-size: 1.5rem; 
+    color: #fff;
     margin: 0;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
 .precio-destacado {
-    font-size: 1.5rem;
+    /* CAMBIO 2: Fuente más chica (de 1.5 a 1.3rem) */
+    font-size: 1.3rem;
     font-weight: bold;
-    color: var(--color-primario-rojo); /* El precio sí en rojo */
+    /* CAMBIO 3: Precio en BLANCO */
+    color: #fff; 
     white-space: nowrap;
 }
 
 .descripcion {
-    font-size: 1rem;
-    line-height: 1.6;
+    /* CAMBIO 2: Fuente un poco más chica (0.9rem) */
+    font-size: 0.9rem;
+    line-height: 1.5;
     color: #ccc;
     font-style: italic;
+    margin: 0; /* Quitamos margen default de p */
 }
 
 /* 7. Ajustes Mobile */
 @media (max-width: 768px) {
     .coctel-row-con-foto {
-        flex-direction: column !important; /* Siempre vertical */
-        height: auto; /* Altura automática */
-        max-height: none;
+        flex-direction: column !important;
+        height: auto; /* Altura automática en móvil */
     }
     
     .coctel-img-container, .coctel-info {
@@ -962,23 +968,38 @@ img {
     }
     
     .coctel-img-container {
-        height: 250px; /* Altura fija para la foto en móvil */
+        /* Altura fija un poco menor en móvil */
+        height: 200px; 
     }
     
-    /* En móvil el degradado es de abajo hacia arriba */
+    /* En móvil el degradado es de ABAJO hacia ARRIBA para fundirse con el texto de abajo */
     .coctel-row-con-foto.layout-img-texto .coctel-img-container::after,
     .coctel-row-con-foto.layout-texto-img .coctel-img-container::after {
-        background: linear-gradient(to top, rgba(18,18,18, 1) 0%, transparent 100%);
+         /* La parte inferior es sólida #1a1a1a y sube a transparente */
+         background: linear-gradient(to top, #1a1a1a 20%, transparent 100%);
+         width: 100%;
+         height: 102%; /* Asegura solapamiento inferior */
+         bottom: -1px;
+         right: auto; left: auto; /* Reseteamos posiciones de desktop */
     }
 
     .coctel-info {
-        padding: 1.5rem;
+        padding: 1.2rem 1.5rem; /* Padding móvil reducido */
         text-align: center;
     }
     
     .coctel-header {
-        justify-content: center; /* Centrado en móvil */
+        justify-content: center;
         gap: 1rem;
         flex-wrap: wrap;
+        border-bottom: none; /* Quitamos la línea roja en móvil para limpiar */
+        margin-bottom: 0.5rem;
+    }
+    
+    .coctel-header h3 {
+        font-size: 1.4rem;
+    }
+    .precio-destacado {
+        font-size: 1.2rem;
     }
 }
