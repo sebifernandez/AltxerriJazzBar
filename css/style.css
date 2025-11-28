@@ -1611,3 +1611,24 @@ body {
         font-size: 0.9rem !important;
     }
 }
+
+/* --- ANIMACIÓN HOVER CARDS EVENTOS --- */
+@media (min-width: 901px) { /* Solo en desktop */
+    .event-card {
+        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
+    }
+
+    .event-card:hover {
+        transform: translateY(-10px) scale(1.02); /* Sube y crece un pelín */
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5); /* Sombra profunda */
+        z-index: 2; /* Se pone por encima de todo */
+        border: 1px solid rgba(255, 255, 255, 0.1); /* Borde sutil brillante */
+    }
+
+    /* Efecto brillo en la imagen */
+    .event-card:hover .card-image img {
+        filter: brightness(1.1);
+        transform: scale(1.05); /* Zoom interno en la foto */
+        transition: transform 0.5s ease, filter 0.3s ease;
+    }
+}

@@ -883,6 +883,20 @@ img {
     transform: scale(1.05);
 }
 
+@media (min-width: 901px) {
+    .coctel-row-con-foto {
+        transition: background-color 0.3s ease;
+    }
+
+    .coctel-row-con-foto:hover {
+        background-color: #222; /* Se aclara apenas un poco el fondo */
+    }
+
+    .coctel-row-con-foto:hover .coctel-img-container img {
+        transform: scale(1.08) rotate(1deg); /* Zoom + rotación sutil muy "fancy" */
+    }
+}
+
 /* 5. Los Degradados (El "Esfumado Perfecto") */
 .coctel-img-container::after {
     content: '';

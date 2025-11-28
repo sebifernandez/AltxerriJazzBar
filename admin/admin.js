@@ -482,6 +482,7 @@ function resetearFormularioAlta() {
     if(infoImg) infoImg.remove();
     
     crearCalendarioAlta();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 // PARTE 3
 /* --- ADMIN.JS (PARTE 3/3 - FINAL) --- */
@@ -937,6 +938,7 @@ function resetearFormularioCarta() {
         tab.click();
         document.getElementById('alta-producto-titulo').textContent = "Crear Nuevo Producto";
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 async function fetchProductosData() {
