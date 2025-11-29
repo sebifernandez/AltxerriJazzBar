@@ -1632,3 +1632,156 @@ body {
         transition: transform 0.5s ease, filter 0.3s ease;
     }
 }
+
+/* --- NOTIFICACIONES PUSH & TROMPETITA --- */
+
+/* 1. La Caja de Notificación */
+.push-notification {
+    position: fixed;
+    top: 100px; /* Debajo del navbar */
+    right: -400px; /* Oculto fuera de la pantalla a la derecha */
+    width: 320px;
+    background: rgba(15, 15, 15, 0.95);
+    border-left: 4px solid var(--color-primario-rojo);
+    border-radius: 8px 0 0 8px; /* Bordes redondeados solo a la izquierda */
+    padding: 1.5rem;
+    box-shadow: -5px 5px 20px rgba(0,0,0,0.6);
+    z-index: 9000; /* Por encima de casi todo */
+    color: #fff;
+    transition: right 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); /* Efecto "slide" suave */
+    backdrop-filter: blur(5px);
+}
+
+.push-notification.visible {
+    right: 0; /* Entra en pantalla */
+}
+
+.push-close {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+.push-close:hover { color: #fff; }
+
+/* Contenido interno */
+.push-content h4 {
+    margin-bottom: 0.5rem;
+    color: var(--color-primario-rojo);
+    font-family: 'Abril Fatface', serif;
+    font-size: 1.2rem;
+}
+
+.push-content p {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #ddd;
+    margin-bottom: 1rem;
+}
+
+.push-timer {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #fff;
+    margin: 0.5rem 0;
+    display: block;
+}
+
+/* Botones dentro de la push (Ver en Vivo, etc) */
+.btn-push {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    background: var(--color-primario-rojo);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    transition: transform 0.2s;
+}
+.btn-push:hover { transform: scale(1.05); }
+
+
+/* 2. La "Trompetita" Flotante */
+.push-trigger {
+    position: fixed;
+    bottom: 30px;
+    right: 30px; /* Misma posición que el PDF (si están en la misma pag se superponen, ojo) */
+    width: 50px;
+    height: 50px;
+    background: #000;
+    border: 2px solid var(--color-primario-rojo);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 8999;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    transition: transform 0.3s, opacity 0.3s;
+    
+    /* Por defecto oculto, JS lo muestra si hay algo que decir */
+    opacity: 0; 
+    pointer-events: none; 
+}
+
+.push-trigger.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.push-trigger:hover {
+    transform: scale(1.1) rotate(-10deg);
+}
+
+.push-trigger img {
+    width: 24px;
+    height: 24px;
+    filter: invert(1); /* Si el favicon es negro, esto lo vuelve blanco */
+}
+
+/* Globitos de alerta */
+.push-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: red;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    animation: bounce 2s infinite;
+}
+
+/* Ajuste para no chocar con el botón de WhatsApp o PDF si hubiera */
+/* En index.html no hay botón PDF, así que Bottom-Right está libre */
+@media (max-width: 768px) {
+    .push-notification {
+        width: 85%; /* Más ancho en móvil */
+        top: auto;
+        bottom: 100px; /* Sale de abajo */
+        right: -100%;
+        border-left: none;
+        border-top: 4px solid var(--color-primario-rojo);
+        border-radius: 8px 8px 0 0;
+    }
+    .push-notification.visible {
+        right: 50%;
+        transform: translateX(50%); /* Centrado */
+    }
+    
+    .push-trigger {
+        bottom: 20px;
+        right: 20px;
+    }
+}

@@ -22,6 +22,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // D. Cargar Eventos (Depende del idioma para los textos de las cards)
     cargarEventos();
+
+    //E. Carga las notificaciones Push
+    inicializarSistemaPush();
 });
 
 // ======================================================
@@ -737,4 +740,193 @@ if (newsletterForm) {
         if(formContainer) formContainer.style.display = 'none';
         if(successMessage) successMessage.style.display = 'block';
     });
+}
+
+// ======================================================
+// 7. SISTEMA DE NOTIFICACIONES PUSH (Time-Aware)
+// ======================================================
+
+let pushInterval;
+const PUSH_STATE = { closed: false }; // Para recordar si el usuario la cerró
+
+function inicializarSistemaPush() {
+    // Chequeo inicial
+    evaluarEstadoPush();
+    
+    // Chequeo cada minuto (para actualizar cuentas atrás o cambiar de estado)
+    pushInterval = setInterval(evaluarEstadoPush, 60000);
+
+    // Listeners UI
+    const btnClose = document.getElementById('btn-close-push');
+    const trigger = document.getElementById('push-trigger');
+    
+    if(btnClose) btnClose.addEventListener('click', () => togglePush(false));
+    if(trigger) trigger.addEventListener('click', () => togglePush(true));
+}
+
+function togglePush(mostrar) {
+    const box = document.getElementById('push-notification');
+    const trigger = document.getElementById('push-trigger');
+    
+    if (mostrar) {
+        box.classList.add('visible');
+        trigger.classList.remove('visible'); // Oculta trompeta
+        PUSH_STATE.closed = false;
+    } else {
+        box.classList.remove('visible');
+        trigger.classList.add('visible'); // Muestra trompeta
+        PUSH_STATE.closed = true;
+    }
+}
+
+function evaluarEstadoPush() {
+    if (eventos.length === 0) return;
+
+    // 1. Determinar "Hoy" según regla de negocio (cambio de día a las 06:00 AM)
+    const ahora = DateTimeLuxon.now().setZone("Europe/Madrid");
+    // Si son las 02:00 AM del dia 20, para el bar sigue siendo la noche del 19.
+    const fechaOperativa = ahora.minus({ hours: 6 }).toISODate(); // YYYY-MM-DD
+
+    // 2. Buscar evento para la fecha operativa
+    const eventoHoy = eventos.find(ev => ev.fecha === fechaOperativa);
+
+    // 3. Definir contenido según estado
+    let contenido = null;
+
+    if (!eventoHoy) {
+        // PUSH H: No hay concierto hoy
+        // (Opcional: decidir si mostrar algo o no. Por ahora mostramos genérico)
+        contenido = generarMensajePush('H', null, textosUI_Push());
+    } else if (eventoHoy.tipoEvento === 'Cerrado') {
+        // PUSH F: Cerrado
+        contenido = generarMensajePush('F', eventoHoy, textosUI_Push());
+    } else if (eventoHoy.tipoEvento === 'Privado') {
+        // PUSH G: Privado
+        contenido = generarMensajePush('G', eventoHoy, textosUI_Push());
+    } else {
+        // Evento Regular: Calculamos tiempos
+        // Asumimos hora inicio 20:00 Madrid (según tu descripción)
+        const horaInicio = DateTimeLuxon.fromISO(`${eventoHoy.fecha}T20:00:00`, { zone: "Europe/Madrid" });
+        const diffMinutos = horaInicio.diff(ahora, 'minutes').minutes;
+
+        if (diffMinutos > 60) {
+            // PUSH A: Falta > 1 hora
+            contenido = generarMensajePush('A', eventoHoy, textosUI_Push(), diffMinutos);
+        } else if (diffMinutos > 10) {
+            // PUSH B: Falta < 1 hora
+            contenido = generarMensajePush('B', eventoHoy, textosUI_Push(), diffMinutos);
+        } else if (diffMinutos > 0) {
+            // PUSH C: En 10 min arranca!
+            contenido = generarMensajePush('C', eventoHoy, textosUI_Push(), diffMinutos);
+        } else if (diffMinutos > -120) { // Asumimos show de 2 horas (hasta 22:00)
+            // PUSH D: Ya empezó (En vivo)
+            contenido = generarMensajePush('D', eventoHoy, textosUI_Push());
+        } else {
+            // PUSH E: Terminó (Revivir)
+            contenido = generarMensajePush('E', eventoHoy, textosUI_Push());
+        }
+    }
+
+    // 4. Renderizar
+    if (contenido) {
+        const container = document.getElementById('push-content');
+        container.innerHTML = contenido;
+        
+        // Lógica de visualización automática
+        // Solo mostramos la caja automáticamente si NO fue cerrada por el usuario
+        const trigger = document.getElementById('push-trigger');
+        
+        if (!PUSH_STATE.closed) {
+            document.getElementById('push-notification').classList.add('visible');
+            trigger.classList.remove('visible');
+        } else {
+            // Si estaba cerrada, aseguramos que la trompetita esté visible
+            trigger.classList.add('visible');
+        }
+    }
+}
+
+// Helper: Textos según idioma actual
+function textosUI_Push() {
+    const es = (idiomaActual === 'es');
+    return {
+        hoy: es ? "Hoy en Altxerri:" : "Today at Altxerri:",
+        falta: es ? "Faltan" : "Starts in",
+        minutos: es ? "minutos" : "minutes",
+        horas: es ? "horas" : "hours",
+        inicio: es ? "¡Inicio Inminente!" : "Starting Soon!",
+        vivo: es ? "¡EN VIVO AHORA!" : "LIVE NOW!",
+        verVivo: es ? "Ver en Vivo" : "Watch Live",
+        termino: es ? "El show ha finalizado" : "The show has ended",
+        revivir: es ? "Reviví el concierto" : "Watch Replay",
+        proximo: es ? "¡Te esperamos mañana!" : "See you tomorrow!",
+        cerrado: es ? "Hoy estamos cerrados" : "We are closed today",
+        privado: es ? "Evento Privado" : "Private Event",
+        agenda: es ? "Ver Agenda" : "See Calendar",
+        sinEvento: es ? "Hoy no hay concierto programado" : "No concert scheduled for today"
+    };
+}
+
+// Helper: Generador de HTML según estado
+function generarMensajePush(tipo, evento, txt, minutos = 0) {
+    const tituloEv = evento ? (idiomaActual === 'en' && evento.titulo_en ? evento.titulo_en : evento.titulo) : '';
+    
+    // Formato de tiempo
+    const horasRestantes = Math.floor(minutos / 60);
+    const minsRestantes = Math.floor(minutos % 60);
+    const tiempoTexto = horasRestantes > 0 
+        ? `${horasRestantes}h ${minsRestantes}m` 
+        : `${minsRestantes}m`;
+
+    let html = '';
+
+    switch (tipo) {
+        case 'A': // Falta mucho
+            html = `<h4>${txt.hoy}</h4>
+                    <p><strong>${tituloEv}</strong></p>
+                    <span class="push-timer">⏳ ${txt.falta} ${tiempoTexto}</span>`;
+            break;
+        case 'B': // Falta 1 hora
+            html = `<h4>🚀 ${txt.inicio}</h4>
+                    <p>Preparate para <strong>${tituloEv}</strong>.</p>
+                    <span class="push-timer">⏳ ${txt.falta} ${tiempoTexto}</span>`;
+            break;
+        case 'C': // Falta 10 min (Urgencia)
+            html = `<h4 style="color:#FFD700">🔥 ${txt.inicio}</h4>
+                    <p><strong>${tituloEv}</strong> está por comenzar.</p>
+                    <span class="push-timer">⏳ ${minsRestantes} ${txt.minutos}!</span>`;
+            break;
+        case 'D': // En Vivo
+            html = `<h4 style="animation: pulse 1s infinite">🔴 ${txt.vivo}</h4>
+                    <p><strong>${tituloEv}</strong> está tocando ahora.</p>`;
+            if (evento.live) {
+                html += `<a href="${evento.live}" target="_blank" class="btn-push">${txt.verVivo}</a>`;
+            }
+            break;
+        case 'E': // Terminó
+            html = `<h4>${txt.termino}</h4>
+                    <p>Gracias por acompañarnos en <strong>${tituloEv}</strong>.</p>`;
+            if (evento.concierto) {
+                html += `<p>${txt.revivir}:</p><a href="${evento.concierto}" target="_blank" class="btn-push">▶ Play</a>`;
+            } else {
+                html += `<small>${txt.proximo}</small>`;
+            }
+            break;
+        case 'F': // Cerrado
+            html = `<h4>💤 ${txt.cerrado}</h4>
+                    <p>Nos tomamos un descanso. ¡Volvemos pronto!</p>
+                    <a href="#eventos" class="btn-push" onclick="document.getElementById('btn-close-push').click()">${txt.agenda}</a>`;
+            break;
+        case 'G': // Privado
+            html = `<h4>🔒 ${txt.privado}</h4>
+                    <p>Hoy el local está reservado. ¡Te esperamos el resto de la semana!</p>
+                    <a href="#eventos" class="btn-push" onclick="document.getElementById('btn-close-push').click()">${txt.agenda}</a>`;
+            break;
+        case 'H': // Sin Evento
+            html = `<h4>🎹 Altxerri Jazz Bar</h4>
+                    <p>${txt.sinEvento}. Revisa nuestra agenda para próximas fechas.</p>
+                    <a href="#eventos" class="btn-push" onclick="document.getElementById('btn-close-push').click()">${txt.agenda}</a>`;
+            break;
+    }
+    return html;
 }
