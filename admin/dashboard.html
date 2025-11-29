@@ -179,6 +179,7 @@
                         </div>
                         
                         <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="btn-preview-evento"><i class='bx bx-show'></i> Vista Previa</button>
                             <button type="submit" class="btn btn-primary"><i class='bx bxs-save'></i> Guardar Evento</button>
                         </div>
 
@@ -285,6 +286,7 @@
                             </div>
 
                         <div id="form-actions-producto" class="form-actions" style="display: none;">
+                            <button type="button" class="btn btn-secondary" id="btn-preview-producto"><i class='bx bx-show'></i> Vista Previa</button>
                             <button type="submit" class="btn btn-primary"><i class='bx bxs-save'></i> Guardar Producto</button>
                         </div>
                     </form>
@@ -468,6 +470,17 @@
             <div id="lista-backups" style="max-height: 400px; overflow-y: auto; margin-top:1rem;">
                 <p style="text-align:center; color:#999;">Cargando historial...</p>
             </div>
+        </div>
+    </div>
+
+    <div id="modal-preview" class="modal-buscador-imagenes">
+        <div class="modal-contenido" style="background: #000; max-width: 600px; border: 1px solid #333;">
+            <div class="modal-header" style="border-bottom: 1px solid #333;">
+                <h3 style="color: #fff;">Vista Previa</h3>
+                <span class="cerrar-modal" id="cerrar-modal-preview">&times;</span>
+            </div>
+            <div id="preview-container" style="padding: 2rem 0; color: #fff;">
+                </div>
         </div>
     </div>
     

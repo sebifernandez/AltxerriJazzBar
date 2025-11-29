@@ -1541,3 +1541,115 @@ window.toggleSection = function(header) {
     }
 };
 
+// ==========================================
+// 10. VISTA PREVIA (PREVIEW)
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Listeners para botones de preview
+    const btnPrevEvento = document.getElementById('btn-preview-evento');
+    const btnPrevProd = document.getElementById('btn-preview-producto');
+    const modalPrev = document.getElementById('modal-preview');
+    const cerrarPrev = document.getElementById('cerrar-modal-preview');
+
+    if(btnPrevEvento) btnPrevEvento.addEventListener('click', () => generarPreview('evento'));
+    if(btnPrevProd) btnPrevProd.addEventListener('click', () => generarPreview('producto'));
+    
+    if(cerrarPrev) cerrarPrev.addEventListener('click', () => {
+        modalPrev.style.display = 'none';
+    });
+});
+
+async function generarPreview(tipo) {
+    const container = document.getElementById('preview-container');
+    const modal = document.getElementById('modal-preview');
+    container.innerHTML = '<p style="text-align:center">Generando...</p>';
+    modal.style.display = 'flex';
+
+    if (tipo === 'evento') {
+        // Recolectar datos del form de eventos
+        const titulo = document.getElementById('evento-titulo').value || 'Título del Evento';
+        const fecha = document.getElementById('evento-fecha').value || '2025-01-01';
+        const desc = document.getElementById('evento-descripcion').value || 'Descripción del evento...';
+        const tipoEv = document.getElementById('evento-tipo').value;
+        const imgInput = document.getElementById('evento-imagen-upload');
+        const imgUrlHidden = document.getElementById('evento-imagen-url-seleccionada').value;
+        
+        let imgSrc = '../img/imgBandaGenerica.jpg';
+        
+        // Intentar mostrar la imagen real
+        if (imgInput.files && imgInput.files[0]) {
+            imgSrc = await toBase64(imgInput.files[0]); // Previsualizar archivo local
+        } else if (imgUrlHidden) {
+            imgSrc = imgUrlHidden;
+        }
+
+        // Usamos el HTML de la card (simplificado para preview)
+        // IMPORTANTE: Inyectamos estilos en línea para simular el CSS de la web sin importarlo
+        container.innerHTML = `
+            <div style="background: #222; border-radius: 10px; overflow: hidden; max-width: 400px; margin: 0 auto; border: 1px solid #444; position: relative; min-height: 450px; display: flex; flex-direction: column;">
+                <div style="height: 250px; overflow: hidden;">
+                    <img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <div style="padding: 1rem; text-align: center; flex-grow: 1; display: flex; flex-direction: column; align-items: center;">
+                    <h3 style="color: #fff; margin-bottom: 0.5rem;">${titulo}</h3>
+                    <p style="color: #ccc; font-size: 0.9rem;">${desc}</p>
+                    <div style="margin-top: auto; width: 100%;">
+                        <button style="background: #B71C1C; color: white; border: none; padding: 10px 20px; width: 100%; border-radius: 4px; text-transform: uppercase; font-weight: bold;">Reservar</button>
+                    </div>
+                </div>
+                <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem;">
+                    ${DateTime.fromISO(fecha).toFormat('dd LLLL')}
+                </div>
+            </div>
+        `;
+
+    } else if (tipo === 'producto') {
+        // Recolectar datos de carta
+        const formGroup = document.querySelector('.form-fields-group.visible');
+        if(!formGroup) return;
+
+        const titulo = formGroup.querySelector('#producto-titulo')?.value || 'Nombre Producto';
+        const desc = formGroup.querySelector('#producto-descripcion-es')?.value || 'Descripción...';
+        const precio = formGroup.querySelector('#producto-precio-copa')?.value || formGroup.querySelector('#producto-precio-botella')?.value || '10';
+        
+        // Check imagen
+        const toggleImg = formGroup.querySelector('#producto-mostrar-imagen');
+        const conFoto = toggleImg ? toggleImg.checked : false;
+        const imgInput = formGroup.querySelector('#producto-imagen-upload');
+        let imgSrc = 'img/bebidaSinFoto.jpg';
+
+        if (conFoto && imgInput && imgInput.files[0]) {
+            imgSrc = await toBase64(imgInput.files[0]);
+        }
+
+        if (conFoto) {
+            // Vista Previa con Foto (Estilo V3)
+            container.innerHTML = `
+                <div style="display: flex; flex-direction: column; width: 100%; background: #1a1a1a; border-bottom: 1px solid #333;">
+                    <div style="height: 200px; width: 100%; position: relative;">
+                        <img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; bottom: 0; width: 100%; height: 50%; background: linear-gradient(to top, #1a1a1a, transparent);"></div>
+                    </div>
+                    <div style="padding: 1.5rem; text-align: center;">
+                        <h3 style="color: #fff; text-transform: uppercase; font-family: serif; margin: 0 0 10px 0;">${titulo}</h3>
+                        <span style="color: #fff; font-weight: bold; font-size: 1.3rem;">${precio}€</span>
+                        <p style="color: #ccc; font-style: italic; margin-top: 10px;">${desc}</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Vista Previa Lista Simple
+            container.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px dashed #666; color: #fff;">
+                    <div>
+                        <h4 style="margin: 0; font-size: 1.1rem;">${titulo}</h4>
+                        <p style="margin: 5px 0 0; color: #999; font-size: 0.9rem;">${desc}</p>
+                    </div>
+                    <span style="font-weight: bold;">${precio}€</span>
+                </div>
+            `;
+        }
+    }
+}
+
