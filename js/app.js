@@ -742,7 +742,7 @@ function smoothScrollTo(targetId, duration) {
 }
 
 // ==========================================
-// 4. GENERADOR DE PDF
+// 4. GENERADOR DE PDF OPTIMIZADO
 // ==========================================
 
 async function descargarPDF() {
@@ -750,42 +750,50 @@ async function descargarPDF() {
     const btn = document.getElementById('btn-download-pdf');
     const contenedor = document.getElementById('main-container');
     
-    // 1. Feedback visual (Ocultamos botón, mostramos "Cargando")
+    // 1. Feedback visual
     btn.style.display = 'none';
     const loading = document.createElement('div');
-    loading.innerHTML = "<div style='position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); color:#fff; display:flex; justify-content:center; align-items:center; z-index:9999; flex-direction:column;'><h3>Generando PDF...</h3><p>Por favor espera.</p></div>";
+    loading.id = "pdf-loading-overlay";
+    loading.innerHTML = "<div style='position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); color:#fff; display:flex; justify-content:center; align-items:center; z-index:9999; flex-direction:column;'><h3>Generando PDF optimizado...</h3><p>Esto puede tardar unos segundos.</p></div>";
     document.body.appendChild(loading);
 
     try {
-        // 2. Tomar "foto" de la carta
+        // 2. Configuración para evitar deformaciones y cortes
         const canvas = await html2canvas(contenedor, {
-            scale: 2, // Alta calidad
-            useCORS: true, // Permitir imágenes de Cloudinary
-            backgroundColor: '#121212', // Fondo oscuro del bar
-            ignoreElements: (element) => element.id === 'btn-download-pdf' // Ignorar el botón si se colara
+            scale: 1.5, // Bajamos un poco la escala (2 era mucho, 1.5 es HD)
+            useCORS: true, 
+            backgroundColor: '#121212', 
+            scrollY: -window.scrollY, // Fix para que no salga cortado si hiciste scroll
+            windowWidth: document.documentElement.offsetWidth, // Asegura ancho correcto
+            ignoreElements: (element) => element.id === 'btn-download-pdf' || element.id === 'pdf-loading-overlay'
         });
 
-        const imgData = canvas.toDataURL('image/png');
+        // 3. COMPRESIÓN FUERTE: Usamos JPEG con calidad 0.7 (70%)
+        // Esto es lo que bajará el peso de 250MB a unos pocos MB.
+        const imgData = canvas.toDataURL('image/jpeg', 0.7); 
         
-        // 3. Calcular dimensiones para un PDF "Sábana" (Sin cortes de página)
-        const imgWidth = 210; // Ancho A4 en mm (estándar)
-        const pageHeight = (canvas.height * imgWidth) / canvas.width; // Altura proporcional
+        // 4. Cálculo Matemático Exacto para evitar "Estiramiento"
+        const imgWidth = 210; // Ancho A4 en mm
+        const pageHeight = (canvas.height * imgWidth) / canvas.width; // Regla de tres simple
 
-        // Creamos el PDF con el tamaño exacto de la carta
+        // Crear PDF con las dimensiones exactas de la imagen
         const pdf = new jsPDF('p', 'mm', [imgWidth, pageHeight]);
         
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, pageHeight);
+        // params: data, format, x, y, width, height
+        pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, pageHeight);
         
-        // 4. Descargar
+        // 5. Descargar
         const fecha = new Date().toISOString().slice(0,10);
-        pdf.save(`Carta_Altxerri_${fecha}.pdf`);
+        pdf.save(`Altxerri_Menu_${fecha}.pdf`);
 
     } catch (err) {
         console.error("Error al generar PDF:", err);
         alert("Hubo un error al generar el PDF. Intenta recargar la página.");
     } finally {
-        // 5. Restaurar estado
-        document.body.removeChild(loading);
+        // 6. Restaurar
+        if(document.getElementById('pdf-loading-overlay')) {
+            document.body.removeChild(document.getElementById('pdf-loading-overlay'));
+        }
         btn.style.display = 'flex';
     }
 }
