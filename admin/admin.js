@@ -74,7 +74,6 @@ const plantillasBloques = {
             <div class="form-bilingue-grid">
                 <div class="lang-content lang-col-es active" data-lang-content="es">${html_es}</div>
                 <div class="lang-content lang-col-en" data-lang-content="en">
-                    <button type="button" class="btn-translate" data-lang-group="en"><i class='bx bxs-magic-wand'></i> Sugerir traducción</button>
                     ${html_en}
                 </div>
             </div>
@@ -865,14 +864,6 @@ function activarLogicaBilingue(group) {
     });
     // Translate Button (Placeholder por ahora)
     const btnTrans = group.querySelector('.btn-translate');
-    if(btnTrans) {
-        const newTrans = btnTrans.cloneNode(true);
-        btnTrans.parentNode.replaceChild(newTrans, btnTrans);
-        newTrans.addEventListener('click', async (e) => {
-            e.preventDefault();
-            alert("Traducción automática pendiente de configurar.");
-        });
-    }
 }
 
 function recolectarDatosProducto(formGroup, tipo) {
