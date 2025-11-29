@@ -740,3 +740,52 @@ function smoothScrollTo(targetId, duration) {
 
     requestAnimationFrame(animationStep);
 }
+
+// ==========================================
+// 4. GENERADOR DE PDF
+// ==========================================
+
+async function descargarPDF() {
+    const { jsPDF } = window.jspdf;
+    const btn = document.getElementById('btn-download-pdf');
+    const contenedor = document.getElementById('main-container');
+    
+    // 1. Feedback visual (Ocultamos botón, mostramos "Cargando")
+    btn.style.display = 'none';
+    const loading = document.createElement('div');
+    loading.innerHTML = "<div style='position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); color:#fff; display:flex; justify-content:center; align-items:center; z-index:9999; flex-direction:column;'><h3>Generando PDF...</h3><p>Por favor espera.</p></div>";
+    document.body.appendChild(loading);
+
+    try {
+        // 2. Tomar "foto" de la carta
+        const canvas = await html2canvas(contenedor, {
+            scale: 2, // Alta calidad
+            useCORS: true, // Permitir imágenes de Cloudinary
+            backgroundColor: '#121212', // Fondo oscuro del bar
+            ignoreElements: (element) => element.id === 'btn-download-pdf' // Ignorar el botón si se colara
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        
+        // 3. Calcular dimensiones para un PDF "Sábana" (Sin cortes de página)
+        const imgWidth = 210; // Ancho A4 en mm (estándar)
+        const pageHeight = (canvas.height * imgWidth) / canvas.width; // Altura proporcional
+
+        // Creamos el PDF con el tamaño exacto de la carta
+        const pdf = new jsPDF('p', 'mm', [imgWidth, pageHeight]);
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, pageHeight);
+        
+        // 4. Descargar
+        const fecha = new Date().toISOString().slice(0,10);
+        pdf.save(`Carta_Altxerri_${fecha}.pdf`);
+
+    } catch (err) {
+        console.error("Error al generar PDF:", err);
+        alert("Hubo un error al generar el PDF. Intenta recargar la página.");
+    } finally {
+        // 5. Restaurar estado
+        document.body.removeChild(loading);
+        btn.style.display = 'flex';
+    }
+}

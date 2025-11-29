@@ -1121,6 +1121,10 @@ input:checked + .slider:before {
         word-wrap: break-word;
         overflow-wrap: break-word;
     }
+
+    #btn-preview-producto {
+        margin-bottom: 10px;
+    }
 }
 
 /* Estilos para Tags Deshabilitados (Fase 1 Fix) */
@@ -1145,3 +1149,4 @@ input:checked + .slider:before {
     cursor: default;
     background-color: #555; /* Un color más neutro para tags fijos */
 }
+

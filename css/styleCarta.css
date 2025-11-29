@@ -1017,3 +1017,43 @@ img {
         font-size: 1.2rem;
     }
 }
+
+/* --- BOTÓN DESCARGA PDF --- */
+.btn-flotante-pdf {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background-color: var(--color-primario-rojo);
+    color: white;
+    border: none;
+    padding: 15px 25px;
+    border-radius: 50px; /* Redondo */
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+    z-index: 1000; /* Por encima de todo */
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Espacio entre icono y texto */
+    transition: transform 0.3s ease, background-color 0.3s;
+}
+
+.btn-flotante-pdf:hover {
+    background-color: #d32f2f;
+    transform: scale(1.05) translateY(-2px);
+}
+
+.btn-flotante-pdf i {
+    font-size: 1.4rem;
+}
+
+/* Ajuste Mobile */
+@media (max-width: 768px) {
+    .btn-flotante-pdf {
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        font-size: 0.9rem;
+    }
+}
