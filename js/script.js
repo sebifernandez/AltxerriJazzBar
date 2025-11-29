@@ -104,6 +104,15 @@ function aplicarIdioma(lang) {
     if (eventos.length > 0) {
         inicializarEventos(); 
     }
+
+    // 9. Actualizar Eventos y Push (FIX IDIOMA PUSH)
+    if (eventos.length > 0) {
+        inicializarEventos();
+        // Forzamos recálculo de la notificación con el nuevo idioma
+        if (typeof evaluarEstadoPush === 'function') {
+            evaluarEstadoPush(); 
+        }
+    }
 }
 
 function toggleIdioma() {
@@ -310,6 +319,13 @@ function cargarEventos() {
             
             inicializarEventos();
             inicializarCalendario();
+            
+            // --- FIX RETRASO PUSH ---
+            // Apenas tenemos datos, calculamos la notificación
+            if (typeof evaluarEstadoPush === 'function') {
+                evaluarEstadoPush();
+            }
+            // ------------------------
             
             if (preloader) preloader.classList.add('preloader-hidden');
         })
@@ -846,7 +862,7 @@ function evaluarEstadoPush() {
     }
 }
 
-// Helper: Textos según idioma actual
+// Helper: Textos según idioma actual (AHORA COMPLETO)
 function textosUI_Push() {
     const es = (idiomaActual === 'es');
     return {
@@ -854,20 +870,33 @@ function textosUI_Push() {
         falta: es ? "Faltan" : "Starts in",
         minutos: es ? "minutos" : "minutes",
         horas: es ? "horas" : "hours",
-        inicio: es ? "¡Inicio Inminente!" : "Starting Soon!",
-        vivo: es ? "¡EN VIVO AHORA!" : "LIVE NOW!",
+        
+        // Títulos
+        t_inicio: es ? "¡Inicio Inminente!" : "Starting Soon!",
+        t_vivo: es ? "¡EN VIVO AHORA!" : "LIVE NOW!",
+        t_termino: es ? "El show ha finalizado" : "The show has ended",
+        t_cerrado: es ? "Hoy estamos cerrados" : "We are closed today",
+        t_privado: es ? "Evento Privado" : "Private Event",
+        t_sinEvento: es ? "Altxerri Jazz Bar" : "Altxerri Jazz Bar",
+
+        // Frases del cuerpo (Las que faltaban)
+        p_preparate: es ? "Preparate para" : "Get ready for",
+        p_comenzar: es ? "está por comenzar." : "is about to start.",
+        p_tocando: es ? "está tocando ahora." : "is playing right now.",
+        p_gracias: es ? "Gracias por acompañarnos en" : "Thanks for joining us at",
+        p_descanso: es ? "Nos tomamos un descanso. ¡Volvemos pronto!" : "We are taking a break. Back soon!",
+        p_reservado: es ? "Hoy el local está reservado. ¡Te esperamos el resto de la semana!" : "The venue is booked today. See you the rest of the week!",
+        p_revisa: es ? "Hoy no hay concierto programado. Revisa nuestra agenda:" : "No concert scheduled for today. Check our calendar:",
+
+        // Botones / Links
         verVivo: es ? "Ver en Vivo" : "Watch Live",
-        termino: es ? "El show ha finalizado" : "The show has ended",
         revivir: es ? "Reviví el concierto" : "Watch Replay",
         proximo: es ? "¡Te esperamos mañana!" : "See you tomorrow!",
-        cerrado: es ? "Hoy estamos cerrados" : "We are closed today",
-        privado: es ? "Evento Privado" : "Private Event",
-        agenda: es ? "Ver Agenda" : "See Calendar",
-        sinEvento: es ? "Hoy no hay concierto programado" : "No concert scheduled for today"
+        agenda: es ? "Ver Agenda" : "See Calendar"
     };
 }
 
-// Helper: Generador de HTML según estado
+// Helper: Generador de HTML según estado (USANDO VARIABLES)
 function generarMensajePush(tipo, evento, txt, minutos = 0) {
     const tituloEv = evento ? (idiomaActual === 'en' && evento.titulo_en ? evento.titulo_en : evento.titulo) : '';
     
@@ -887,25 +916,25 @@ function generarMensajePush(tipo, evento, txt, minutos = 0) {
                     <span class="push-timer">⏳ ${txt.falta} ${tiempoTexto}</span>`;
             break;
         case 'B': // Falta 1 hora
-            html = `<h4>🚀 ${txt.inicio}</h4>
-                    <p>Preparate para <strong>${tituloEv}</strong>.</p>
+            html = `<h4>🚀 ${txt.t_inicio}</h4>
+                    <p>${txt.p_preparate} <strong>${tituloEv}</strong>.</p>
                     <span class="push-timer">⏳ ${txt.falta} ${tiempoTexto}</span>`;
             break;
-        case 'C': // Falta 10 min (Urgencia)
-            html = `<h4 style="color:#FFD700">🔥 ${txt.inicio}</h4>
-                    <p><strong>${tituloEv}</strong> está por comenzar.</p>
+        case 'C': // Falta 10 min
+            html = `<h4 style="color:#FFD700">🔥 ${txt.t_inicio}</h4>
+                    <p><strong>${tituloEv}</strong> ${txt.p_comenzar}</p>
                     <span class="push-timer">⏳ ${minsRestantes} ${txt.minutos}!</span>`;
             break;
         case 'D': // En Vivo
-            html = `<h4 style="animation: pulse 1s infinite">🔴 ${txt.vivo}</h4>
-                    <p><strong>${tituloEv}</strong> está tocando ahora.</p>`;
+            html = `<h4 style="animation: pulse 1s infinite">🔴 ${txt.t_vivo}</h4>
+                    <p><strong>${tituloEv}</strong> ${txt.p_tocando}</p>`;
             if (evento.live) {
                 html += `<a href="${evento.live}" target="_blank" class="btn-push">${txt.verVivo}</a>`;
             }
             break;
         case 'E': // Terminó
-            html = `<h4>${txt.termino}</h4>
-                    <p>Gracias por acompañarnos en <strong>${tituloEv}</strong>.</p>`;
+            html = `<h4>${txt.t_termino}</h4>
+                    <p>${txt.p_gracias} <strong>${tituloEv}</strong>.</p>`;
             if (evento.concierto) {
                 html += `<p>${txt.revivir}:</p><a href="${evento.concierto}" target="_blank" class="btn-push">▶ Play</a>`;
             } else {
@@ -913,18 +942,18 @@ function generarMensajePush(tipo, evento, txt, minutos = 0) {
             }
             break;
         case 'F': // Cerrado
-            html = `<h4>💤 ${txt.cerrado}</h4>
-                    <p>Nos tomamos un descanso. ¡Volvemos pronto!</p>
+            html = `<h4>💤 ${txt.t_cerrado}</h4>
+                    <p>${txt.p_descanso}</p>
                     <a href="#eventos" class="btn-push" onclick="document.getElementById('btn-close-push').click()">${txt.agenda}</a>`;
             break;
         case 'G': // Privado
-            html = `<h4>🔒 ${txt.privado}</h4>
-                    <p>Hoy el local está reservado. ¡Te esperamos el resto de la semana!</p>
+            html = `<h4>🔒 ${txt.t_privado}</h4>
+                    <p>${txt.p_reservado}</p>
                     <a href="#eventos" class="btn-push" onclick="document.getElementById('btn-close-push').click()">${txt.agenda}</a>`;
             break;
         case 'H': // Sin Evento
-            html = `<h4>🎹 Altxerri Jazz Bar</h4>
-                    <p>${txt.sinEvento}. Revisa nuestra agenda para próximas fechas.</p>
+            html = `<h4>🎹 ${txt.t_sinEvento}</h4>
+                    <p>${txt.p_revisa}</p>
                     <a href="#eventos" class="btn-push" onclick="document.getElementById('btn-close-push').click()">${txt.agenda}</a>`;
             break;
     }
