@@ -28,6 +28,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     //F. Carga el calendario interactivo
     inicializarCalendarioFull();
+
+    // G. INICIALIZAR REPRODUCTOR DE VIDEO
+    inicializarReproductorVideo();
 });
 
 // ======================================================
@@ -1154,39 +1157,47 @@ function inicializarReproductorVideo() {
 
     if (closeBtn) closeBtn.addEventListener('click', cerrarVideo);
     
-    // Cerrar con ESC
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.style.display === 'flex') cerrarVideo();
+        if (e.key === 'Escape' && modal && modal.style.display === 'flex') cerrarVideo();
     });
 
-    // Cerrar click fuera
     window.addEventListener('click', (e) => {
         if (e.target === modal) cerrarVideo();
     });
 
-    // DELEGACIÓN DE EVENTOS: Detectar clic en cualquier botón de video (presente o futuro)
+    // DELEGACIÓN DE EVENTOS
     document.body.addEventListener('click', (e) => {
-        // Buscamos si el clic fue en un botón de video o dentro de uno
+        // Buscamos el botón
         const btn = e.target.closest('.btn-live, .btn-archive, .btn-push');
         
-        if (btn && btn.tagName === 'A' && btn.href.includes('youtube.com')) {
-            // Verificamos si es un link de YouTube válido
-            const videoID = extraerIDYoutube(btn.href);
-            if (videoID) {
-                e.preventDefault(); // ¡ALTO! No vayas a YouTube
-                
-                // Detectamos si es LIVE o ARCHIVO para saber si mostrar chat
-                const esLive = btn.classList.contains('btn-live') || btn.innerText.includes('Vivo') || btn.innerText.includes('Live');
-                
-                // Buscamos el título (intentamos encontrar el h3 o h4 más cercano)
-                let titulo = "Video Altxerri";
-                const card = btn.closest('.event-card, .push-content');
-                if (card) {
-                    const h = card.querySelector('h3, h4');
-                    if(h) titulo = h.innerText;
-                }
+        if (btn && btn.tagName === 'A') {
+            console.log("Click detectado en botón de video:", btn.href); // DEBUG
 
-                abrirVideo(videoID, esLive, titulo, btn.href);
+            // Verificamos si es YouTube (común o corto)
+            const esYoutube = btn.href.includes('youtube.com') || btn.href.includes('youtu.be');
+            
+            if (esYoutube) {
+                const videoID = extraerIDYoutube(btn.href);
+                console.log("ID extraído:", videoID); // DEBUG
+
+                if (videoID) {
+                    e.preventDefault(); // ¡DETENER LA REDIRECCIÓN!
+                    console.log("Abriendo modal..."); // DEBUG
+                    
+                    const esLive = btn.classList.contains('btn-live') || btn.innerText.includes('Vivo') || btn.innerText.includes('Live');
+                    
+                    let titulo = "Video Altxerri";
+                    // Intentar buscar título en la tarjeta padre
+                    const card = btn.closest('.event-card, .push-content, .mini-card-result, .cal-event-preview');
+                    if (card) {
+                        const h = card.querySelector('h3, h4, h5');
+                        if(h) titulo = h.innerText;
+                    }
+
+                    abrirVideo(videoID, esLive, titulo, btn.href);
+                } else {
+                    console.warn("No se pudo extraer ID de YouTube.");
+                }
             }
         }
     });
