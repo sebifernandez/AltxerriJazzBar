@@ -1976,3 +1976,49 @@ body {
 .mini-card-result img {
     width: 50px; height: 50px; object-fit: cover; border-radius: 4px;
 }
+
+/* --- FIX BOTÓN CALENDARIO (Visible y Estilizado) --- */
+
+/* 1. Forzar visibilidad del contenedor */
+.calendario-acceso {
+    display: block !important;
+    text-align: center;
+    margin: 2rem 0 4rem 0; /* Un poco de aire abajo */
+}
+
+/* 2. Estilo del Botón */
+#btn-abrir-calendario-full {
+    /* Override de la regla oculta */
+    display: inline-block !important; 
+    opacity: 1 !important;
+    visibility: visible !important;
+    
+    /* Estética (Rojo Altxerri) */
+    background-color: #B71C1C; 
+    color: #fff;
+    border: 1px solid #B71C1C;
+    padding: 15px 30px;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 50px; /* Redondo y moderno */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(183, 28, 28, 0.4);
+}
+
+/* Hover Effect */
+#btn-abrir-calendario-full:hover {
+    background-color: #d32f2f;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(183, 28, 28, 0.6);
+}
+
+/* Ajuste Mobile */
+@media (max-width: 768px) {
+    #btn-abrir-calendario-full {
+        width: 90%; /* Botón ancho en móvil */
+        padding: 15px 0;
+    }
+}
