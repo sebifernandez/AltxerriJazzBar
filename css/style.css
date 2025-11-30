@@ -1965,3 +1965,63 @@ body {
     .cal-day-title { font-size: 0.55rem; }
     .cal-weekdays div { font-size: 0.8rem; }
 }
+
+/* --- FIX FINAL CALENDARIO (Transparencia y Bordes) --- */
+
+/* 1. FIX TRANSPARENCIA (Eventos Pasados) */
+/* Quitamos la opacidad del contenedor para que sea SÓLIDO */
+.cal-day.status-past {
+    opacity: 1 !important; 
+    background-color: #111 !important; /* Fondo negro sólido */
+    border: 1px solid #333;
+}
+
+/* Aplicamos el efecto "apagado" SOLO a la imagen y al texto, no al fondo */
+.cal-day.status-past .cal-day-bg {
+    opacity: 0.2 !important; /* Imagen muy oscura */
+    filter: grayscale(100%) !important; /* Blanco y negro */
+}
+.cal-day.status-past .cal-day-number,
+.cal-day.status-past .cal-day-title {
+    color: #666 !important; /* Texto gris apagado */
+}
+
+/* Al pasar el mouse sobre un pasado, recuperamos un poco de vida */
+.cal-day.status-past:hover {
+    background-color: #1a1a1a !important; /* Fondo sólido un poco más claro */
+    border-color: #f1c40f !important;
+    z-index: 100;
+}
+.cal-day.status-past:hover .cal-day-bg {
+    opacity: 0.4 !important; /* Se ve un poco más */
+}
+
+/* 2. FIX ANCHO Y SCROLL (Desktop) */
+@media (min-width: 901px) {
+    /* Agrandamos el modal para dar más aire */
+    .modal-cal-content {
+        max-width: 1200px !important; 
+        overflow-x: hidden !important; /* Prohibido scroll horizontal */
+        padding: 2rem !important; /* Más margen interno */
+    }
+
+    /* INTELIGENCIA DE BORDES (Para que no se salgan de la pantalla) */
+    
+    /* Si es el 1er día de la fila (Domingo/Columna 1), crece hacia la derecha */
+    .cal-grid .cal-day:nth-child(7n+1) {
+        transform-origin: left center !important;
+    }
+
+    /* Si es el último día de la fila (Sábado/Columna 7), crece hacia la izquierda */
+    .cal-grid .cal-day:nth-child(7n) {
+        transform-origin: right center !important;
+    }
+    
+    /* El resto crece desde el centro (default) */
+}
+
+/* 3. Asegurar fondo sólido en TODOS los hovers (para que no se vean las rayas de atrás) */
+.cal-day:hover {
+    background-color: #0a0a0a !important; /* Fondo negro profundo sólido */
+    /* La imagen de fondo tapa el color, pero esto asegura que no sea transparente */
+}
