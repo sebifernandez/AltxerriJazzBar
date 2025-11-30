@@ -305,34 +305,40 @@
         <span class="push-badge" id="push-badge">!</span>
     </div>
 
-    <div id="modal-calendario-full" class="modal-calendario-full">
-        <div class="modal-cal-content">
-            <span class="close-cal-full" id="close-cal-full">&times;</span>
-            
-            <div class="cal-header">
+<div id="modal-calendario-full" class="modal-calendario-full">
+    <div class="modal-cal-content">
+        <span class="close-cal-full" id="close-cal-full">&times;</span>
+        
+        <div class="cal-header">
+            <div class="cal-nav-controls">
                 <button id="cal-prev-btn"><i class='bx bx-chevron-left'></i></button>
                 <h3 id="cal-month-year">Noviembre 2025</h3>
                 <button id="cal-next-btn"><i class='bx bx-chevron-right'></i></button>
             </div>
+        </div>
 
-            <div class="cal-weekdays">
-                <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
+        <div class="cal-weekdays">
+            <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
+        </div>
+
+        <div class="cal-grid" id="cal-grid">
             </div>
 
-            <div class="cal-grid" id="cal-grid">
-                </div>
-
-            <div id="cal-event-preview" class="cal-event-preview">
-                <p style="color:#777;">Selecciona un día para ver detalles.</p>
-            </div>
-
-            <div class="cal-search-container">
-                <h4>Buscar en la Agenda</h4>
-                <input type="text" id="cal-search-input" placeholder="Nombre de banda, estilo...">
-                <div id="cal-search-results" class="cal-search-results"></div>
-            </div>
+        <div class="cal-search-container">
+            <h4>Buscar en la Agenda</h4>
+            <input type="text" id="cal-search-input" placeholder="Nombre de banda, estilo...">
+            <div id="cal-search-results" class="cal-search-results"></div>
         </div>
     </div>
+</div>
+
+<div id="modal-detalle-centro" class="modal-detalle-centro">
+    <div class="detalle-card-content">
+        <span class="close-detalle" id="close-detalle-centro">&times;</span>
+        <div id="contenido-detalle-dinamico">
+            </div>
+    </div>
+</div>
 
     <script src="js/script.js"></script>
     </body>

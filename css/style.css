@@ -1786,7 +1786,7 @@ body {
     }
 }
 
-/* --- CALENDARIO INTERACTIVO FULL --- */
+/* --- CALENDARIO INTERACTIVO FULL (Final) --- */
 
 .modal-calendario-full {
     display: none; /* Oculto por defecto */
@@ -1812,7 +1812,7 @@ body {
     flex-direction: column;
     padding: 1.5rem;
     position: relative;
-    overflow-y: auto; /* Scroll si no cabe en altura */
+    overflow-y: auto; 
 }
 
 .close-cal-full {
@@ -1821,36 +1821,33 @@ body {
     font-size: 2rem;
     color: #aaa;
     cursor: pointer;
-    z-index: 10;
+    z-index: 20;
 }
 .close-cal-full:hover { color: #fff; }
 
-/* Header del Calendario */
+/* Header */
 .cal-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
 }
-.cal-header h3 {
-    color: #fff;
-    text-transform: uppercase;
-    font-size: 1.5rem;
-    margin: 0;
-}
-.cal-header button {
-    background: none;
+.cal-nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #222;
+    padding: 0.5rem 1.5rem;
+    border-radius: 50px;
     border: 1px solid #444;
-    color: #fff;
-    border-radius: 50%;
-    width: 40px; height: 40px;
-    font-size: 1.5rem;
-    cursor: pointer;
-    transition: 0.3s;
 }
-.cal-header button:hover { background: var(--color-primario-rojo); border-color: var(--color-primario-rojo); }
+.cal-header h3 { font-size: 1.2rem; margin: 0; color: #fff; }
+.cal-header button {
+    background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;
+}
+.cal-header button:hover { color: var(--color-primario-rojo); }
 
-/* Días de la semana */
+/* Días semana */
 .cal-weekdays {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -1860,165 +1857,136 @@ body {
     margin-bottom: 0.5rem;
 }
 
-/* La Grilla */
+/* Grilla */
 .cal-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 5px;
-    flex-grow: 1; /* Que ocupe espacio disponible */
+    flex-grow: 1;
     margin-bottom: 1.5rem;
+    align-content: start; /* Para que no se estiren si hay pocos */
 }
 
-/* Cada Día (Cuadrado) */
+/* Días */
 .cal-day {
     background: #1a1a1a;
     border-radius: 5px;
-    min-height: 80px; /* Altura del cuadrado */
+    min-height: 100px; /* Altura Desktop */
     padding: 5px;
     position: relative;
     cursor: pointer;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s;
+    transition: transform 0.2s, z-index 0s;
+    border: 1px solid rgba(255,255,255,0.1);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    border: 1px solid #222;
+    overflow: hidden;
 }
 
-/* Efecto "Ola" / Hover */
 .cal-day:hover {
-    transform: scale(1.15);
-    z-index: 10;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    border-color: #555;
+    transform: scale(1.4);
+    z-index: 100;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.9);
+    border-color: #fff;
 }
 
+/* Contenido del día */
 .cal-day-number {
-    font-size: 0.9rem;
-    color: #555;
-    font-weight: bold;
+    font-size: 0.9rem; font-weight: bold; text-shadow: 1px 1px 2px black; z-index: 2;
 }
-
-/* Estados de los días (Colores) */
-.cal-day.has-event {
-    background: linear-gradient(135deg, #1a1a1a 0%, #003300 100%); /* Verdoso sutil */
-    border-color: #004d00;
+.cal-day-title {
+    font-size: 0.7rem; line-height: 1.1; color: #fff; text-align: center; z-index: 2;
+    text-shadow: 1px 1px 3px black; font-weight: bold;
+    background: rgba(0,0,0,0.6); padding: 2px; border-radius: 4px;
 }
-.cal-day.has-event:hover { background: #004d00; }
-
-.cal-day.is-past {
-    background: #0f0f0f;
-    opacity: 0.6;
+.cal-hover-hint {
+    display: none; font-size: 0.6rem; color: #FFD700; text-align: center; z-index: 2;
 }
+.cal-day:hover .cal-hover-hint { display: block; }
 
-.cal-day.is-private {
-    background: linear-gradient(135deg, #1a1a1a 0%, #332b00 100%); /* Amarillento */
-    border-color: #665500;
+/* Imagen Fondo */
+.cal-day-bg {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    object-fit: cover; opacity: 0.5; z-index: 1; transition: opacity 0.3s;
 }
+.cal-day:hover .cal-day-bg { opacity: 0.3; }
 
-.cal-day.is-closed {
-    background: #111;
-    background-image: repeating-linear-gradient(45deg, #111, #111 10px, #222 10px, #222 20px); /* Rayado */
-}
+/* Colores Estado */
+.cal-day.status-future { background-color: #001a00; border-color: #2ecc71; } /* Verde */
+.cal-day.status-future .cal-day-number { color: #2ecc71; }
 
-/* Indicadores dentro del día */
-.cal-event-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    align-self: flex-end;
-    margin: 3px;
-}
-.dot-regular { background: #0f0; box-shadow: 0 0 5px #0f0; }
-.dot-private { background: gold; }
-.dot-closed { background: #555; }
+.cal-day.status-closed { background-color: #1a0505; border-color: #e74c3c; } /* Rojo */
+.cal-day.status-closed .cal-day-number { color: #e74c3c; }
 
-/* Preview y Buscador */
-.cal-event-preview {
-    background: #222;
-    padding: 1rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-    min-height: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px dashed #444;
-}
+.cal-day.status-private { background-color: #0a0a1a; border-color: #3498db; } /* Azul */
+.cal-day.status-private .cal-day-number { color: #3498db; }
 
+.cal-day.status-open { background-color: #111; border-color: #bdc3c7; } /* Plateado */
+.cal-day.status-open .cal-day-number { color: #fff; }
+
+.cal-day.status-past { background-color: #111; border-color: #f1c40f; opacity: 0.6; } /* Amarillo */
+.cal-day.status-past .cal-day-number { color: #f1c40f; }
+
+/* Buscador */
 .cal-search-container input {
-    width: 100%;
-    padding: 10px;
-    background: #000;
-    border: 1px solid #333;
-    color: #fff;
-    border-radius: 5px;
-    margin-top: 0.5rem;
+    width: 100%; padding: 10px; background: #fff; color: #000;
+    border: 1px solid #333; border-radius: 5px; margin-top: 0.5rem;
 }
-
 .cal-search-results {
-    margin-top: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    max-height: 200px;
-    overflow-y: auto;
+    margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;
+    max-height: 150px; overflow-y: auto;
 }
-
-/* Resultado de búsqueda (Card mini) */
 .mini-card-result {
-    background: #1a1a1a;
-    padding: 10px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    border-radius: 5px;
-    border: 1px solid #333;
+    background: #222; padding: 8px; display: flex; gap: 10px; align-items: center;
+    border-radius: 5px; border: 1px solid #444;
 }
-.mini-card-result img {
-    width: 50px; height: 50px; object-fit: cover; border-radius: 4px;
+.mini-card-result img { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; }
+
+/* Modal Detalle (Centro) */
+.modal-detalle-centro {
+    display: none; position: fixed; z-index: 11000; left: 0; top: 0;
+    width: 100%; height: 100%; background-color: rgba(0,0,0,0.85);
+    justify-content: center; align-items: center; backdrop-filter: blur(5px);
 }
-
-/* --- FIX BOTÓN CALENDARIO (Visible y Estilizado) --- */
-
-/* 1. Forzar visibilidad del contenedor */
-.calendario-acceso {
-    display: block !important;
-    text-align: center;
-    margin: 2rem 0 4rem 0; /* Un poco de aire abajo */
+.detalle-card-content {
+    position: relative; width: 90%; max-width: 400px;
+}
+.close-detalle {
+    position: absolute; top: -40px; right: 0; font-size: 2.5rem; color: #fff; cursor: pointer;
 }
 
-/* 2. Estilo del Botón */
-#btn-abrir-calendario-full {
-    /* Override de la regla oculta */
-    display: inline-block !important; 
-    opacity: 1 !important;
-    visibility: visible !important;
-    
-    /* Estética (Rojo Altxerri) */
-    background-color: #B71C1C; 
-    color: #fff;
-    border: 1px solid #B71C1C;
-    padding: 15px 30px;
-    font-size: 1rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border-radius: 50px; /* Redondo y moderno */
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(183, 28, 28, 0.4);
-}
-
-/* Hover Effect */
-#btn-abrir-calendario-full:hover {
-    background-color: #d32f2f;
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(183, 28, 28, 0.6);
-}
-
-/* Ajuste Mobile */
+/* --- MEDIA QUERY MOBILE (LO QUE FALTABA) --- */
 @media (max-width: 768px) {
-    #btn-abrir-calendario-full {
-        width: 90%; /* Botón ancho en móvil */
-        padding: 15px 0;
+    .modal-cal-content {
+        padding: 10px;
+        height: 95vh; /* Aprovechar más altura */
     }
+
+    /* Achicamos los días para que entren 7 en una fila */
+    .cal-day {
+        min-height: 55px; /* Mucho más bajos */
+        padding: 2px;
+    }
+
+    /* Texto más pequeño */
+    .cal-day-number { font-size: 0.7rem; }
+    .cal-day-title { 
+        font-size: 0.55rem; 
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+    }
+
+    /* Desactivamos el efecto "Ola" gigante en móvil porque tapa todo */
+    .cal-day:hover {
+        transform: none; 
+        box-shadow: none;
+        z-index: 1;
+    }
+    
+    /* Headers de días más chicos */
+    .cal-weekdays div { font-size: 0.8rem; }
+    
+    /* Ajuste buscador */
+    .cal-search-container h4 { font-size: 1rem; }
 }
