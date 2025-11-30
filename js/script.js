@@ -25,6 +25,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     //E. Carga las notificaciones Push
     inicializarSistemaPush();
+
+    //F. Carga el calendario interactivo
+    inicializarCalendarioFull();
 });
 
 // ======================================================
@@ -958,4 +961,178 @@ function generarMensajePush(tipo, evento, txt, minutos = 0) {
             break;
     }
     return html;
+}
+
+// ======================================================
+// 8. CALENDARIO INTERACTIVO (FULL)
+// ======================================================
+
+let calFechaActual = DateTimeLuxon.now().setZone("Europe/Madrid");
+
+// Inicializar (Llamar en DOMContentLoaded si existe el botón)
+function inicializarCalendarioFull() {
+    const btnAbrir = document.getElementById('btn-abrir-calendario-full');
+    const modal = document.getElementById('modal-calendario-full');
+    const btnCerrar = document.getElementById('close-cal-full');
+    const btnPrev = document.getElementById('cal-prev-btn');
+    const btnNext = document.getElementById('cal-next-btn');
+    const searchInput = document.getElementById('cal-search-input');
+
+    if (btnAbrir) btnAbrir.addEventListener('click', () => {
+        modal.style.display = 'flex';
+        renderizarGrillaCalendario(calFechaActual);
+    });
+
+    if (btnCerrar) btnCerrar.addEventListener('click', () => modal.style.display = 'none');
+
+    if (btnPrev) btnPrev.addEventListener('click', () => {
+        calFechaActual = calFechaActual.minus({ months: 1 });
+        renderizarGrillaCalendario(calFechaActual);
+    });
+
+    if (btnNext) btnNext.addEventListener('click', () => {
+        calFechaActual = calFechaActual.plus({ months: 1 });
+        renderizarGrillaCalendario(calFechaActual);
+    });
+
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => filtrarEventosCalendario(e.target.value));
+    }
+}
+
+function renderizarGrillaCalendario(fecha) {
+    const grid = document.getElementById('cal-grid');
+    const titulo = document.getElementById('cal-month-year');
+    
+    // Título Mes Año
+    const meses = idiomaActual === 'es' 
+        ? ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+        : ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    
+    titulo.textContent = `${meses[fecha.month - 1]} ${fecha.year}`;
+
+    grid.innerHTML = '';
+
+    // Cálculos de días
+    const primerDiaMes = fecha.startOf('month');
+    const diasEnMes = fecha.daysInMonth;
+    const diaSemanaInicio = primerDiaMes.weekday; // 1 (Lun) a 7 (Dom)
+    
+    // Ajuste para que la semana empiece en Domingo (0) como suele ser visualmente o Lunes (1)
+    // Tu HTML dice Dom-Lun... así que ajustamos:
+    // Luxon: 1=Lun ... 7=Dom. Nosotros queremos 0=Dom, 1=Lun.
+    let huecosVacios = diaSemanaInicio === 7 ? 0 : diaSemanaInicio; 
+
+    // Rellenar huecos vacíos antes del día 1
+    for (let i = 0; i < huecosVacios; i++) {
+        const div = document.createElement('div');
+        div.classList.add('cal-day-empty');
+        grid.appendChild(div);
+    }
+
+    // Rellenar días
+    const hoy = DateTimeLuxon.now().setZone("Europe/Madrid").toISODate();
+    
+    for (let i = 1; i <= diasEnMes; i++) {
+        const diaActual = fecha.set({ day: i });
+        const fechaIso = diaActual.toISODate();
+        
+        // Buscar evento
+        const evento = eventos.find(ev => ev.fecha === fechaIso);
+        
+        const div = document.createElement('div');
+        div.className = 'cal-day';
+        
+        // Estado visual
+        if (fechaIso < hoy) div.classList.add('is-past');
+        
+        let dotHtml = '';
+        if (evento) {
+            if (evento.tipoEvento === 'Privado') {
+                div.classList.add('is-private');
+                dotHtml = '<div class="cal-event-dot dot-private"></div>';
+            } else if (evento.tipoEvento === 'Cerrado') {
+                div.classList.add('is-closed');
+                dotHtml = '<div class="cal-event-dot dot-closed"></div>';
+            } else {
+                div.classList.add('has-event');
+                dotHtml = '<div class="cal-event-dot dot-regular"></div>';
+            }
+            
+            // Click para ver detalle
+            div.addEventListener('click', () => mostrarDetalleCalendario(evento));
+            // Hover rápido (opcional, si quieres que cambie solo con pasar el mouse)
+            div.addEventListener('mouseenter', () => mostrarDetalleCalendario(evento));
+        }
+
+        div.innerHTML = `
+            <span class="cal-day-number" style="color:${fechaIso === hoy ? '#fff' : ''}">${i}</span>
+            ${dotHtml}
+        `;
+        
+        // Si es hoy, marcarlo visualmente extra
+        if (fechaIso === hoy) {
+            div.style.border = "1px solid var(--color-primario-rojo)";
+        }
+
+        grid.appendChild(div);
+    }
+}
+
+function mostrarDetalleCalendario(evento) {
+    const container = document.getElementById('cal-event-preview');
+    if (!evento) {
+        container.innerHTML = '<p style="color:#777;">Selecciona un día para ver detalles.</p>';
+        return;
+    }
+    
+    // Reutilizamos tu función createEventCard (que ya es bilingüe y maneja todo)
+    // Pero le quitamos la clase 'event-card' para que se adapte al contenedor del preview
+    // O simplemente inyectamos el HTML y dejamos que el CSS lo maneje.
+    container.innerHTML = createEventCard(evento);
+    
+    // Ajuste visual: forzar que se vea horizontal en el preview
+    const card = container.querySelector('.event-card');
+    if(card) {
+        card.style.width = "100%";
+        card.style.flexDirection = "row";
+        card.style.minHeight = "150px";
+    }
+}
+
+function filtrarEventosCalendario(texto) {
+    const container = document.getElementById('cal-search-results');
+    container.innerHTML = '';
+    
+    if (texto.length < 3) return;
+    
+    const termino = texto.toLowerCase();
+    
+    // Buscar en eventos
+    const resultados = eventos.filter(ev => {
+        const titulo = (ev.titulo || '').toLowerCase();
+        const desc = (ev.descripcion || '').toLowerCase();
+        const tituloEn = (ev.titulo_en || '').toLowerCase();
+        return titulo.includes(termino) || desc.includes(termino) || tituloEn.includes(termino);
+    }).sort((a, b) => b.fecha.localeCompare(a.fecha)); // Ordenar más reciente primero
+
+    if (resultados.length === 0) {
+        container.innerHTML = '<p style="color:#555;">No se encontraron eventos.</p>';
+        return;
+    }
+
+    container.innerHTML = resultados.map(ev => {
+        const img = ev.imagen && ev.imagen.length > 3 
+            ? (ev.imagen.startsWith('http') ? ev.imagen : `img/${ev.imagen}`) 
+            : 'img/imgBandaGenerica.jpg';
+            
+        return `
+        <div class="mini-card-result" onclick="mostrarDetalleCalendario(eventos.find(e => e._id === '${ev._id}'))" style="cursor:pointer;">
+            <img src="${img}">
+            <div>
+                <h5 style="margin:0;color:#fff;">${ev.titulo || ev.titulo_en}</h5>
+                <small style="color:#aaa;">${DateTimeLuxon.fromISO(ev.fecha).toFormat('dd/MM/yyyy')}</small>
+            </div>
+        </div>`;
+    }).join('');
 }
