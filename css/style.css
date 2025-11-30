@@ -2025,3 +2025,14 @@ body {
     background-color: #0a0a0a !important; /* Fondo negro profundo sólido */
     /* La imagen de fondo tapa el color, pero esto asegura que no sea transparente */
 }
+
+/* --- FIX HOVER EVENTOS PASADOS (Color sutil) --- */
+
+.cal-day.status-past:hover .cal-day-bg {
+    /* 1. Recuperar el color (quitamos el blanco y negro) */
+    filter: grayscale(0%) !important; 
+    
+    /* 2. Mantener transparencia (para que se fusione con el fondo negro) */
+    /* Puedes subir a 0.6 o 0.7 si la quieres más brillante */
+    opacity: 0.5 !important; 
+}
