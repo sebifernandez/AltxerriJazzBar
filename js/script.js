@@ -1036,10 +1036,8 @@ function renderizarGrillaCalendario(fecha) {
     const diaSemanaInicio = primerDiaMes.weekday; // 1=Lun...7=Dom
     let huecosVacios = diaSemanaInicio === 7 ? 0 : diaSemanaInicio; 
 
-    // Huecos vacíos
     for (let i = 0; i < huecosVacios; i++) {
         const div = document.createElement('div');
-        div.style.background = 'transparent';
         grid.appendChild(div);
     }
 
@@ -1049,56 +1047,49 @@ function renderizarGrillaCalendario(fecha) {
         const diaActual = fecha.set({ day: i });
         const fechaIso = diaActual.toISODate();
         
-        // Buscar evento real
         let evento = eventos.find(ev => ev.fecha === fechaIso);
-        let tipoVisual = 'open'; // Default: Blanco/Plateado (Abierto sin show)
+        let tipoVisual = 'open'; // Default (Plateado/Blanco)
 
-        // Si NO hay evento, creamos el objeto "Día Sin Banda" ficticio para mostrar
         if (!evento) {
+            // Crear evento dummy "Sin Banda"
             evento = {
                 _id: 'dummy-' + fechaIso,
                 fecha: fechaIso,
-                tipoEvento: 'Regular', // Para que no sea especial
-                titulo: idiomaActual === 'es' ? "Altxerri Jazz Bar" : "Altxerri Jazz Bar",
-                titulo_en: "Altxerri Jazz Bar",
-                descripcion: idiomaActual === 'es' ? "Abierto para disfrutar buenos tragos y música." : "Open for drinks and good music.",
-                descripcion_en: "Open for drinks and good music.",
-                imagen: "diaSinBanda.jpg", // La foto que crearás
-                esDummy: true // Marca interna
+                tipoEvento: 'Regular',
+                titulo: idiomaActual === 'es' ? "Bar Abierto" : "Open Bar",
+                titulo_en: "Open Bar",
+                descripcion: idiomaActual === 'es' ? "Disfruta de buena música y tragos." : "Enjoy good music and drinks.",
+                descripcion_en: "Enjoy good music and drinks.",
+                imagen: "diaSinBanda.jpg", 
+                esDummy: true 
             };
             tipoVisual = 'open';
         } else {
-            // Determinar color según tipo
             if (evento.tipoEvento === 'Cerrado') tipoVisual = 'closed';
             else if (evento.tipoEvento === 'Privado') tipoVisual = 'private';
-            else tipoVisual = 'future'; // Verde (Evento activo)
+            else tipoVisual = 'future';
         }
 
-        // Si es pasado, sobrescribe color a Amarillo
-        if (fechaIso < hoy) tipoVisual = 'past';
+        if (fechaIso < hoy) tipoVisual = 'past'; // Amarillo si ya pasó
 
         const div = document.createElement('div');
         div.className = `cal-day status-${tipoVisual}`;
         
-        // Imagen de fondo (mini)
         let imgUrl = 'img/imgBandaGenerica.jpg';
-        if (evento.imagen && evento.imagen !== '') {
+        if (evento.imagen && evento.imagen.length > 3) {
             imgUrl = evento.imagen.startsWith('http') ? evento.imagen : `img/${evento.imagen}`;
         }
         
-        // Contenido del cuadrado
         const tituloEv = (idiomaActual === 'en' && evento.titulo_en) ? evento.titulo_en : evento.titulo;
         
         div.innerHTML = `
             <img src="${imgUrl}" class="cal-day-bg">
             <span class="cal-day-number">${i}</span>
             <span class="cal-day-title">${tituloEv}</span>
-            <span class="cal-hover-hint">Click + Info</span>
+            <span class="cal-hover-hint">Ver Info</span>
         `;
 
-        // Click: Abrir Modal Central
         div.addEventListener('click', () => abrirDetalleCentro(evento));
-
         grid.appendChild(div);
     }
 }

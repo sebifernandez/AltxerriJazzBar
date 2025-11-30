@@ -1786,207 +1786,182 @@ body {
     }
 }
 
-/* --- CALENDARIO INTERACTIVO FULL (Final) --- */
+/* --- FIX FINAL: BOTÓN + CALENDARIO V3 --- */
 
-.modal-calendario-full {
-    display: none; /* Oculto por defecto */
-    position: fixed;
-    z-index: 10000;
-    left: 0; top: 0;
-    width: 100%; height: 100%;
-    background-color: rgba(0,0,0,0.9);
-    backdrop-filter: blur(8px);
-    justify-content: center;
-    align-items: center;
-    padding: 1rem;
+/* 1. EL BOTÓN (Resucitado) */
+.calendario-acceso {
+    display: block !important;
+    text-align: center;
+    margin: 2rem 0 4rem 0;
 }
-
-.modal-cal-content {
-    background: #111;
-    width: 100%;
-    max-width: 900px;
-    height: 90vh;
-    border-radius: 15px;
-    border: 1px solid #333;
-    display: flex;
-    flex-direction: column;
-    padding: 1.5rem;
-    position: relative;
-    overflow-y: auto; 
-}
-
-.close-cal-full {
-    position: absolute;
-    top: 10px; right: 20px;
-    font-size: 2rem;
-    color: #aaa;
+#btn-abrir-calendario-full {
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    background-color: #B71C1C;
+    color: #fff;
+    border: 1px solid #B71C1C;
+    padding: 15px 30px;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 50px;
     cursor: pointer;
-    z-index: 20;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(183, 28, 28, 0.4);
+}
+#btn-abrir-calendario-full:hover {
+    background-color: #d32f2f;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(183, 28, 28, 0.6);
+}
+
+/* 2. MODAL Y CONTENEDOR */
+.modal-calendario-full {
+    display: none; position: fixed; z-index: 10000;
+    left: 0; top: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.95); backdrop-filter: blur(10px);
+    justify-content: center; align-items: center; padding: 1rem;
+}
+.modal-cal-content {
+    background: #0a0a0a; width: 100%; max-width: 1000px; height: 90vh;
+    border-radius: 15px; border: 1px solid #333;
+    display: flex; flex-direction: column; padding: 1.5rem;
+    position: relative; overflow-y: auto;
+}
+.close-cal-full {
+    position: absolute; top: 15px; right: 25px;
+    font-size: 2.5rem; color: #aaa; cursor: pointer; z-index: 20;
 }
 .close-cal-full:hover { color: #fff; }
 
-/* Header */
+/* 3. HEADER COMPACTO */
 .cal-header {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 1.5rem;
+    display: flex; justify-content: center; align-items: center;
+    margin-bottom: 1rem;
 }
 .cal-nav-controls {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    background: #222;
-    padding: 0.5rem 1.5rem;
-    border-radius: 50px;
-    border: 1px solid #444;
+    display: flex; align-items: center; gap: 0.5rem; /* Más pegados */
+    background: #222; padding: 0.5rem 1rem;
+    border-radius: 50px; border: 1px solid #444;
 }
-.cal-header h3 { font-size: 1.2rem; margin: 0; color: #fff; }
+.cal-header h3 { font-size: 1.1rem; margin: 0; color: #fff; min-width: 150px; text-align: center; }
 .cal-header button {
-    background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;
+    background: none; border: none; color: #ccc; font-size: 1.5rem; cursor: pointer;
+    width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%;
 }
-.cal-header button:hover { color: var(--color-primario-rojo); }
+.cal-header button:hover { background: #444; color: #fff; }
 
-/* Días semana */
+/* 4. GRILLA Y DÍAS */
 .cal-weekdays {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    text-align: center;
-    font-weight: bold;
-    color: #777;
-    margin-bottom: 0.5rem;
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    text-align: center; font-weight: bold; color: #777; margin-bottom: 0.5rem;
 }
-
-/* Grilla */
 .cal-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 5px;
-    flex-grow: 1;
-    margin-bottom: 1.5rem;
-    align-content: start; /* Para que no se estiren si hay pocos */
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 4px; flex-grow: 1; margin-bottom: 1.5rem; align-content: start;
 }
 
-/* Días */
+/* CADA DÍA (CUADRADO) */
 .cal-day {
-    background: #1a1a1a;
-    border-radius: 5px;
-    min-height: 100px; /* Altura Desktop */
-    padding: 5px;
-    position: relative;
-    cursor: pointer;
-    transition: transform 0.2s, z-index 0s;
-    border: 1px solid rgba(255,255,255,0.1);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    background: #111; border-radius: 6px;
+    min-height: 110px; /* Altura Desktop */
+    padding: 6px; position: relative; cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), z-index 0s;
+    border: 1px solid rgba(255,255,255,0.05);
+    display: flex; flex-direction: column; justify-content: space-between;
     overflow: hidden;
 }
-
+/* Efecto Ola / Hover */
 .cal-day:hover {
-    transform: scale(1.4);
-    z-index: 100;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.9);
+    transform: scale(1.4); z-index: 100;
+    box-shadow: 0 15px 40px rgba(0,0,0,1);
     border-color: #fff;
 }
 
 /* Contenido del día */
 .cal-day-number {
-    font-size: 0.9rem; font-weight: bold; text-shadow: 1px 1px 2px black; z-index: 2;
+    font-size: 1rem; font-weight: 900; z-index: 2; text-shadow: 2px 2px 4px black;
 }
 .cal-day-title {
-    font-size: 0.7rem; line-height: 1.1; color: #fff; text-align: center; z-index: 2;
-    text-shadow: 1px 1px 3px black; font-weight: bold;
-    background: rgba(0,0,0,0.6); padding: 2px; border-radius: 4px;
+    font-size: 0.75rem; line-height: 1.1; color: #fff; text-align: center; z-index: 2;
+    text-shadow: 2px 2px 4px black; font-weight: bold;
 }
+/* Tooltip "Haz clic" */
 .cal-hover-hint {
-    display: none; font-size: 0.6rem; color: #FFD700; text-align: center; z-index: 2;
+    display: none; font-size: 0.5rem; color: #FFD700; text-align: center; z-index: 2;
+    background: rgba(0,0,0,0.8); padding: 2px 4px; border-radius: 4px; margin-top: 2px;
 }
-.cal-day:hover .cal-hover-hint { display: block; }
+.cal-day:hover .cal-hover-hint { display: inline-block; }
 
-/* Imagen Fondo */
+/* Imagen Fondo Día */
 .cal-day-bg {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    object-fit: cover; opacity: 0.5; z-index: 1; transition: opacity 0.3s;
+    object-fit: cover; opacity: 0.5; z-index: 1;
 }
-.cal-day:hover .cal-day-bg { opacity: 0.3; }
 
-/* Colores Estado */
-.cal-day.status-future { background-color: #001a00; border-color: #2ecc71; } /* Verde */
+/* 5. COLORES (Tu Esquema Nuevo) */
+/* Verde: Evento Disponible */
+.cal-day.status-future { background: #051a05; border-color: #2ecc71; }
 .cal-day.status-future .cal-day-number { color: #2ecc71; }
 
-.cal-day.status-closed { background-color: #1a0505; border-color: #e74c3c; } /* Rojo */
+/* Rojo: Cerrado */
+.cal-day.status-closed { background: #1a0505; border-color: #e74c3c; }
 .cal-day.status-closed .cal-day-number { color: #e74c3c; }
 
-.cal-day.status-private { background-color: #0a0a1a; border-color: #3498db; } /* Azul */
+/* Azul: Privado */
+.cal-day.status-private { background: #050a1a; border-color: #3498db; }
 .cal-day.status-private .cal-day-number { color: #3498db; }
 
-.cal-day.status-open { background-color: #111; border-color: #bdc3c7; } /* Plateado */
+/* Blanco/Plateado: Sin Show */
+.cal-day.status-open { background: #1a1a1a; border-color: #bdc3c7; }
 .cal-day.status-open .cal-day-number { color: #fff; }
 
-.cal-day.status-past { background-color: #111; border-color: #f1c40f; opacity: 0.6; } /* Amarillo */
+/* Amarillo: Finalizado */
+.cal-day.status-past { background: #1a1a05; border-color: #f1c40f; opacity: 0.6; }
 .cal-day.status-past .cal-day-number { color: #f1c40f; }
 
-/* Buscador */
+/* 6. BUSCADOR (Legible) */
+.cal-search-container h4 { color: #fff; margin-bottom: 0.5rem; font-size: 1.1rem; }
 .cal-search-container input {
-    width: 100%; padding: 10px; background: #fff; color: #000;
-    border: 1px solid #333; border-radius: 5px; margin-top: 0.5rem;
+    width: 100%; padding: 12px; 
+    background: #fff; /* Fondo blanco */
+    color: #000; /* Texto negro */
+    border: none; border-radius: 6px;
+    font-size: 1rem; margin-bottom: 1rem;
 }
 .cal-search-results {
-    margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;
-    max-height: 150px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 8px;
+    max-height: 200px; overflow-y: auto;
 }
 .mini-card-result {
-    background: #222; padding: 8px; display: flex; gap: 10px; align-items: center;
-    border-radius: 5px; border: 1px solid #444;
+    background: #222; padding: 10px; display: flex; gap: 15px; align-items: center;
+    border-radius: 6px; border: 1px solid #444; cursor: pointer; transition: 0.2s;
 }
-.mini-card-result img { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; }
+.mini-card-result:hover { background: #333; border-color: #fff; }
+.mini-card-result img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
 
-/* Modal Detalle (Centro) */
+/* 7. MODAL DETALLE (Centro) */
 .modal-detalle-centro {
-    display: none; position: fixed; z-index: 11000; left: 0; top: 0;
-    width: 100%; height: 100%; background-color: rgba(0,0,0,0.85);
-    justify-content: center; align-items: center; backdrop-filter: blur(5px);
+    display: none; position: fixed; z-index: 12000; left: 0; top: 0;
+    width: 100%; height: 100%; background-color: rgba(0,0,0,0.9);
+    justify-content: center; align-items: center; backdrop-filter: blur(10px);
 }
 .detalle-card-content {
-    position: relative; width: 90%; max-width: 400px;
+    position: relative; width: 95%; max-width: 450px;
 }
 .close-detalle {
-    position: absolute; top: -40px; right: 0; font-size: 2.5rem; color: #fff; cursor: pointer;
+    position: absolute; top: -50px; right: 0; font-size: 3rem; color: #fff; cursor: pointer;
 }
 
-/* --- MEDIA QUERY MOBILE (LO QUE FALTABA) --- */
+/* Mobile */
 @media (max-width: 768px) {
-    .modal-cal-content {
-        padding: 10px;
-        height: 95vh; /* Aprovechar más altura */
-    }
-
-    /* Achicamos los días para que entren 7 en una fila */
-    .cal-day {
-        min-height: 55px; /* Mucho más bajos */
-        padding: 2px;
-    }
-
-    /* Texto más pequeño */
-    .cal-day-number { font-size: 0.7rem; }
-    .cal-day-title { 
-        font-size: 0.55rem; 
-        white-space: nowrap; 
-        overflow: hidden; 
-        text-overflow: ellipsis; 
-    }
-
-    /* Desactivamos el efecto "Ola" gigante en móvil porque tapa todo */
-    .cal-day:hover {
-        transform: none; 
-        box-shadow: none;
-        z-index: 1;
-    }
-    
-    /* Headers de días más chicos */
+    #btn-abrir-calendario-full { width: 90%; padding: 15px 0; }
+    .modal-cal-content { padding: 10px; height: 95vh; }
+    .cal-day { min-height: 60px; padding: 3px; } /* Más bajos para que entren */
+    .cal-day:hover { transform: none; z-index: 1; box-shadow: none; } /* Sin ola en móvil */
+    .cal-day-number { font-size: 0.8rem; }
+    .cal-day-title { font-size: 0.55rem; }
     .cal-weekdays div { font-size: 0.8rem; }
-    
-    /* Ajuste buscador */
-    .cal-search-container h4 { font-size: 1rem; }
 }
