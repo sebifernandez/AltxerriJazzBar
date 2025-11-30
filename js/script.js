@@ -1143,3 +1143,110 @@ function filtrarEventosCalendario(texto) {
         </div>`;
     }).join('');
 }
+
+// ======================================================
+// 9. REPRODUCTOR DE VIDEO INCRUSTADO (CINE)
+// ======================================================
+
+function inicializarReproductorVideo() {
+    const modal = document.getElementById('modal-video-player');
+    const closeBtn = document.getElementById('close-video-player');
+
+    if (closeBtn) closeBtn.addEventListener('click', cerrarVideo);
+    
+    // Cerrar con ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.style.display === 'flex') cerrarVideo();
+    });
+
+    // Cerrar click fuera
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) cerrarVideo();
+    });
+
+    // DELEGACIÓN DE EVENTOS: Detectar clic en cualquier botón de video (presente o futuro)
+    document.body.addEventListener('click', (e) => {
+        // Buscamos si el clic fue en un botón de video o dentro de uno
+        const btn = e.target.closest('.btn-live, .btn-archive, .btn-push');
+        
+        if (btn && btn.tagName === 'A' && btn.href.includes('youtube.com')) {
+            // Verificamos si es un link de YouTube válido
+            const videoID = extraerIDYoutube(btn.href);
+            if (videoID) {
+                e.preventDefault(); // ¡ALTO! No vayas a YouTube
+                
+                // Detectamos si es LIVE o ARCHIVO para saber si mostrar chat
+                const esLive = btn.classList.contains('btn-live') || btn.innerText.includes('Vivo') || btn.innerText.includes('Live');
+                
+                // Buscamos el título (intentamos encontrar el h3 o h4 más cercano)
+                let titulo = "Video Altxerri";
+                const card = btn.closest('.event-card, .push-content');
+                if (card) {
+                    const h = card.querySelector('h3, h4');
+                    if(h) titulo = h.innerText;
+                }
+
+                abrirVideo(videoID, esLive, titulo, btn.href);
+            }
+        }
+    });
+}
+
+function abrirVideo(videoID, esLive, titulo, urlOriginal) {
+    const modal = document.getElementById('modal-video-player');
+    const container = document.getElementById('youtube-player-placeholder');
+    const chatContainer = document.getElementById('youtube-chat-container');
+    const titleEl = document.getElementById('video-modal-title');
+    const btnExt = document.getElementById('btn-open-youtube');
+
+    // 1. Título y Link Externo
+    if(titleEl) titleEl.textContent = titulo;
+    if(btnExt) btnExt.href = urlOriginal;
+
+    // 2. Inyectar Iframe Video
+    // autoplay=1 : arranca solo
+    // rel=0 : al terminar no muestra videos de otros canales
+    container.innerHTML = `
+        <iframe 
+            src="https://www.youtube.com/embed/${videoID}?autoplay=1&rel=0&modestbranding=1" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen>
+        </iframe>
+    `;
+
+    // 3. Lógica del Chat (Solo si es Live)
+    // OJO: YouTube bloquea embeds de chat si el dominio no está verificado. 
+    // Si falla en Netlify, se verá gris o con error, pero el video funcionará.
+    if (esLive) {
+        const domain = window.location.hostname;
+        chatContainer.style.display = 'block';
+        chatContainer.innerHTML = `
+            <iframe 
+                src="https://www.youtube.com/live_chat?v=${videoID}&embed_domain=${domain}" 
+                width="100%" height="100%">
+            </iframe>`;
+    } else {
+        chatContainer.style.display = 'none';
+        chatContainer.innerHTML = '';
+    }
+
+    modal.style.display = 'flex';
+}
+
+function cerrarVideo() {
+    const modal = document.getElementById('modal-video-player');
+    const container = document.getElementById('youtube-player-placeholder');
+    const chatContainer = document.getElementById('youtube-chat-container');
+    
+    modal.style.display = 'none';
+    // IMPORTANTE: Limpiar el HTML para que el video deje de sonar
+    container.innerHTML = '';
+    chatContainer.innerHTML = '';
+}
+
+// Helper: Extraer ID de URLs de Youtube (soporta youtu.be y youtube.com)
+function extraerIDYoutube(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+}
