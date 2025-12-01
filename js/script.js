@@ -579,6 +579,7 @@ function renderizarGaleria(imagenes) {
         img.src = ruta;
         img.className = 'gallery-slide';
         img.alt = `Galería imagen ${index + 1}`;
+        if (index > 0) img.loading = "lazy";
         galleryTrack.appendChild(img);
 
         // Generar Indicador
@@ -1086,7 +1087,7 @@ function renderizarGrillaCalendario(fecha) {
         const tituloEv = (idiomaActual === 'en' && evento.titulo_en) ? evento.titulo_en : evento.titulo;
         
         div.innerHTML = `
-            <img src="${imgUrl}" class="cal-day-bg">
+            <img src="${imgUrl}" class="cal-day-bg" loading="lazy">
             <span class="cal-day-number">${i}</span>
             <span class="cal-day-title">${tituloEv}</span>
             <span class="cal-hover-hint">Ver Info</span>

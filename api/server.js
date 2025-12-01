@@ -19,8 +19,9 @@ const path = require('path');
 const cloudinary = require('cloudinary').v2;    
 
 const app = express();
-// Aumentamos el límite a 10MB para poder recibir imágenes en Base64
-app.use(express.json({ limit: '10mb' }));
+// Aumentamos el límite a 50MB para poder recibir imágenes en Base64
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 const router = express.Router();
 
 // --- 1. CONFIGURACIÓN DE BASE DE DATOS ---
