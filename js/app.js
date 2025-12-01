@@ -395,69 +395,44 @@ function renderizarListado(productos, subtitulo, etiquetas, tipoPlantilla) {
 
 /**
 /**
+
+/**
  * Función REUTILIZABLE para CADA item de un listado.
- * (Versión actualizada con formatarPrecio() para arreglar 'null€')
  */
 function renderizarItemLista(item, etiquetas, tipoPlantilla) {
     const { etiquetasPrecio, etiquetasVino } = etiquetas;
     let preciosHtml = '';
     let descripcionHtml = '';
 
-    // 1. Generar el HTML de los precios (¡USANDO LA NUEVA FUNCIÓN!)
+    // 1. Generar HTML Precios (Igual que antes)
     switch (tipoPlantilla) {
-        case 'dosPrecios': // Cerveza Barril
-            preciosHtml = `
-                <div class="listado-item-precios precios-dos">
-                    <span class="precio-item">
-                        ${formatarPrecio(item.precioCana)} 
-                        <span class="precio-etiqueta">(${etiquetasPrecio.cana})</span>
-                    </span>
-                    <span class="precio-item">
-                        ${formatarPrecio(item.precioPinta)} 
-                        <span class="precio-etiqueta">(${etiquetasPrecio.pinta})</span>
-                    </span>
-                </div>
-            `;
+        case 'dosPrecios': 
+            preciosHtml = `<div class="listado-item-precios precios-dos"><span class="precio-item">${formatarPrecio(item.precioCana)} <span class="precio-etiqueta">(${etiquetasPrecio.cana})</span></span><span class="precio-item">${formatarPrecio(item.precioPinta)} <span class="precio-etiqueta">(${etiquetasPrecio.pinta})</span></span></div>`;
             break;
         case 'vino':
-            preciosHtml = `
-                <div class="listado-item-precios precios-dos">
-                    <span class="precio-item">
-                        ${formatarPrecio(item.precioCopa)} 
-                        <span class="precio-etiqueta">(${etiquetasPrecio.copa})</span>
-                    </span>
-                    <span class="precio-item">
-                        ${formatarPrecio(item.precioBotella)} 
-                        <span class="precio-etiqueta">(${etiquetasPrecio.botella})</span>
-                    </span>
-                </div>
-            `;
+            preciosHtml = `<div class="listado-item-precios precios-dos"><span class="precio-item">${formatarPrecio(item.precioCopa)} <span class="precio-etiqueta">(${etiquetasPrecio.copa})</span></span><span class="precio-item">${formatarPrecio(item.precioBotella)} <span class="precio-etiqueta">(${etiquetasPrecio.botella})</span></span></div>`;
             break;
         case 'destilado':
-            preciosHtml = `
-                <div class="listado-item-precios precios-dos">
-                    <span class="precio-item">
-                        ${formatarPrecio(item.precioCana)} 
-                        <span class="precio-etiqueta">(${etiquetasPrecio.chupito || 'Chupito'})</span>
-                    </span>
-                    <span class="precio-item">
-                        ${formatarPrecio(item.precioCopa)} 
-                        <span class="precio-etiqueta">(${etiquetasPrecio.vasoDestilado || 'Vaso'})</span>
-                    </span>
-                </div>
-            `;
+            preciosHtml = `<div class="listado-item-precios precios-dos"><span class="precio-item">${formatarPrecio(item.precioCana)} <span class="precio-etiqueta">(${etiquetasPrecio.chupito || 'Chupito'})</span></span><span class="precio-item">${formatarPrecio(item.precioCopa)} <span class="precio-etiqueta">(${etiquetasPrecio.vasoDestilado || 'Vaso'})</span></span></div>`;
             break;
         case 'unPrecio':
-            preciosHtml = `
-                <div class="listado-item-precios precios-uno">
-                    <span class="precio-item">${formatarPrecio(item.precioBotella)}</span>
-                </div>
-            `;
+            preciosHtml = `<div class="listado-item-precios precios-uno"><span class="precio-item">${formatarPrecio(item.precioBotella)}</span></div>`;
             break;
     }
 
-    // 2. Generar el HTML de la descripción (sin cambios)
+    // 2. Lógica de Región / País (FIX DESTILADOS)
+    let regionPais = '';
+    // Filtramos valores nulos o vacíos
+    const locacion = [item.region, item.pais].filter(val => val && val.trim() !== '');
+    if (locacion.length > 0) {
+        // .join(' - ') une automáticamente con guion solo si hay dos elementos
+        // Si hay uno, no pone guion. Si hay cero, no pone nada.
+        regionPais = `<span class="titulo-region">(${locacion.join(' - ')})</span>`;
+    }
+
+    // 3. Descripción y Crianza
     if (tipoPlantilla === 'vino') {
+        // ... (Lógica vino igual que antes) ...
         const datosVino = [
             item.productor ? `<strong>${etiquetasVino.bodega}:</strong> ${item.productor}` : '',
             item.varietal ? `<strong>${etiquetasVino.varietal}:</strong> ${item.varietal}` : '',
@@ -465,33 +440,41 @@ function renderizarItemLista(item, etiquetas, tipoPlantilla) {
             item.crianza ? `<strong>${etiquetasVino.crianza}:</strong> ${item.crianza}` : ''
         ].filter(Boolean).join(' – ');
 
-        descripcionHtml = `
-            <div class="listado-item-descripcion-vino">
-                <p class="vino-datos">${datosVino}</p>
-                <p class="vino-descripcion"><em>${item.descripcion}</em></p>
-            </div>
-        `;
+        descripcionHtml = `<div class="listado-item-descripcion-vino"><p class="vino-datos">${datosVino}</p><p class="vino-descripcion"><em>${item.descripcion}</em></p></div>`;
+    
     } else {
-        const datosGenerales = [item.abv ? `${item.abv}% ABV` : '', item.ibu ? `${item.ibu} IBU` : '']
-            .filter(Boolean).join(' | ');
+        // Cervezas, Destilados, Sin Alcohol
+        const datosGenerales = [item.abv ? `${item.abv}% ABV` : '', item.ibu ? `${item.ibu} IBU` : ''].filter(Boolean).join(' | ');
+        
+        // Lógica Crianza Destilados (FIX DESTILADOS)
+        let textoDesc = item.descripcion || '';
+        if (tipoPlantilla === 'destilado' && item.crianza && item.crianza.trim() !== '') {
+            // Obtenemos etiqueta traducida ("Crianza" o "Aging") o fallback
+            const lblCrianza = (etiquetasVino && etiquetasVino.crianza) ? etiquetasVino.crianza : 'Crianza';
+            // Prependemos al texto
+            textoDesc = `<strong>${lblCrianza}:</strong> ${item.crianza} - ${textoDesc}`;
+        }
 
-        descripcionHtml = `
-            <div class="listado-item-descripcion-general">
-                ${datosGenerales ? `<p class="datos-generales">${datosGenerales}</p>` : ''}
-                <p class="descripcion-general">${item.descripcion}</p>
-            </div>
-        `;
+        // Solo renderizamos el párrafo si hay texto (FIX SIN ALCOHOL)
+        let parrafoDesc = '';
+        if (textoDesc.trim() !== '') {
+            parrafoDesc = `<p class="descripcion-general">${textoDesc}</p>`;
+        }
+
+        if (datosGenerales || parrafoDesc) {
+            descripcionHtml = `
+                <div class="listado-item-descripcion-general">
+                    ${datosGenerales ? `<p class="datos-generales">${datosGenerales}</p>` : ''}
+                    ${parrafoDesc}
+                </div>
+            `;
+        }
     }
-
-    // 3. Ensamblar el item completo (sin cambios)
-    const regionPais = (item.region || item.pais) 
-        ? `(${[item.region, item.pais].filter(Boolean).join(' – ')})` 
-        : '';
 
     return `
         <div class="listado-item">
             <div class="listado-item-textos">
-                <h4 class="listado-item-titulo">${item.titulo} <span class="titulo-region">${regionPais}</span></h4>
+                <h4 class="listado-item-titulo">${item.titulo} ${regionPais}</h4>
                 ${descripcionHtml}
             </div>
             ${preciosHtml}
@@ -640,8 +623,8 @@ function renderizarVinosDestacados(productos, textosUI) {
 // --- RENDERIZADOR: SECCIÓN DESTILADOS ---
 
 function renderizarSeccionDestilados(productos, textosUI) {
-    const { etiquetasPrecio, titulosSeccion, subtitulos } = textosUI;
-    const etiquetas = { etiquetasPrecio };
+    const { etiquetasPrecio, titulosSeccion, etiquetasVino } = textosUI;
+    const etiquetas = { etiquetasPrecio, etiquetasVino };
 
     const destilados = productos
         .filter(p => p.tipo === 'destilado' && p.visualizacion)

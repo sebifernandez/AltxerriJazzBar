@@ -35,7 +35,7 @@ function toBase64(file) {
 }
 
 // ==========================================
-// 2. PLANTILLAS HTML (CARTA)
+// 2. PLANTILLAS HTML (CARTA) - ACTUALIZADO (Campos Opcionales)
 // ==========================================
 const plantillasBloques = {
     unicos_titulo_marca: `<div class="form-group"><label for="producto-titulo">Título / Nombre (Marca) *</label><input type="text" id="producto-titulo" class="form-input" placeholder="Ej: Jack Daniel's" required></div>`,
@@ -51,19 +51,36 @@ const plantillasBloques = {
     unicos_imagen_vino: `<div class="form-section"><h4>Imagen del Producto (¡Obligatoria para Vinos!)</h4><div class="form-group"><label for="producto-imagen-upload">Subir Imagen *</label><input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required></div></div>`,
     unicos_vino_destacado: `<div class="form-group-checkbox-inline"><input type="checkbox" id="producto-destacado"><label for="producto-destacado">Marcar como "Vino Destacado de la Semana"</label></div>`,
 
+    // --- CAMPOS TRADUCIBLES ESTÁNDAR (Obligatorios) ---
     trad_es_titulo: `<div class="form-group"><label for="producto-titulo-es">Título (ES) *</label><input type="text" id="producto-titulo-es" class="form-input" required></div>`,
     trad_es_descripcion: `<div class="form-group"><label for="producto-descripcion-es">Descripción (ES) *</label><textarea id="producto-descripcion-es" class="form-input" style="min-height: 100px;" required></textarea></div>`,
-    trad_es_region_pais: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-region-es">Región (ES)</label><input type="text" id="producto-region-es" class="form-input"></div></div><div class="form-col"><div class="form-group"><label for="producto-pais-es">País (ES)</label><input type="text" id="producto-pais-es" class="form-input"></div></div></div>`,
-    trad_es_varietal_vino: `<div class="form-group"><label for="producto-varietal-es">Varietal (ES)</label><input type="text" id="producto-varietal-es" class="form-input"></div>`,
-    trad_es_crianza_vino: `<div class="form-group"><label for="producto-crianza-es">Crianza (ES)</label><input type="text" id="producto-crianza-es" class="form-input" placeholder="Ej: 14 meses en barricas"></div>`,
-    trad_es_crianza_destilado: `<div class="form-group"><label for="producto-crianza-es">Crianza (ES)</label><input type="text" id="producto-crianza-es" class="form-input" placeholder="Ej: En barricas nuevas..."></div>`,
     
     trad_en_titulo: `<div class="form-group"><label for="producto-titulo-en">Título (EN) *</label><input type="text" id="producto-titulo-en" class="form-input" required></div>`,
     trad_en_descripcion: `<div class="form-group"><label for="producto-descripcion-en">Descripción (EN) *</label><textarea id="producto-descripcion-en" class="form-input" style="min-height: 100px;" required></textarea></div>`,
+
+    // --- CAMPOS OPCIONALES (NUEVOS PARA FASE 1) ---
+    
+    // Descripción Opcional (Para Sin Alcohol)
+    trad_es_descripcion_opcional: `<div class="form-group"><label for="producto-descripcion-es">Descripción (ES)</label><textarea id="producto-descripcion-es" class="form-input" style="min-height: 100px;"></textarea></div>`,
+    trad_en_descripcion_opcional: `<div class="form-group"><label for="producto-descripcion-en">Descripción (EN)</label><textarea id="producto-descripcion-en" class="form-input" style="min-height: 100px;"></textarea></div>`,
+
+    // Región/País Opcional (Para Destilados)
+    trad_es_region_pais_opcional: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-region-es">Región (ES)</label><input type="text" id="producto-region-es" class="form-input"></div></div><div class="form-col"><div class="form-group"><label for="producto-pais-es">País (ES)</label><input type="text" id="producto-pais-es" class="form-input"></div></div></div>`,
+    trad_en_region_pais_opcional: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-region-en">Región (EN)</label><input type="text" id="producto-region-en" class="form-input"></div></div><div class="form-col"><div class="form-group"><label for="producto-pais-en">País (EN)</label><input type="text" id="producto-pais-en" class="form-input"></div></div></div>`,
+    
+    // Crianza Opcional (Para Destilados)
+    trad_es_crianza_destilado_opcional: `<div class="form-group"><label for="producto-crianza-es">Crianza (ES)</label><input type="text" id="producto-crianza-es" class="form-input" placeholder="Ej: 18 meses..."></div>`,
+    trad_en_crianza_destilado_opcional: `<div class="form-group"><label for="producto-crianza-en">Crianza (EN)</label><input type="text" id="producto-crianza-en" class="form-input" placeholder="Ej: 18 months..."></div>`,
+
+    // Campos Estándar (Vinos - Obligatorios o normales)
+    trad_es_region_pais: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-region-es">Región (ES)</label><input type="text" id="producto-region-es" class="form-input"></div></div><div class="form-col"><div class="form-group"><label for="producto-pais-es">País (ES)</label><input type="text" id="producto-pais-es" class="form-input"></div></div></div>`,
     trad_en_region_pais: `<div class="form-grid"><div class="form-col"><div class="form-group"><label for="producto-region-en">Región (EN)</label><input type="text" id="producto-region-en" class="form-input"></div></div><div class="form-col"><div class="form-group"><label for="producto-pais-en">País (EN)</label><input type="text" id="producto-pais-en" class="form-input"></div></div></div>`,
+    
+    trad_es_varietal_vino: `<div class="form-group"><label for="producto-varietal-es">Varietal (ES)</label><input type="text" id="producto-varietal-es" class="form-input"></div>`,
     trad_en_varietal_vino: `<div class="form-group"><label for="producto-varietal-en">Varietal (EN)</label><input type="text" id="producto-varietal-en" class="form-input"></div>`,
+    
+    trad_es_crianza_vino: `<div class="form-group"><label for="producto-crianza-es">Crianza (ES)</label><input type="text" id="producto-crianza-es" class="form-input" placeholder="Ej: 14 meses en barricas"></div>`,
     trad_en_crianza_vino: `<div class="form-group"><label for="producto-crianza-en">Crianza (EN)</label><input type="text" id="producto-crianza-en" class="form-input" placeholder="Ej: 14 months in barrels"></div>`,
-    trad_en_crianza_destilado: `<div class="form-group"><label for="producto-crianza-en">Crianza (EN)</label><input type="text" id="producto-crianza-en" class="form-input" placeholder="Ej: In new barrels..."></div>`,
     
     bilingue_wrapper: (html_es, html_en) => `
         <div class="form-section-bilingue">
@@ -82,11 +99,16 @@ const plantillasBloques = {
 
 const plantillasFormCarta = {
     coctel: `<div class="form-section"><h4>Datos Únicos</h4>${plantillasBloques.unicos_precios_copa_solo}${plantillasBloques.unicos_imagen_coctel}</div>${plantillasBloques.bilingue_wrapper(plantillasBloques.trad_es_titulo + plantillasBloques.trad_es_descripcion, plantillasBloques.trad_en_titulo + plantillasBloques.trad_en_descripcion)}`,
-    sinAlcohol: `<div class="form-section"><h4>Datos Únicos</h4>${plantillasBloques.unicos_precios_botella_solo}</div>${plantillasBloques.bilingue_wrapper(plantillasBloques.trad_es_titulo + plantillasBloques.trad_es_descripcion, plantillasBloques.trad_en_titulo + plantillasBloques.trad_en_descripcion)}`,
     cervezaBarril: `<div class="form-section"><h4>Datos Únicos</h4>${plantillasBloques.unicos_titulo_marca}${plantillasBloques.unicos_precios_cana_pinta}${plantillasBloques.unicos_cerveza_datos}</div>${plantillasBloques.bilingue_wrapper(plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_descripcion, plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_descripcion)}`,
     cervezaEnvasada: `<div class="form-section"><h4>Datos Únicos</h4>${plantillasBloques.unicos_titulo_marca}${plantillasBloques.unicos_precios_botella_solo}${plantillasBloques.unicos_cerveza_datos}</div>${plantillasBloques.bilingue_wrapper(plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_descripcion, plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_descripcion)}`,
     vino: `${plantillasBloques.unicos_vino_destacado}<div class="form-section"><h4>Datos Únicos</h4>${plantillasBloques.unicos_titulo_marca}${plantillasBloques.unicos_vino_datos}${plantillasBloques.unicos_precios_copa_botella}${plantillasBloques.unicos_imagen_vino}</div>${plantillasBloques.bilingue_wrapper(plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_varietal_vino + plantillasBloques.trad_es_crianza_vino + plantillasBloques.trad_es_descripcion, plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_varietal_vino + plantillasBloques.trad_en_crianza_vino + plantillasBloques.trad_en_descripcion)}`,
-    destilado: `<div class="form-section"><h4>Datos Únicos</h4>${plantillasBloques.unicos_titulo_marca}${plantillasBloques.unicos_precios_copa_botella_destilado}${plantillasBloques.unicos_destilado_datos}</div>${plantillasBloques.bilingue_wrapper(plantillasBloques.trad_es_region_pais + plantillasBloques.trad_es_crianza_destilado + plantillasBloques.trad_es_descripcion, plantillasBloques.trad_en_region_pais + plantillasBloques.trad_en_crianza_destilado + plantillasBloques.trad_en_descripcion)}`
+    
+    // --- MODIFICADOS ---
+    // Sin Alcohol: Usa descripción OPCIONAL
+    sinAlcohol: `<div class="form-section"><h4>Datos Únicos</h4>${plantillasBloques.unicos_precios_botella_solo}</div>${plantillasBloques.bilingue_wrapper(plantillasBloques.trad_es_titulo + plantillasBloques.trad_es_descripcion_opcional, plantillasBloques.trad_en_titulo + plantillasBloques.trad_en_descripcion_opcional)}`,
+    
+    // Destilado: Usa región y crianza OPCIONALES
+    destilado: `<div class="form-section"><h4>Datos Únicos</h4>${plantillasBloques.unicos_titulo_marca}${plantillasBloques.unicos_precios_copa_botella_destilado}${plantillasBloques.unicos_destilado_datos}</div>${plantillasBloques.bilingue_wrapper(plantillasBloques.trad_es_region_pais_opcional + plantillasBloques.trad_es_crianza_destilado_opcional + plantillasBloques.trad_es_descripcion, plantillasBloques.trad_en_region_pais_opcional + plantillasBloques.trad_en_crianza_destilado_opcional + plantillasBloques.trad_en_descripcion)}`
 };
 
 // ==========================================
@@ -172,6 +194,7 @@ function inicializarNavegacion() {
                 if (section.id === targetId) section.classList.add('active');
             });
             if (sidebar.classList.contains('open')) sidebar.classList.remove('open');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     });
 
