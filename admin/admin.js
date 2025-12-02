@@ -758,6 +758,7 @@ function inicializarFormularioCarta() {
     const form = document.getElementById('form-alta-producto');
     const sel = document.getElementById('producto-tipo');
     const btnActions = document.getElementById('form-actions-producto');
+    const btnPreview = document.getElementById('btn-preview-producto'); // Referencia al botón
 
     // 1. Inyectar Plantillas
     if (container.children.length === 0) {
@@ -770,12 +771,31 @@ function inicializarFormularioCarta() {
         }
     }
     
-    // 2. Listener Tipo + Lógica de Toggles (Cóctel y Vino)
+    // --- FUNCIÓN HELPER PARA VISIBILIDAD DEL BOTÓN PREVIEW ---
+    const actualizarBotonPreview = () => {
+        const tipo = sel.value;
+        const tipoKey = tipo.startsWith('vino') ? 'vino' : tipo;
+        const target = document.getElementById(`fields-${tipoKey}`);
+        let mostrarBoton = false;
+
+        if (tipoKey === 'coctel') {
+            // Solo si el toggle "Mostrar Imagen" está activo
+            const toggle = target.querySelector('#producto-mostrar-imagen');
+            if (toggle && toggle.checked) mostrarBoton = true;
+        } else if (tipoKey === 'vino') {
+            // Solo si el toggle "Destacado" está activo
+            const toggle = target.querySelector('#producto-destacado');
+            if (toggle && toggle.checked) mostrarBoton = true;
+        }
+        // Cervezas, Destilados, Sin Alcohol -> Siempre false
+
+        if (btnPreview) btnPreview.style.display = mostrarBoton ? 'inline-flex' : 'none';
+    };
+
+    // 2. Listener Tipo
     sel.addEventListener('change', () => {
         document.querySelectorAll('.form-fields-group').forEach(g => g.classList.remove('visible'));
-        
-        const val = sel.value;
-        const tipoKey = val.startsWith('vino') ? 'vino' : val;
+        const tipoKey = sel.value.startsWith('vino') ? 'vino' : sel.value;
         const target = document.getElementById(`fields-${tipoKey}`);
         
         if(target) {
@@ -783,36 +803,46 @@ function inicializarFormularioCarta() {
             activarLogicaBilingue(target);
             btnActions.style.display = 'block';
 
-            // A. Lógica Cóctel (Mostrar Imagen)
+            // A. Lógica Cóctel
             if (tipoKey === 'coctel') {
                 const toggle = target.querySelector('#producto-mostrar-imagen');
                 const area = target.querySelector('#contenedor-imagen-coctel');
                 if(toggle && area) {
                     const newT = toggle.cloneNode(true);
                     toggle.parentNode.replaceChild(newT, toggle);
-                    newT.addEventListener('change', () => area.style.display = newT.checked ? 'block' : 'none');
+                    
+                    newT.addEventListener('change', () => {
+                        area.style.display = newT.checked ? 'block' : 'none';
+                        actualizarBotonPreview(); // Chequear botón al cambiar
+                    });
                     newT.dispatchEvent(new Event('change'));
                 }
             }
 
-            // B. Lógica Vino (Destacado -> Imagen)
+            // B. Lógica Vino
             if (tipoKey === 'vino') {
                 const toggleVino = target.querySelector('#producto-destacado');
                 const areaVino = target.querySelector('#contenedor-imagen-vino');
                 if(toggleVino && areaVino) {
                     const newTV = toggleVino.cloneNode(true);
                     toggleVino.parentNode.replaceChild(newTV, toggleVino);
-                    newTV.addEventListener('change', () => areaVino.style.display = newTV.checked ? 'block' : 'none');
+                    
+                    newTV.addEventListener('change', () => {
+                        areaVino.style.display = newTV.checked ? 'block' : 'none';
+                        actualizarBotonPreview(); // Chequear botón al cambiar
+                    });
                     newTV.dispatchEvent(new Event('change'));
                 }
             }
+            
+            actualizarBotonPreview(); // Chequear al cambiar de tipo
 
         } else {
             btnActions.style.display = 'none';
         }
     });
 
-    // 3. Submit
+    // 3. Submit (Sin Cambios)
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const tipo = sel.value;
@@ -837,7 +867,6 @@ function inicializarFormularioCarta() {
             const { producto_es, producto_en } = recolectarDatosProducto(formGroup, tipo);
             
             let imgUrl = producto_es.imagen; 
-            
             // Subir solo si hay archivo Y (es destacado O quiere mostrar imagen)
             const debeSubir = (producto_es.destacado || producto_es.mostrarImagen) && producto_es.archivoImagen;
 
@@ -853,7 +882,6 @@ function inicializarFormularioCarta() {
                 imgUrl = json.url;
             } else if (modoEdicion) {
                 const orig = adminProductos.find(p => p._id === idProductoEdicion);
-                // Mantenemos la imagen vieja si existe
                 imgUrl = orig ? orig.imagen : null;
             }
 
@@ -1591,25 +1619,17 @@ async function generarPreview(tipo) {
     modal.style.display = 'flex';
 
     if (tipo === 'evento') {
-        // Recolectar datos del form de eventos
+        // ... (Lógica de eventos existente, mantenla igual o copia del bloque anterior) ...
         const titulo = document.getElementById('evento-titulo').value || 'Título del Evento';
         const fecha = document.getElementById('evento-fecha').value || '2025-01-01';
         const desc = document.getElementById('evento-descripcion').value || 'Descripción del evento...';
-        const tipoEv = document.getElementById('evento-tipo').value;
-        const imgInput = document.getElementById('evento-imagen-upload');
         const imgUrlHidden = document.getElementById('evento-imagen-url-seleccionada').value;
+        const imgInput = document.getElementById('evento-imagen-upload');
         
         let imgSrc = '../img/imgBandaGenerica.jpg';
-        
-        // Intentar mostrar la imagen real
-        if (imgInput.files && imgInput.files[0]) {
-            imgSrc = await toBase64(imgInput.files[0]); // Previsualizar archivo local
-        } else if (imgUrlHidden) {
-            imgSrc = imgUrlHidden;
-        }
+        if (imgInput.files && imgInput.files[0]) imgSrc = await toBase64(imgInput.files[0]);
+        else if (imgUrlHidden) imgSrc = imgUrlHidden;
 
-        // Usamos el HTML de la card (simplificado para preview)
-        // IMPORTANTE: Inyectamos estilos en línea para simular el CSS de la web sin importarlo
         container.innerHTML = `
             <div style="background: #222; border-radius: 10px; overflow: hidden; max-width: 400px; margin: 0 auto; border: 1px solid #444; position: relative; min-height: 450px; display: flex; flex-direction: column;">
                 <div style="height: 250px; overflow: hidden;">
@@ -1625,55 +1645,44 @@ async function generarPreview(tipo) {
                 <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem;">
                     ${DateTime.fromISO(fecha).toFormat('dd LLLL')}
                 </div>
-            </div>
-        `;
+            </div>`;
 
     } else if (tipo === 'producto') {
-        // Recolectar datos de carta
         const formGroup = document.querySelector('.form-fields-group.visible');
         if(!formGroup) return;
 
         const titulo = formGroup.querySelector('#producto-titulo')?.value || 'Nombre Producto';
         const desc = formGroup.querySelector('#producto-descripcion-es')?.value || 'Descripción...';
         const precio = formGroup.querySelector('#producto-precio-copa')?.value || formGroup.querySelector('#producto-precio-botella')?.value || '10';
-        
-        // Check imagen
-        const toggleImg = formGroup.querySelector('#producto-mostrar-imagen');
-        const conFoto = toggleImg ? toggleImg.checked : false;
         const imgInput = formGroup.querySelector('#producto-imagen-upload');
+        
         let imgSrc = 'img/bebidaSinFoto.jpg';
-
-        if (conFoto && imgInput && imgInput.files[0]) {
+        if (imgInput && imgInput.files && imgInput.files[0]) {
             imgSrc = await toBase64(imgInput.files[0]);
+        } else if (modoEdicion && idProductoEdicion) {
+             const orig = adminProductos.find(p => p._id === idProductoEdicion);
+             if (orig && orig.imagen) imgSrc = orig.imagen.startsWith('http') ? orig.imagen : `../img/${orig.imagen}`;
         }
 
-        if (conFoto) {
-            // Vista Previa con Foto (Estilo V3)
-            container.innerHTML = `
-                <div style="display: flex; flex-direction: column; width: 100%; background: #1a1a1a; border-bottom: 1px solid #333;">
-                    <div style="height: 200px; width: 100%; position: relative;">
-                        <img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;">
-                        <div style="position: absolute; bottom: 0; width: 100%; height: 50%; background: linear-gradient(to top, #1a1a1a, transparent);"></div>
-                    </div>
-                    <div style="padding: 1.5rem; text-align: center;">
-                        <h3 style="color: #fff; text-transform: uppercase; font-family: serif; margin: 0 0 10px 0;">${titulo}</h3>
-                        <span style="color: #fff; font-weight: bold; font-size: 1.3rem;">${precio}€</span>
-                        <p style="color: #ccc; font-style: italic; margin-top: 10px;">${desc}</p>
-                    </div>
+        // ESTILO CARD / BANNER (Coctel o Vino)
+        container.innerHTML = `
+            <div style="display: flex; flex-direction: row; width: 100%; max-width: 500px; margin: 0 auto; background: #1a1a1a; border-bottom: 1px solid #333; min-height: 200px; border: 1px solid #444; overflow: hidden; border-radius: 8px;">
+                
+                <div style="width: 50%; position: relative; overflow: hidden;">
+                    <img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <div style="position: absolute; top: 0; right: 0; bottom: 0; width: 40%; background: linear-gradient(to right, transparent, #1a1a1a);"></div>
                 </div>
-            `;
-        } else {
-            // Vista Previa Lista Simple
-            container.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px dashed #666; color: #fff;">
-                    <div>
-                        <h4 style="margin: 0; font-size: 1.1rem;">${titulo}</h4>
-                        <p style="margin: 5px 0 0; color: #999; font-size: 0.9rem;">${desc}</p>
+                
+                <div style="width: 50%; padding: 1.5rem; display: flex; flex-direction: column; justify-content: center; background: #1a1a1a;">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid #B71C1C; padding-bottom: 5px; margin-bottom: 10px;">
+                        <h3 style="color: #fff; font-family: serif; margin: 0; font-size: 1.2rem; text-transform: uppercase;">${titulo}</h3>
+                        <span style="color: #fff; font-weight: bold; font-size: 1.1rem;">${precio}€</span>
                     </div>
-                    <span style="font-weight: bold;">${precio}€</span>
+                    <p style="color: #ccc; font-style: italic; font-size: 0.85rem; margin: 0; line-height: 1.4;">${desc}</p>
                 </div>
-            `;
-        }
+            </div>
+            <p style="text-align:center; color:#777; margin-top:1rem; font-size:0.8rem;">(Vista previa aproximada estilo Desktop)</p>
+        `;
     }
 }
 
