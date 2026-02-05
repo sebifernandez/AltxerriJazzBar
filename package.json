@@ -13,6 +13,7 @@
     "cloudinary": "^2.8.0",
     "express": "^5.1.0",
     "mongodb": "^7.0.0",
+    "resend": "^6.9.1",
     "serverless-http": "^4.0.0"
   }
 }

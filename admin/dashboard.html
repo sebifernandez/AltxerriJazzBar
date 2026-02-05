@@ -33,6 +33,9 @@
                 <a href="#" class="nav-link" data-target="gestion-web">
                     <i class='bx bxs-photo-album'></i> <span>Web / Galería</span>
                 </a>
+                <a href="#" class="nav-link" data-target="gestion-newsletter">
+                    <i class='bx bxs-envelope'></i> <span>Newsletter</span>
+                </a>
             </nav>
             
             <div class="sidebar-footer">
@@ -431,6 +434,59 @@
                             </div>
                         </form>
                     </div>
+            </section>
+
+            <section id="gestion-newsletter" class="content-section">
+                <h2>Creador de Newsletter</h2>
+                <div class="newsletter-workspace">
+                    <div class="news-config-col">
+                        <div class="form-alta-evento"> <h4>1. Configuración del Correo</h4>
+                            <div class="form-group">
+                                <label>Asunto del Correo (Subject) *</label>
+                                <input type="text" id="news-subject" class="form-input" placeholder="Ej: ¡Esta semana Jazz en vivo con Pedro Asnar!">
+                            </div>
+                            <div class="form-group">
+                                <label>Título Principal (Encabezado)</label>
+                                <input type="text" id="news-title" class="form-input" value="Agenda Semanal">
+                            </div>
+                            <div class="form-group">
+                                <label>Texto Introductorio</label>
+                                <textarea id="news-intro" class="form-input" style="min-height: 80px;">Te compartimos los próximos conciertos para que vayas reservando tu mesa.</textarea>
+                            </div>
+                            
+                            <hr style="border-top:1px solid #444; margin: 1.5rem 0;">
+                            
+                            <h4>3. Acciones</h4>
+                            <button class="btn btn-secondary" id="btn-preview-newsletter" style="width:100%; margin-bottom:1rem;">
+                                <i class='bx bx-show'></i> Vista Previa
+                            </button>
+                            <button class="btn btn-primary" id="btn-send-newsletter" style="width:100%;">
+                                <i class='bx bxs-paper-plane'></i> Enviar Ahora
+                            </button>
+                            <p style="font-size:0.8rem; color:#aaa; margin-top:5px; text-align:center;">Se enviará a toda la base de suscriptores.</p>
+                        </div>
+                    </div>
+
+                    <div class="news-calendar-col">
+                        <div class="form-alta-evento">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                                <h4>2. Selecciona los Eventos</h4>
+                                <div class="cal-nav-buttons">
+                                    <button type="button" class="btn btn-secondary" id="news-cal-prev"><i class='bx bx-chevron-left'></i></button>
+                                    <span id="news-cal-month" style="font-weight:bold; margin:0 10px;">Mes Año</span>
+                                    <button type="button" class="btn btn-secondary" id="news-cal-next"><i class='bx bx-chevron-right'></i></button>
+                                </div>
+                            </div>
+                            
+                            <div class="newsletter-calendar-grid" id="news-calendar-grid">
+                                </div>
+                            
+                            <div id="news-selection-counter" style="margin-top:1rem; padding:1rem; background:#222; border-radius:8px; text-align:center; color:#FFC107;">
+                                0 eventos seleccionados
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
             
         </main>

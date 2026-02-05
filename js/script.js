@@ -756,12 +756,42 @@ window.addEventListener('click', (event) => {
 });
 
 // Envío del formulario
+// En js/script.js
 if (newsletterForm) {
-    newsletterForm.addEventListener('submit', (e) => {
+    newsletterForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        // Simulación de éxito
-        if(formContainer) formContainer.style.display = 'none';
-        if(successMessage) successMessage.style.display = 'block';
+        
+        const nombre = document.getElementById('newsletterName').value;
+        const email = document.getElementById('newsletterEmail').value;
+        const btn = newsletterForm.querySelector('button');
+        const txtOriginal = btn.innerText;
+
+        btn.disabled = true;
+        btn.innerText = "...";
+
+        try {
+            const res = await fetch('/api/suscribir', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre, email })
+            });
+
+            const data = await res.json();
+            
+            if (data.success) {
+                if(formContainer) formContainer.style.display = 'none';
+                if(successMessage) successMessage.style.display = 'block';
+            } else {
+                alert("Error: " + data.message);
+                btn.disabled = false;
+                btn.innerText = txtOriginal;
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error de conexión.");
+            btn.disabled = false;
+            btn.innerText = txtOriginal;
+        }
     });
 }
 

@@ -1686,3 +1686,328 @@ async function generarPreview(tipo) {
     }
 }
 
+// ==========================================
+// 11. GESTOR DE NEWSLETTER (NUEVO)
+// ==========================================
+
+let newsFechaActual = DateTime.now();
+let eventosSeleccionadosIds = new Set(); // Guardamos IDs de eventos seleccionados
+
+// Inicialización (Llamar dentro de DOMContentLoaded o inicializarGestorWeb)
+function inicializarGestorNewsletter() {
+    const btnPrev = document.getElementById('news-cal-prev');
+    const btnNext = document.getElementById('news-cal-next');
+    const btnPreview = document.getElementById('btn-preview-newsletter');
+    const btnSend = document.getElementById('btn-send-newsletter');
+
+    if(btnPrev) {
+        btnPrev.addEventListener('click', () => {
+            newsFechaActual = newsFechaActual.minus({ months: 1 });
+            renderizarCalendarioNewsletter();
+        });
+        btnNext.addEventListener('click', () => {
+            newsFechaActual = newsFechaActual.plus({ months: 1 });
+            renderizarCalendarioNewsletter();
+        });
+        
+        // Carga inicial
+        renderizarCalendarioNewsletter();
+    }
+
+    if(btnPreview) btnPreview.addEventListener('click', mostrarPreviewNewsletter);
+    if(btnSend) btnSend.addEventListener('click', enviarNewsletterReal);
+}
+
+// Llamar a esta funcion en DOMContentLoaded junto con las otras inicializaciones
+document.addEventListener('DOMContentLoaded', () => {
+    // ... (tus otros inits) ...
+    inicializarGestorNewsletter();
+});
+
+function renderizarCalendarioNewsletter() {
+    const grid = document.getElementById('news-calendar-grid');
+    const labelMes = document.getElementById('news-cal-month');
+    if(!grid) return;
+
+    labelMes.textContent = newsFechaActual.setLocale('es').toFormat('MMMM yyyy').toUpperCase();
+    grid.innerHTML = '';
+
+    // Headers (Semana + Días)
+    const diasSemana = ['Sem', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    diasSemana.forEach(d => {
+        grid.innerHTML += `<div class="news-cal-header">${d}</div>`;
+    });
+
+    const primerDiaMes = newsFechaActual.startOf('month');
+    const diasEnMes = newsFechaActual.daysInMonth;
+    let diaSemanaInicio = primerDiaMes.weekday; // 1=Lun ... 7=Dom
+
+    // Celdas vacías iniciales (offset)
+    // Ajuste: necesitamos llenar hasta completar la fila si es necesario, pero 
+    // la estructura es: [CheckSemana] [Lun] [Mar] ...
+    // Así que controlaremos el flujo por filas.
+    
+    // Simplificación visual: Generamos un array plano de celdas y el CSS grid hace la magia.
+    // Pero necesitamos insertar el "Check Semana" cada 7 días.
+    
+    // Mejor estrategia: Loop por semanas.
+    let diaContador = 1;
+    // Calculamos el offset del primer día (lunes=1)
+    let offset = diaSemanaInicio - 1; 
+
+    // Total celdas necesarias = offset + diasEnMes
+    // Vamos a iterar día a día y detectar cuándo es Lunes para meter el check de semana.
+    
+    // REINICIO LÓGICA GRID:
+    // Grid CSS: 8 columnas. 
+    // Col 1: Check Semana. Cols 2-8: Días.
+    // Si el mes empieza en Miércoles (3), necesitamos celdas vacías para Lun y Mar.
+
+    // 1. Fila 1 (Puede estar incompleta al inicio)
+    // Checkbox Semana 1
+    grid.appendChild(crearCeldaSemana(1)); // ID temporal
+    
+    // Rellenar vacíos previos
+    for(let i=0; i<offset; i++) {
+        grid.appendChild(document.createElement('div')); // Vacío
+    }
+
+    // Días
+    while(diaContador <= diasEnMes) {
+        // Obtenemos fecha completa
+        const fechaDia = newsFechaActual.set({ day: diaContador });
+        const fechaIso = fechaDia.toISODate();
+        
+        // Buscar si hay evento
+        const evento = adminEventos.find(e => e.fecha === fechaIso);
+        
+        // Crear celda
+        const celda = document.createElement('div');
+        celda.className = `news-cal-day ${evento ? 'has-event' : ''}`;
+        if(evento && eventosSeleccionadosIds.has(evento._id)) celda.classList.add('selected');
+        
+        // HTML interno
+        let contenido = `<span class="day-number">${diaContador}</span>`;
+        if(evento) {
+            contenido += `<span class="day-title">${evento.titulo}</span>`;
+            // Checkbox oculto para lógica
+            contenido += `<input type="checkbox" value="${evento._id}" ${eventosSeleccionadosIds.has(evento._id)?'checked':''}>`;
+            
+            // Evento Click
+            celda.addEventListener('click', () => toggleSeleccionEvento(celda, evento._id));
+        } else {
+            celda.style.opacity = '0.5';
+            celda.style.cursor = 'default';
+        }
+        
+        celda.innerHTML = contenido;
+        grid.appendChild(celda);
+
+        // Si es Domingo (7) y no es el último día, cerramos fila y empezamos nueva semana
+        if (fechaDia.weekday === 7 && diaContador < diasEnMes) {
+             // Nueva semana -> Nuevo Checkbox
+             grid.appendChild(crearCeldaSemana(diaContador + 1));
+        }
+
+        diaContador++;
+    }
+}
+
+function crearCeldaSemana(refId) {
+    const div = document.createElement('div');
+    div.className = 'news-week-select';
+    div.title = "Seleccionar toda la semana";
+    div.innerHTML = `<input type="checkbox" data-week-ref="${refId}">`;
+    
+    // Lógica click semana
+    div.querySelector('input').addEventListener('change', (e) => {
+        const checked = e.target.checked;
+        // Seleccionar los siguientes 7 elementos hermanos (o hasta que acabe grid)
+        // Como están en el DOM en orden: [Check] [Día] [Día]...
+        // Recorremos los nextSibling
+        let hermano = div.nextElementSibling;
+        for(let i=0; i<7; i++) {
+            if(!hermano) break;
+            if(hermano.classList.contains('news-week-select')) break; // Stop si llegamos a otra semana
+            
+            if(hermano.classList.contains('has-event')) {
+                const checkDia = hermano.querySelector('input[type="checkbox"]');
+                const idEvento = checkDia.value;
+                
+                if(checked) {
+                    eventosSeleccionadosIds.add(idEvento);
+                    hermano.classList.add('selected');
+                    checkDia.checked = true;
+                } else {
+                    eventosSeleccionadosIds.delete(idEvento);
+                    hermano.classList.remove('selected');
+                    checkDia.checked = false;
+                }
+            }
+            hermano = hermano.nextElementSibling;
+        }
+        actualizarContadorSeleccion();
+    });
+    return div;
+}
+
+function toggleSeleccionEvento(celda, id) {
+    if(eventosSeleccionadosIds.has(id)) {
+        eventosSeleccionadosIds.delete(id);
+        celda.classList.remove('selected');
+    } else {
+        eventosSeleccionadosIds.add(id);
+        celda.classList.add('selected');
+    }
+    actualizarContadorSeleccion();
+}
+
+function actualizarContadorSeleccion() {
+    document.getElementById('news-selection-counter').innerText = 
+        `${eventosSeleccionadosIds.size} eventos seleccionados`;
+}
+
+// --- GENERADOR DE HTML PARA MAIL ---
+
+function generarHTMLNewsletter() {
+    // 1. Recuperar eventos seleccionados
+    const seleccionados = adminEventos.filter(e => eventosSeleccionadosIds.has(e._id));
+    // Ordenar por fecha
+    seleccionados.sort((a,b) => a.fecha.localeCompare(b.fecha));
+
+    const subject = document.getElementById('news-subject').value;
+    const title = document.getElementById('news-title').value;
+    const intro = document.getElementById('news-intro').value;
+
+    // Estilos base (Inline CSS para emails)
+    const styleContainer = "width: 100%; max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #333;";
+    const styleCard = "width: 100%; border-bottom: 1px solid #ddd; padding: 20px 0;";
+    const styleImg = "width: 100%; max-width: 200px; border-radius: 8px; display: block;";
+    const styleBtn = "background-color: #B71C1C; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin-top: 10px;";
+    
+    // Construcción de Cards
+    let cardsHTML = '';
+    seleccionados.forEach((ev, index) => {
+        // Imagen
+        let imgUrl = ev.imagen.startsWith('http') ? ev.imagen : `https://tu-dominio-netlify.app/img/${ev.imagen}`; // OJO: Aquí necesitas la URL absoluta de producción. Si usas Cloudinary, ya la tienes. Si usas local, esto fallará en el mail.
+        // Como dijiste que usas Cloudinary, la mayoría tendrá http. Si es una local "imgBandaGenerica", necesitas subirla a un host público o usar la URL absoluta de tu web.
+        if(!imgUrl.startsWith('http')) {
+            // Fallback temporal a una imagen placeholder pública si es local
+            imgUrl = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1/altxerri_jazz_club/imgBandaGenerica.jpg"; 
+        }
+
+        const fechaNice = DateTime.fromISO(ev.fecha).setLocale('es').toFormat('EEEE dd ')+ ' de ' + DateTime.fromISO(ev.fecha).setLocale('es').toFormat('MMMM').toUpperCase();
+        
+        // Alternancia visual (zigzag)
+        // Hack para emails responsivos: Tablas anidadas.
+        // Simplificado: Imagen arriba, texto abajo para máxima compatibilidad móvil, 
+        // o tabla de 2 columnas para desktop.
+        
+        cardsHTML += `
+        <tr>
+            <td style="padding: 15px 0; border-bottom: 1px solid #444;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td width="220" valign="top" style="padding-right: 20px;">
+                            <img src="${imgUrl}" alt="${ev.titulo}" style="${styleImg}">
+                        </td>
+                        <td valign="top">
+                            <p style="margin: 0; color: #B71C1C; font-weight: bold; font-size: 14px; text-transform: uppercase;">
+                                ${fechaNice}
+                            </p>
+                            <h3 style="margin: 5px 0 10px 0; font-size: 18px; color: #000;">${ev.titulo}</h3>
+                            <p style="font-size: 14px; line-height: 1.4; color: #555;">${ev.descripcion || ''}</p>
+                            <a href="https://tu-sitio-web.com/#eventos" style="${styleBtn}">Reservar</a>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>`;
+    });
+
+    // Plantilla Completa
+    return `
+    <!DOCTYPE html>
+    <html>
+    <body style="margin:0; padding:20px; background-color:#f4f4f4;">
+        <table align="center" cellpadding="0" cellspacing="0" style="${styleContainer} background-color: #ffffff; padding: 20px; border-radius: 10px;">
+            <tr>
+                <td align="center" style="padding-bottom: 20px; border-bottom: 2px solid #B71C1C;">
+                    <img src="https://res.cloudinary.com/dpcrozjx0/image/upload/v1763505385/altxerri_jazz_club/h26gwioqlrd2ygwjbwvu.png" alt="Altxerri Logo" width="120">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 20px 0; text-align: center;">
+                    <h1 style="margin: 0 0 10px 0; font-size: 24px;">${title}</h1>
+                    <p style="font-size: 16px; color: #666;">${intro}</p>
+                </td>
+            </tr>
+            ${cardsHTML}
+            <tr>
+                <td align="center" style="padding-top: 30px; font-size: 12px; color: #999;">
+                    <p>Altxerri Jazz Bar<br>Erregina Erregeordea kalea, 2, San Sebastián</p>
+                    <p><a href="#" style="color: #999;">Darse de baja</a></p>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>`;
+}
+
+function mostrarPreviewNewsletter(e) {
+    e.preventDefault();
+    const html = generarHTMLNewsletter();
+    
+    // Abrir ventana nueva o modal
+    const modal = document.getElementById('modal-preview');
+    const container = document.getElementById('preview-container');
+    
+    // Limpiamos estilos oscuros del preview container para que se vea el mail real (fondo blanco)
+    container.innerHTML = `<iframe id="email-frame" style="width:100%; height:500px; border:none; background:#fff;"></iframe>`;
+    const doc = document.getElementById('email-frame').contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
+    
+    modal.style.display = 'flex';
+}
+
+async function enviarNewsletterReal(e) {
+    e.preventDefault();
+    if(eventosSeleccionadosIds.size === 0) return alert("Selecciona al menos un evento.");
+    
+    const subject = document.getElementById('news-subject').value;
+    if(!subject) return alert("Falta el Asunto del correo.");
+
+    if(!confirm("¿Estás seguro de enviar este correo a TODOS los suscriptores?")) return;
+
+    const btn = e.target;
+    btn.disabled = true;
+    btn.innerHTML = "Enviando...";
+
+    try {
+        const html = generarHTMLNewsletter();
+        
+        const res = await fetch('/api/newsletter/enviar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
+            body: JSON.stringify({ subject, htmlContent: html })
+        });
+        
+        const data = await res.json();
+        if(!data.success) throw new Error(data.message);
+        
+        alert(data.message);
+        // Reset
+        eventosSeleccionadosIds.clear();
+        renderizarCalendarioNewsletter();
+        actualizarContadorSeleccion();
+
+    } catch(err) {
+        alert("Error: " + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<i class='bx bxs-paper-plane'></i> Enviar Ahora";
+    }
+}
+

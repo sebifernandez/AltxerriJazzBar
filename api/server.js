@@ -24,6 +24,9 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 const router = express.Router();
 
+// --- 1. CONFIGURACIÓN DE RESEND ---
+const { Resend } = require('resend');
+
 // --- 1. CONFIGURACIÓN DE BASE DE DATOS ---
 const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = 'altxerriDB';
@@ -44,6 +47,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
   secure: true,
 });
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // --- DATOS SEMILLA (DEFINITIVO Y COMPLETO V2) ---
 const DATOS_SEMILLA = [
@@ -892,6 +897,86 @@ router.get('/contenido/backups/:uid', checkAuth, async (req, res) => {
     } catch (error) {
         console.error("Error en GET /contenido/backups:", error);
         res.status(500).json({ success: false, message: "Error al leer backups." });
+    }
+});
+
+// 1. SUSCRIPCIÓN (Pública - Desde el Footer)
+router.post('/suscribir', async (req, res) => {
+    try {
+        const db = await connectToDb();
+        const { nombre, email } = req.body;
+
+        if (!email || !email.includes('@')) {
+            return res.status(400).json({ success: false, message: 'Email inválido.' });
+        }
+
+        // Usamos updateOne con upsert:true para no duplicar emails
+        await db.collection('subscribers').updateOne(
+            { email: email },
+            { 
+                $set: { 
+                    nombre: nombre, 
+                    activo: true, 
+                    ultimo_registro: new Date().toISOString() 
+                } 
+            },
+            { upsert: true }
+        );
+
+        res.json({ success: true, message: '¡Suscripción exitosa!' });
+
+    } catch (error) {
+        console.error("Error suscripción:", error);
+        res.status(500).json({ success: false, message: 'Error interno.' });
+    }
+});
+
+// 2. ENVIAR NEWSLETTER (Privada - Requiere Auth)
+router.post('/newsletter/enviar', checkAuth, async (req, res) => {
+    try {
+        const db = await connectToDb();
+        const { subject, htmlContent } = req.body;
+
+        // 1. Obtener suscriptores activos
+        const suscriptores = await db.collection('subscribers').find({ activo: true }).toArray();
+        
+        if (suscriptores.length === 0) {
+            return res.status(400).json({ success: false, message: 'No hay suscriptores activos.' });
+        }
+
+        // Extraer solo los emails
+        // NOTA: Para producción real masiva, se recomienda usar "Audiences" de Resend o enviar en lotes.
+        // Para este MVP, enviaremos como copia oculta (BCC) para proteger privacidad.
+        const emails = suscriptores.map(s => s.email);
+
+        // Limitación de Resend Free: Máximo 50 destinatarios por batch si usas "to" o "bcc".
+        // Vamos a hacer un loop simple para enviar en tandas de 45 para estar seguros.
+        const batchSize = 45;
+        for (let i = 0; i < emails.length; i += batchSize) {
+            const lote = emails.slice(i, i + batchSize);
+            
+            await resend.emails.send({
+                from: 'Altxerri Jazz Bar <onboarding@resend.dev>', // IMPORTANTE: Cambiar esto cuando verifiques tu dominio en Resend
+                to: ['delivered@resend.dev'], // Dirección "dummy" requerida por Resend si usas BCC masivo en testing
+                bcc: lote,
+                subject: subject,
+                html: htmlContent
+            });
+        }
+
+        // 2. Guardar historial
+        await db.collection('newsletters').insertOne({
+            fecha: new Date().toISOString(),
+            subject: subject,
+            contenido: htmlContent,
+            destinatarios_conteo: emails.length
+        });
+
+        res.json({ success: true, message: `Newsletter enviado a ${emails.length} personas.` });
+
+    } catch (error) {
+        console.error("Error enviando newsletter:", error);
+        res.status(500).json({ success: false, message: 'Error al enviar emails: ' + error.message });
     }
 });
 
