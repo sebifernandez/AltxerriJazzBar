@@ -1688,22 +1688,28 @@ async function generarPreview(tipo) {
 }
 
 // ==========================================
-// 11. GESTOR DE NEWSLETTER (V2 - FINAL)
+// 11. GESTOR DE NEWSLETTER (V3 - CORREGIDO)
 // ==========================================
 
-// ESTADO GLOBAL DEL NEWSLETTER (RAM)
+// URLs base para imágenes en Newsletter (Cloudinary)
+const CLOUD_BASE = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1/altxerri_jazz_club/";
+const IMG_DEFAULT = CLOUD_BASE + "diaSinBanda.jpg";
+const IMG_CERRADO = CLOUD_BASE + "cerrado.jpg";
+const IMG_PRIVADO = CLOUD_BASE + "eventoPrivado.jpg";
+
+// ESTADO GLOBAL DEL NEWSLETTER
 let newsState = {
-    fechaCursor: DateTime.now(), // Mes que estamos viendo
-    mode: 'calendar', // 'calendar' o 'custom'
-    seleccionados: new Set(), // IDs de fechas seleccionadas (YYYY-MM-DD)
-    destacados: new Set(), // IDs de fechas destacadas
-    modificaciones: new Map(), // Key: YYYY-MM-DD, Value: { titulo, descripcion, archivoImg (Blob), urlImgPreview }
-    customData: { archivo: null, header: true } // Datos para modo Custom
+    fechaCursor: DateTime.now(), 
+    mode: 'calendar', 
+    seleccionados: new Set(), 
+    destacados: new Set(), 
+    modificaciones: new Map(), 
+    customData: { archivo: null, header: true } 
 };
 
 // Inicialización
 function inicializarGestorNewsletter() {
-    // 1. Botones de Navegación Calendario
+    // 1. Botones de Navegación
     const btnPrev = document.getElementById('news-cal-prev');
     const btnNext = document.getElementById('news-cal-next');
     
@@ -1718,7 +1724,7 @@ function inicializarGestorNewsletter() {
         });
     }
 
-    // 2. Toggle de Modo (Calendario / Custom)
+    // 2. Toggle de Modo
     const btnModeCal = document.getElementById('btn-mode-calendar');
     const btnModeCust = document.getElementById('btn-mode-custom');
     
@@ -1742,18 +1748,15 @@ function inicializarGestorNewsletter() {
     if(btnRemoveImg) btnRemoveImg.addEventListener('click', () => {
         document.getElementById('edit-news-img').value = '';
         document.getElementById('edit-news-img-preview').style.display = 'none';
-        // Marcar que se borró imagen en el estado temporal (null)
         const id = document.getElementById('edit-news-date').value;
         const currentMod = newsState.modificaciones.get(id) || {};
         currentMod.archivoImg = null;
-        currentMod.borrarImagen = true; // Flag para saber que reseteamos
+        currentMod.borrarImagen = true; 
     });
 
-    // 5. Carga Inicial
     renderizarCalendarioNewsletter();
 }
 
-// Cambiar Modo
 function setMode(mode) {
     newsState.mode = mode;
     const containerCal = document.getElementById('container-calendar-mode');
@@ -1783,88 +1786,82 @@ function renderizarCalendarioNewsletter() {
     labelMes.textContent = newsState.fechaCursor.setLocale('es').toFormat('MMMM yyyy').toUpperCase();
     grid.innerHTML = '';
 
-    // Headers (Dom -> Sab)
+    // Headers
     const diasSemana = ['Sem', 'Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     diasSemana.forEach(d => grid.innerHTML += `<div class="news-cal-header">${d}</div>`);
 
-    // Calcular días
     const primerDiaMes = newsState.fechaCursor.startOf('month');
     const diasEnMes = newsState.fechaCursor.daysInMonth;
-    // Luxon: 1=Lunes ... 7=Domingo.
-    // Queremos Domingo primero. Si es Domingo (7) -> Offset 0. Si es Lunes (1) -> Offset 1.
+    
+    // Luxon: 1=Lunes...7=Domingo. Ajustamos para que Domingo sea 0 visualmente en el offset
     const diaSemanaInicio = primerDiaMes.weekday; 
     let offset = (diaSemanaInicio === 7) ? 0 : diaSemanaInicio;
 
-    // Rellenar Grid
-    // Checkbox Semana 1
-    grid.appendChild(crearCeldaSemana());
+    // --- CORRECCIÓN 1: Checkbox Semana Lógico ---
+    // Pasamos el día de inicio (1) para el primer checkbox
+    grid.appendChild(crearCeldaSemana(1, diasEnMes));
 
-    // Vacíos previos
     for(let i=0; i<offset; i++) grid.appendChild(document.createElement('div'));
 
-    // Días
     for(let i=1; i<=diasEnMes; i++) {
         const fechaDia = newsState.fechaCursor.set({ day: i });
-        const fechaIso = fechaDia.toISODate(); // ID ÚNICO: YYYY-MM-DD
+        const fechaIso = fechaDia.toISODate();
         
-        // Buscar datos (Evento DB + Edición Local)
         const eventoDB = adminEventos.find(e => e.fecha === fechaIso);
         const modificacion = newsState.modificaciones.get(fechaIso);
         
-        // Datos Finales para Visualización en Calendario
         let titulo = modificacion?.titulo || (eventoDB ? eventoDB.titulo : 'Bar Abierto');
-        let imgUrl = 'img/diaSinBanda.jpg'; // Default Bar Abierto
+        
+        // --- CORRECCIÓN 3A: Rutas visuales en el Admin ---
+        let imgUrl = '../img/diaSinBanda.jpg'; // Default local
 
         if (modificacion?.urlImgPreview) {
-            imgUrl = modificacion.urlImgPreview; // Imagen editada local
+            imgUrl = modificacion.urlImgPreview;
         } else if (eventoDB) {
-            // Imagen DB
-            if (eventoDB.tipoEvento === 'Cerrado') imgUrl = 'img/cerrado.jpg';
-            else if (eventoDB.tipoEvento === 'Privado') imgUrl = 'img/eventoPrivado.jpg';
-            else if (eventoDB.imagen) imgUrl = eventoDB.imagen.startsWith('http') ? eventoDB.imagen : `../img/${eventoDB.imagen}`;
-        } else {
-             // Es un día vacío sin editar -> Bar Abierto
-             imgUrl = '../img/diaSinBanda.jpg';
+            if (eventoDB.tipoEvento === 'Cerrado') {
+                titulo = eventoDB.titulo || 'Cerrado';
+                imgUrl = '../img/cerrado.jpg';
+            }
+            else if (eventoDB.tipoEvento === 'Privado') {
+                titulo = eventoDB.titulo || 'Evento Privado';
+                imgUrl = '../img/eventoPrivado.jpg';
+            }
+            else if (eventoDB.imagen) {
+                imgUrl = eventoDB.imagen.startsWith('http') ? eventoDB.imagen : `../img/${eventoDB.imagen}`;
+            }
         }
 
-        // Crear Celda
         const celda = document.createElement('div');
         celda.className = 'news-cal-day';
         if (newsState.seleccionados.has(fechaIso)) celda.classList.add('selected');
         if (newsState.destacados.has(fechaIso)) celda.classList.add('featured');
-        if (modificacion) celda.classList.add('has-edits'); // Indicador visual de edición
+        if (modificacion) celda.classList.add('has-edits'); 
 
         celda.innerHTML = `
             <img src="${imgUrl}" class="news-day-bg">
             <span class="news-day-number">${i}</span>
             <span class="news-day-status">${titulo}</span>
             
-            <div class="news-action-btn btn-star" title="Destacar (Ocupar 100% con estilo)"><i class='bx bxs-star'></i></div>
-            <div class="news-action-btn btn-edit" title="Editar Contenido"><i class='bx bxs-pencil'></i></div>
+            <div class="news-action-btn btn-star"><i class='bx bxs-star'></i></div>
+            <div class="news-action-btn btn-edit"><i class='bx bxs-pencil'></i></div>
         `;
 
-        // LOGICA DE CLICKS
-        // 1. Click en Estrella
-        const btnStar = celda.querySelector('.btn-star');
-        btnStar.addEventListener('click', (e) => {
-            e.stopPropagation(); // No deseleccionar
+        celda.querySelector('.btn-star').addEventListener('click', (e) => {
+            e.stopPropagation();
             if(newsState.destacados.has(fechaIso)) newsState.destacados.delete(fechaIso);
             else newsState.destacados.add(fechaIso);
-            renderizarCalendarioNewsletter(); // Re-render para actualizar estilo
+            renderizarCalendarioNewsletter();
         });
 
-        // 2. Click en Lápiz
-        const btnEdit = celda.querySelector('.btn-edit');
-        btnEdit.addEventListener('click', (e) => {
+        celda.querySelector('.btn-edit').addEventListener('click', (e) => {
             e.stopPropagation();
             abrirEditorEfimero(fechaIso, eventoDB);
         });
 
-        // 3. Click General (Seleccionar/Deseleccionar)
         celda.addEventListener('click', () => {
             if(newsState.seleccionados.has(fechaIso)) {
                 newsState.seleccionados.delete(fechaIso);
-                newsState.destacados.delete(fechaIso); // Si deselecciono, quito destacado
+                newsState.destacados.delete(fechaIso); 
             } else {
                 newsState.seleccionados.add(fechaIso);
             }
@@ -1874,36 +1871,58 @@ function renderizarCalendarioNewsletter() {
 
         grid.appendChild(celda);
 
-        // Si es Sábado (6), cerramos fila y empezamos nueva semana
-        // (Luxon: Dom=7, Lun=1... Sab=6)
+        // Si es Sábado (6), cerramos fila. Si quedan días, metemos otro Check Semana
         if (fechaDia.weekday === 6 && i < diasEnMes) {
-            grid.appendChild(crearCeldaSemana());
+            grid.appendChild(crearCeldaSemana(i + 1, diasEnMes));
         }
     }
     actualizarContadorNews();
 }
 
-function crearCeldaSemana() {
+// --- CORRECCIÓN 1: Nueva lógica de selección de semana ---
+function crearCeldaSemana(diaInicio, totalDiasMes) {
     const div = document.createElement('div');
     div.className = 'news-week-chk';
     div.innerHTML = `<input type="checkbox" title="Seleccionar Semana">`;
     
+    // Verificamos si toda esta "semana" (o lo que queda) ya está seleccionada para marcar el check
+    let todosSeleccionados = true;
+    const fechaBase = newsState.fechaCursor.set({ day: diaInicio });
+    
+    // Calcular cuántos días quedan en esta semana (hasta el próximo sábado o fin de mes)
+    // El bucle avanza hasta que weekday sea 6 (Sábado) o se acabe el mes
+    let dia = diaInicio;
+    while(dia <= totalDiasMes) {
+        const f = newsState.fechaCursor.set({ day: dia });
+        if(!newsState.seleccionados.has(f.toISODate())) {
+            todosSeleccionados = false;
+            break;
+        }
+        if(f.weekday === 6) break; // Llegamos al sábado
+        dia++;
+    }
+    div.querySelector('input').checked = todosSeleccionados;
+
+    // Evento Click
     div.querySelector('input').addEventListener('change', (e) => {
         const checked = e.target.checked;
-        let hermano = div.nextElementSibling;
+        let d = diaInicio;
         
-        // Iteramos los siguientes 7 elementos
-        for(let i=0; i<7; i++) {
-            if(!hermano || hermano.classList.contains('news-week-chk')) break;
+        while(d <= totalDiasMes) {
+            const f = newsState.fechaCursor.set({ day: d });
+            const iso = f.toISODate();
             
-            // Obtenemos la fecha del día desde el índice o regenerando lógica (simplificado: click event)
-            // Hack: simulamos click si el estado no coincide
-            const esSelected = hermano.classList.contains('selected');
-            if (checked && !esSelected) hermano.click();
-            if (!checked && esSelected) hermano.click();
+            if(checked) newsState.seleccionados.add(iso);
+            else {
+                newsState.seleccionados.delete(iso);
+                newsState.destacados.delete(iso);
+            }
             
-            hermano = hermano.nextElementSibling;
+            if(f.weekday === 6) break; // Parar al llegar al sábado
+            d++;
         }
+        renderizarCalendarioNewsletter(); // Re-renderizar UNA sola vez al final
+        actualizarContadorNews();
     });
     return div;
 }
@@ -1922,13 +1941,10 @@ function abrirEditorEfimero(fechaIso, eventoDB) {
     const imgPreview = document.getElementById('edit-news-img-preview');
     const imgFile = document.getElementById('edit-news-img');
 
-    // Reset UI
     imgFile.value = '';
     imgPreview.style.display = 'none';
 
-    // Cargar datos existentes (Modificación > DB > Default)
     const modificacion = newsState.modificaciones.get(fechaIso);
-    
     idInp.value = fechaIso;
     
     if (modificacion) {
@@ -1939,7 +1955,6 @@ function abrirEditorEfimero(fechaIso, eventoDB) {
             imgPreview.querySelector('img').src = modificacion.urlImgPreview;
         }
     } else {
-        // Datos por defecto
         if (eventoDB) {
             tituloInp.value = eventoDB.titulo;
             descInp.value = eventoDB.descripcion || '';
@@ -1948,7 +1963,6 @@ function abrirEditorEfimero(fechaIso, eventoDB) {
             descInp.value = "Disfruta de buena música y tragos en el mejor ambiente.";
         }
     }
-
     modal.style.display = 'flex';
 }
 
@@ -1963,16 +1977,13 @@ function guardarEdicionEfimera() {
     nuevaMod.descripcion = desc;
 
     if (fileInput.files && fileInput.files[0]) {
-        // Guardamos el Blob para subirlo luego
         nuevaMod.archivoImg = fileInput.files[0];
-        // Creamos URL temporal para preview en calendario
         nuevaMod.urlImgPreview = URL.createObjectURL(fileInput.files[0]);
     }
 
     newsState.modificaciones.set(fechaIso, nuevaMod);
-    
     document.getElementById('modal-edit-newsletter').style.display = 'none';
-    renderizarCalendarioNewsletter(); // Refrescar vista
+    renderizarCalendarioNewsletter();
 }
 
 // ==========================================
@@ -1980,9 +1991,13 @@ function guardarEdicionEfimera() {
 // ==========================================
 
 async function prepararDatosParaEnvio() {
-    // 1. Validaciones
     const subject = document.getElementById('news-subject').value;
     const title = document.getElementById('news-title').value;
+    // --- CORRECCIÓN 2: Leer estado del checkbox ---
+    const includeHeader = document.getElementById('news-custom-header') 
+        ? document.getElementById('news-custom-header').checked 
+        : true; 
+
     if(!subject || !title) throw new Error("Asunto y Título son obligatorios.");
 
     if (newsState.mode === 'calendar' && newsState.seleccionados.size === 0) {
@@ -1993,24 +2008,21 @@ async function prepararDatosParaEnvio() {
         if(!file) throw new Error("En modo personalizado debes subir una imagen flyer.");
     }
 
-    // 2. Subida de Imágenes Efímeras (Solo las necesarias)
-    // Recorremos las modificaciones y subimos los Blobs a Cloudinary
+    // Subida de imágenes editadas
     for (const [fecha, mod] of newsState.modificaciones) {
-        // Solo si la fecha está seleccionada
         if (newsState.seleccionados.has(fecha) && mod.archivoImg) {
             const urlNube = await subirImagenAlVuelo(mod.archivoImg);
-            mod.urlFinal = urlNube; // Guardamos la URL pública
+            mod.urlFinal = urlNube; 
         }
     }
 
-    // Si es modo Custom, subir el flyer
     let urlFlyerCustom = null;
     if (newsState.mode === 'custom') {
         const file = document.getElementById('news-custom-img').files[0];
         urlFlyerCustom = await subirImagenAlVuelo(file);
     }
 
-    return { subject, title, urlFlyerCustom };
+    return { subject, title, urlFlyerCustom, includeHeader };
 }
 
 async function subirImagenAlVuelo(file) {
@@ -2026,26 +2038,29 @@ async function subirImagenAlVuelo(file) {
 }
 
 function generarHTMLFinal(config) {
-    const { title, urlFlyerCustom } = config;
+    const { title, urlFlyerCustom, includeHeader } = config;
     const subtitle = document.getElementById('news-subtitle').value;
     const intro = document.getElementById('news-intro').value;
     const footer = document.getElementById('news-footer-text').value;
 
-    // ESTILOS INLINE (Compatible Outlook/Gmail)
     const colors = { bg: "#121212", cardBg: "#1e1e1e", text: "#e0e0e0", accent: "#B71C1C", gold: "#FFD700" };
     
-    // Header
     let html = `
     <!DOCTYPE html>
     <html>
     <body style="margin:0; padding:0; background-color:${colors.bg}; font-family: Arial, sans-serif; color:${colors.text};">
         <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: ${colors.bg};">
-            <tr><td align="center" style="padding: 20px;">
-                <img src="https://res.cloudinary.com/dpcrozjx0/image/upload/v1763505385/altxerri_jazz_club/h26gwioqlrd2ygwjbwvu.png" width="150" alt="Altxerri">
-            </td></tr>
     `;
 
-    // Intro Section
+    // --- CORRECCIÓN 2: Header Condicional ---
+    if (includeHeader) {
+        html += `
+            <tr><td align="center" style="padding: 20px;">
+                <img src="${CLOUD_BASE + 'h26gwioqlrd2ygwjbwvu.png'}" width="150" alt="Altxerri">
+            </td></tr>
+        `;
+    }
+
     html += `
             <tr><td style="padding: 0 20px 20px 20px; text-align: center;">
                 <h1 style="color: #ffffff; margin-bottom: 5px; font-size: 24px;">${title}</h1>
@@ -2054,56 +2069,56 @@ function generarHTMLFinal(config) {
             </td></tr>
     `;
 
-    // CONTENIDO DINÁMICO
     if (newsState.mode === 'custom') {
-        // MODO CUSTOM: Solo Flyer
         html += `
             <tr><td align="center" style="padding: 0 0 20px 0;">
                 <img src="${urlFlyerCustom}" style="width: 100%; max-width: 600px; display: block; border-radius: 8px;">
             </td></tr>
         `;
     } else {
-        // MODO CALENDARIO
         const fechasOrdenadas = Array.from(newsState.seleccionados).sort();
         
         fechasOrdenadas.forEach(fecha => {
             const eventoDB = adminEventos.find(e => e.fecha === fecha);
             const mod = newsState.modificaciones.get(fecha) || {};
             
-            // Datos Finales
             const titulo = mod.titulo || (eventoDB ? eventoDB.titulo : 'Bar Abierto');
             const desc = mod.descripcion || (eventoDB ? eventoDB.descripcion : 'Ven a disfrutar de nuestros tragos.');
             
-            // Imagen: Prioridad -> Uploaded > Edit Preview (No sirve para mail) > DB > Default
-            // Para el mail necesitamos mod.urlFinal (que subimos en paso previo) o la de DB pública.
-            let imgUrl = mod.urlFinal || (eventoDB?.imagen?.startsWith('http') ? eventoDB.imagen : "https://res.cloudinary.com/dpcrozjx0/image/upload/v1/altxerri_jazz_club/diaSinBanda.jpg");
-            
-            if (!mod.urlFinal && eventoDB && !eventoDB.imagen.startsWith('http')) {
-                // Parche para imagenes locales viejas
-                 imgUrl = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1/altxerri_jazz_club/imgBandaGenerica.jpg";
+            // --- CORRECCIÓN 3B: Imágenes Absolutas para Mail ---
+            let imgUrl = IMG_DEFAULT;
+
+            if (mod.urlFinal) {
+                imgUrl = mod.urlFinal; // 1. Prioridad: Imagen editada y subida
+            } else if (eventoDB) {
+                if (eventoDB.tipoEvento === 'Cerrado') imgUrl = IMG_CERRADO;
+                else if (eventoDB.tipoEvento === 'Privado') imgUrl = IMG_PRIVADO;
+                else if (eventoDB.imagen) {
+                    // Si ya es http la usamos, si no, es local y NO sirve para mail -> Fallback
+                    if(eventoDB.imagen.startsWith('http')) imgUrl = eventoDB.imagen;
+                    else imgUrl = IMG_DEFAULT; // No podemos mostrar local en mail
+                }
             }
+            // Si es Bar Abierto (no DB) y no hay edit -> queda IMG_DEFAULT
 
             const isFeatured = newsState.destacados.has(fecha);
             const fechaTxt = DateTime.fromISO(fecha).setLocale('es').toFormat('EEEE d').toUpperCase();
             
-            // Lógica Visual:
-            // Destacado: Titulo Dorado, Imagen Grande, Texto Grande.
-            // Normal: Titulo Blanco, Estándar.
-            // Vacío (Bar Abierto sin editar): Imagen fina? No, el usuario pidió "Lineas un poco menos altas".
-            
-            // Definimos Alturas/Estilos
             const heightImg = isFeatured ? "250px" : "180px";
             const borderStyle = isFeatured ? `border: 2px solid ${colors.gold};` : `border: 1px solid #333;`;
             const titleColor = isFeatured ? colors.gold : "#ffffff";
             const titleSize = isFeatured ? "22px" : "18px";
-            const isVacio = !eventoDB && !mod.titulo; // Si es generado auto
             
-            // CARD (Todo al 100% de ancho)
+            // Fix para Outlook: background-image a veces falla, usamos <img> block si es posible,
+            // pero para mantener el diseño cover, background es mejor.
+            // Agregamos un fallback img oculto para clientes viejos? No, simplificamos.
+            
             html += `
             <tr><td style="padding: 0 20px 20px 20px;">
                 <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${colors.cardBg}; border-radius: 8px; overflow: hidden; ${borderStyle}">
                     <tr>
-                        <td height="${isVacio ? '100' : heightImg}" style="background-image: url('${imgUrl}'); background-size: cover; background-position: center;">
+                        <td height="${heightImg}" style="background-image: url('${imgUrl}'); background-size: cover; background-position: center; background-color: #333;">
+                            <div></div>
                             </td>
                     </tr>
                     <tr>
@@ -2125,7 +2140,6 @@ function generarHTMLFinal(config) {
         });
     }
 
-    // Footer
     html += `
             ${footer ? `<tr><td align="center" style="padding: 20px; color:#aaa; font-style:italic;">${footer}</td></tr>` : ''}
             
@@ -2149,44 +2163,30 @@ function generarHTMLFinal(config) {
     return html;
 }
 
-// HANDLERS FINALES
 async function mostrarPreviewNewsletter(e) {
     e.preventDefault();
     const btn = e.target;
     btn.innerHTML = "Generando...";
     
     try {
-        // En preview NO subimos imágenes definitivas todavía si podemos evitarlo,
-        // pero para que el HTML se vea bien en el iframe, podemos usar las URLs temporales (blob) 
-        // o subir solo si es necesario. 
-        // Simplificación: Usamos URLs locales (Blob) para preview y Subida real para envío.
-        
-        // HACK: generarHTMLFinal espera URLs públicas. Para preview local, 
-        // parcheamos las modificaciones con URLs Blob antes de generar.
-        // (Ya lo hacemos en renderizarCalendarioNewsletter con urlImgPreview)
-        
-        // Creamos una copia de configuración 'fake' para preview
         const configPreview = { 
             title: document.getElementById('news-title').value,
-            // Si hay archivo custom, creamos URL temporal
             urlFlyerCustom: newsState.mode === 'custom' && document.getElementById('news-custom-img').files[0] 
                 ? URL.createObjectURL(document.getElementById('news-custom-img').files[0]) 
-                : null
+                : null,
+            includeHeader: document.getElementById('news-custom-header')?.checked ?? true
         };
         
-        // Inyectar URLs preview en modifiaciones TEMPORALMENTE
         for (const [key, val] of newsState.modificaciones) {
             if(val.urlImgPreview) val.urlFinal = val.urlImgPreview; 
         }
 
         const html = generarHTMLFinal(configPreview);
 
-        // Limpieza de URLs temporales en .urlFinal para no confundir al enviador real
         for (const [key, val] of newsState.modificaciones) {
             if(val.urlImgPreview) val.urlFinal = null; 
         }
 
-        // Mostrar Modal
         const modal = document.getElementById('modal-preview');
         const container = document.getElementById('preview-container');
         container.innerHTML = `<iframe id="email-frame" style="width:100%; height:600px; border:none; background:#fff;"></iframe>`;
@@ -2212,13 +2212,9 @@ async function enviarNewsletterReal(e) {
     btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Subiendo imágenes...";
 
     try {
-        // 1. Subir Imágenes y Preparar Config
         const config = await prepararDatosParaEnvio();
-        
-        // 2. Generar HTML Final (Ahora sí con URLs de Cloudinary)
         const html = generarHTMLFinal(config);
 
-        // 3. Enviar a Backend
         const res = await fetch('/api/newsletter/enviar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': getAuthToken() },
@@ -2229,10 +2225,6 @@ async function enviarNewsletterReal(e) {
         if(!data.success) throw new Error(data.message);
         
         alert("¡Enviado con éxito!");
-        
-        // Reset parcial (opcional)
-        // newsState.seleccionados.clear();
-        // renderizarCalendarioNewsletter();
 
     } catch (err) {
         alert("Error: " + err.message);
