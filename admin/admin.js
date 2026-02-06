@@ -2037,6 +2037,10 @@ async function subirImagenAlVuelo(file) {
     return data.url;
 }
 
+// ==========================================
+// FUNCIÓN CORREGIDA: GENERAR HTML FINAL
+// ==========================================
+
 function generarHTMLFinal(config) {
     const { title, urlFlyerCustom, includeHeader } = config;
     const subtitle = document.getElementById('news-subtitle').value;
@@ -2045,6 +2049,14 @@ function generarHTMLFinal(config) {
 
     const colors = { bg: "#121212", cardBg: "#1e1e1e", text: "#e0e0e0", accent: "#B71C1C", gold: "#FFD700" };
     
+    // URLs PÚBLICAS (Cloudinary) - Asegúrate de que estas imágenes existan en tu nube
+    // Si no las tienes, reemplaza estas URLs con links de imágenes que sí tengas online.
+    const IMG_CLOUD_BASE = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1/altxerri_jazz_club/";
+    const URL_BAR_ABIERTO = IMG_CLOUD_BASE + "diaSinBanda.jpg"; 
+    const URL_CERRADO = IMG_CLOUD_BASE + "cerrado.jpg";
+    const URL_PRIVADO = IMG_CLOUD_BASE + "eventoPrivado.jpg";
+    const URL_GENERICA = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1/altxerri_jazz_club/imgBandaGenerica.jpg"; // Fallback final
+
     let html = `
     <!DOCTYPE html>
     <html>
@@ -2052,11 +2064,10 @@ function generarHTMLFinal(config) {
         <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: ${colors.bg};">
     `;
 
-    // --- CORRECCIÓN 2: Header Condicional ---
     if (includeHeader) {
         html += `
             <tr><td align="center" style="padding: 20px;">
-                <img src="${CLOUD_BASE + 'h26gwioqlrd2ygwjbwvu.png'}" width="150" alt="Altxerri">
+                <img src="${IMG_CLOUD_BASE + 'h26gwioqlrd2ygwjbwvu.png'}" width="150" alt="Altxerri">
             </td></tr>
         `;
     }
@@ -2082,25 +2093,43 @@ function generarHTMLFinal(config) {
             const eventoDB = adminEventos.find(e => e.fecha === fecha);
             const mod = newsState.modificaciones.get(fecha) || {};
             
-            const titulo = mod.titulo || (eventoDB ? eventoDB.titulo : 'Bar Abierto');
-            const desc = mod.descripcion || (eventoDB ? eventoDB.descripcion : 'Ven a disfrutar de nuestros tragos.');
-            
-            // --- CORRECCIÓN 3B: Imágenes Absolutas para Mail ---
-            let imgUrl = IMG_DEFAULT;
+            // 1. LÓGICA DE TEXTOS (Ahora maneja Cerrado y Privado explícitamente)
+            let titulo = mod.titulo;
+            let desc = mod.descripcion;
 
-            if (mod.urlFinal) {
-                imgUrl = mod.urlFinal; // 1. Prioridad: Imagen editada y subida
-            } else if (eventoDB) {
-                if (eventoDB.tipoEvento === 'Cerrado') imgUrl = IMG_CERRADO;
-                else if (eventoDB.tipoEvento === 'Privado') imgUrl = IMG_PRIVADO;
-                else if (eventoDB.imagen) {
-                    // Si ya es http la usamos, si no, es local y NO sirve para mail -> Fallback
-                    if(eventoDB.imagen.startsWith('http')) imgUrl = eventoDB.imagen;
-                    else imgUrl = IMG_DEFAULT; // No podemos mostrar local en mail
+            if (!titulo) {
+                if (eventoDB) {
+                    if (eventoDB.tipoEvento === 'Cerrado') titulo = 'CERRADO';
+                    else if (eventoDB.tipoEvento === 'Privado') titulo = 'EVENTO PRIVADO';
+                    else titulo = eventoDB.titulo;
+                } else {
+                    titulo = 'BAR ABIERTO'; // Caso día vacío sin editar
                 }
             }
-            // Si es Bar Abierto (no DB) y no hay edit -> queda IMG_DEFAULT
 
+            if (!desc) {
+                if (eventoDB) desc = eventoDB.descripcion || '';
+                // Texto por defecto si está vacío
+                if (!desc && !eventoDB) desc = 'Ven a disfrutar de nuestros tragos y el mejor ambiente de Jazz.';
+                if (eventoDB && eventoDB.tipoEvento === 'Cerrado') desc = 'Disculpen las molestias.';
+            }
+
+            // 2. LÓGICA DE IMÁGENES (Prioridad: Editada > DB > Tipo Evento > Default)
+            let imgUrl = URL_BAR_ABIERTO; // Por defecto (Bar Abierto)
+
+            if (mod.urlFinal) {
+                imgUrl = mod.urlFinal; // Imagen subida manualmente para el mail
+            } else if (eventoDB) {
+                if (eventoDB.tipoEvento === 'Cerrado') imgUrl = URL_CERRADO;
+                else if (eventoDB.tipoEvento === 'Privado') imgUrl = URL_PRIVADO;
+                else if (eventoDB.imagen) {
+                    // Solo usamos la imagen de DB si ya es un link de internet (Cloudinary)
+                    if (eventoDB.imagen.startsWith('http')) imgUrl = eventoDB.imagen;
+                    else imgUrl = URL_GENERICA; // Si es local, usamos genérica para que no salga rota
+                }
+            }
+
+            // Estilos
             const isFeatured = newsState.destacados.has(fecha);
             const fechaTxt = DateTime.fromISO(fecha).setLocale('es').toFormat('EEEE d').toUpperCase();
             
@@ -2108,10 +2137,6 @@ function generarHTMLFinal(config) {
             const borderStyle = isFeatured ? `border: 2px solid ${colors.gold};` : `border: 1px solid #333;`;
             const titleColor = isFeatured ? colors.gold : "#ffffff";
             const titleSize = isFeatured ? "22px" : "18px";
-            
-            // Fix para Outlook: background-image a veces falla, usamos <img> block si es posible,
-            // pero para mantener el diseño cover, background es mejor.
-            // Agregamos un fallback img oculto para clientes viejos? No, simplificamos.
             
             html += `
             <tr><td style="padding: 0 20px 20px 20px;">
