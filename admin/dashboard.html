@@ -70,6 +70,11 @@
                         <h3>Galería y Web</h3>
                         <p>Administrar fotos del carrusel y textos.</p>
                     </div>
+                    <div class="dash-card" data-target="gestion-newsletter">
+                        <i class='bx bxs-envelope'></i>
+                        <h3>Newsletter</h3>
+                        <p>Crear y enviar campañas de correo.</p>
+                    </div>
                 </div>
             </section>
 
@@ -437,25 +442,85 @@
             </section>
 
             <section id="gestion-newsletter" class="content-section">
-                <h2>Creador de Newsletter</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2>Creador de Newsletter</h2>
+                    
+                    <div class="switch-mode-container" style="background: var(--color-bg-dark); padding: 5px; border-radius: 20px; border: 1px solid #444;">
+                        <button type="button" id="btn-mode-calendar" class="btn-mode active" style="border:none; padding: 5px 15px; border-radius: 15px; cursor: pointer; font-weight: bold;">Por Fechas</button>
+                        <button type="button" id="btn-mode-custom" class="btn-mode" style="border:none; padding: 5px 15px; border-radius: 15px; cursor: pointer; color: #aaa; background: transparent;">Personalizado</button>
+                    </div>
+                </div>
+
                 <div class="newsletter-workspace">
-                    <div class="news-config-col">
-                        <div class="form-alta-evento"> <h4>1. Configuración del Correo</h4>
+                    
+                    <div class="news-col-config">
+                        <div class="form-alta-evento">
+                            <h4 style="color: var(--color-primario-rojo); margin-bottom: 1rem;">1. Configuración del Correo</h4>
+                            
                             <div class="form-group">
                                 <label>Asunto del Correo (Subject) *</label>
-                                <input type="text" id="news-subject" class="form-input" placeholder="Ej: ¡Esta semana Jazz en vivo con Pedro Asnar!">
+                                <input type="text" id="news-subject" class="form-input" placeholder="Ej: Agenda Semanal - ¡No te lo pierdas!">
                             </div>
+                            
                             <div class="form-group">
-                                <label>Título Principal (Encabezado)</label>
+                                <label>Título Principal (Encabezado) *</label>
                                 <input type="text" id="news-title" class="form-input" value="Agenda Semanal">
                             </div>
+
                             <div class="form-group">
-                                <label>Texto Introductorio</label>
-                                <textarea id="news-intro" class="form-input" style="min-height: 80px;">Te compartimos los próximos conciertos para que vayas reservando tu mesa.</textarea>
+                                <label>Subtítulo (Opcional)</label>
+                                <input type="text" id="news-subtitle" class="form-input" placeholder="Ej: Del 10 al 17 de Febrero">
                             </div>
                             
-                            <hr style="border-top:1px solid #444; margin: 1.5rem 0;">
+                            <div class="form-group">
+                                <label>Texto Introductorio (Opcional)</label>
+                                <textarea id="news-intro" class="form-input" style="min-height: 60px;">Te compartimos los próximos conciertos para que vayas reservando tu mesa.</textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Texto Final / Footer (Opcional)</label>
+                                <textarea id="news-footer-text" class="form-input" style="min-height: 60px;" placeholder="Esperamos verte pronto..."></textarea>
+                            </div>
+
+                            <div id="custom-newsletter-fields" style="display: none; border-top: 1px solid #444; margin-top: 1rem; padding-top: 1rem;">
+                                <h4 style="color: #FFC107;">Imagen Principal (Flyer)</h4>
+                                <div class="form-group">
+                                    <label>Subir Flyer Completo *</label>
+                                    <input type="file" id="news-custom-img" class="form-input-file" accept="image/*">
+                                </div>
+                                <div class="form-group-checkbox">
+                                    <input type="checkbox" id="news-custom-header" checked>
+                                    <label for="news-custom-header">Incluir Logo y Cabecera del Bar</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="news-col-calendar" id="container-calendar-mode">
+                        <div class="form-alta-evento">
+                            <div class="news-cal-top-bar">
+                                <h4>2. Selecciona los Eventos</h4>
+                                <div class="cal-nav-buttons">
+                                    <button type="button" class="btn btn-secondary btn-sm" id="news-cal-prev"><i class='bx bx-chevron-left'></i></button>
+                                    <span id="news-cal-month">MES AÑO</span>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="news-cal-next"><i class='bx bx-chevron-right'></i></button>
+                                </div>
+                            </div>
                             
+                            <div class="newsletter-calendar-grid" id="news-calendar-grid">
+                                </div>
+                            
+                            <div class="news-selection-info">
+                                <span id="news-selection-counter" style="color:#FFC107; font-weight:bold;">0 eventos seleccionados</span>
+                                <small style="color:#aaa; display:block; margin-top:5px;">
+                                    <i class='bx bxs-star'></i> Destacar | <i class='bx bxs-pencil'></i> Editar para Mail
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="news-col-actions">
+                        <div class="form-alta-evento" style="text-align: center;">
                             <h4>3. Acciones</h4>
                             <button class="btn btn-secondary" id="btn-preview-newsletter" style="width:100%; margin-bottom:1rem;">
                                 <i class='bx bx-show'></i> Vista Previa
@@ -463,31 +528,51 @@
                             <button class="btn btn-primary" id="btn-send-newsletter" style="width:100%;">
                                 <i class='bx bxs-paper-plane'></i> Enviar Ahora
                             </button>
-                            <p style="font-size:0.8rem; color:#aaa; margin-top:5px; text-align:center;">Se enviará a toda la base de suscriptores.</p>
+                            <p style="font-size:0.8rem; color:#aaa; margin-top:10px;">
+                                Se enviará a la base de datos de suscriptores.
+                            </p>
                         </div>
                     </div>
 
-                    <div class="news-calendar-col">
-                        <div class="form-alta-evento">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-                                <h4>2. Selecciona los Eventos</h4>
-                                <div class="cal-nav-buttons">
-                                    <button type="button" class="btn btn-secondary" id="news-cal-prev"><i class='bx bx-chevron-left'></i></button>
-                                    <span id="news-cal-month" style="font-weight:bold; margin:0 10px;">Mes Año</span>
-                                    <button type="button" class="btn btn-secondary" id="news-cal-next"><i class='bx bx-chevron-right'></i></button>
-                                </div>
+                </div>
+            </section>
+
+            <div id="modal-edit-newsletter" class="modal-buscador-imagenes">
+                <div class="modal-contenido" style="max-width: 500px;">
+                    <div class="modal-header">
+                        <h3>Editar para Newsletter</h3>
+                        <span class="cerrar-modal" id="close-edit-news">&times;</span>
+                    </div>
+                    <div style="padding: 1rem 0;">
+                        <p style="font-size: 0.9rem; color: #FFC107; margin-bottom: 1rem;">
+                            <i class='bx bxs-info-circle'></i> Estos cambios solo se aplicarán a este envío de correo. No afectan a la web.
+                        </p>
+                        
+                        <input type="hidden" id="edit-news-id"> <input type="hidden" id="edit-news-date"> <div class="form-group">
+                            <label>Título para el Mail</label>
+                            <input type="text" id="edit-news-title" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Descripción / Precio</label>
+                            <textarea id="edit-news-desc" class="form-input" style="min-height: 80px;"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Imagen Personalizada (Opcional)</label>
+                            <input type="file" id="edit-news-img" class="form-input-file" accept="image/*">
+                            <div id="edit-news-img-preview" style="margin-top: 10px; max-width: 100px; display: none;">
+                                <img src="" style="width: 100%; border-radius: 5px;">
+                                <button type="button" id="btn-remove-custom-img" style="font-size: 0.8rem; background: #333; border: none; color: #fff; cursor: pointer;">Quitar</button>
                             </div>
-                            
-                            <div class="newsletter-calendar-grid" id="news-calendar-grid">
-                                </div>
-                            
-                            <div id="news-selection-counter" style="margin-top:1rem; padding:1rem; background:#222; border-radius:8px; text-align:center; color:#FFC107;">
-                                0 eventos seleccionados
-                            </div>
+                        </div>
+                        
+                        <div class="form-actions" style="margin-top: 1rem;">
+                            <button type="button" class="btn btn-primary" id="btn-save-edit-news">Confirmar Edición Temporal</button>
                         </div>
                     </div>
                 </div>
-            </section>
+            </div>
             
         </main>
     </div>
