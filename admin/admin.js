@@ -166,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         inicializarModalImagenes();
         inicializarGestorWeb();
         inicializarGestorTextos();
+        inicializarGestorNewsletter();
         fetchEventosData(); 
         fetchProductosData(); 
         inicializarPanelesBusquedaEventos();
