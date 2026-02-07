@@ -1764,16 +1764,18 @@ function setMode(mode) {
     const btnCal = document.getElementById('btn-mode-calendar');
     const btnCust = document.getElementById('btn-mode-custom');
 
+    // Forzamos limpieza total de clases antes de asignar
+    btnCal.classList.remove('active');
+    btnCust.classList.remove('active');
+
     if (mode === 'calendar') {
         containerCal.style.display = 'block';
         fieldsCustom.style.display = 'none';
-        btnCal.classList.add('active');
-        btnCust.classList.remove('active');
+        btnCal.classList.add('active'); // Solo agregamos al correcto
     } else {
         containerCal.style.display = 'none';
         fieldsCustom.style.display = 'block';
-        btnCal.classList.remove('active');
-        btnCust.classList.add('active');
+        btnCust.classList.add('active'); // Solo agregamos al correcto
     }
 }
 
@@ -2052,11 +2054,10 @@ function generarHTMLFinal(config) {
     // URLs PÚBLICAS (Cloudinary) - Asegúrate de que estas imágenes existan en tu nube
     // Si no las tienes, reemplaza estas URLs con links de imágenes que sí tengas online.
     const IMG_CLOUD_BASE = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1/altxerri_jazz_club/";
-    const URL_BAR_ABIERTO = IMG_CLOUD_BASE + "diaSinBanda.jpg"; 
-    const URL_CERRADO = IMG_CLOUD_BASE + "cerrado.jpg";
-    const URL_PRIVADO = IMG_CLOUD_BASE + "eventoPrivado.jpg";
-    const URL_GENERICA = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1/altxerri_jazz_club/imgBandaGenerica.jpg"; // Fallback final
-
+    const URL_BAR_ABIERTO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507545/altxerri_jazz_club/p59y29pvh6t7rbbxuo5w.jpg"; 
+    const URL_CERRADO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507506/altxerri_jazz_club/iroswh5blrl6tnplncnc.jpg";
+    const URL_PRIVADO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507610/altxerri_jazz_club/dop9klffc2xfzpq2x1ya.jpg";
+    const URL_GENERICA = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770508071/altxerri_jazz_club/rnyma3epql4uxvkgkglu.jpg";
     let html = `
     <!DOCTYPE html>
     <html>

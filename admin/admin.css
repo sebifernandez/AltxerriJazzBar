@@ -1432,3 +1432,72 @@ input:checked + .slider:before {
     border-radius: 4px;
 }
 .news-week-chk:hover { background: #333; }
+
+/* --- ADMIN.CSS - FIXES NEWSLETTER & MOBILE --- */
+
+/* 1. ESTILOS DEL TOGGLE (ROJO Y LIMPIO) */
+.switch-mode-container {
+    background: var(--color-bg); /* Fondo oscuro base */
+    padding: 4px;
+    border-radius: 25px;
+    border: 1px solid #444;
+    display: inline-flex;
+    gap: 5px;
+}
+
+.btn-mode {
+    border: none;
+    padding: 8px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    background: transparent;
+    color: #888; /* Color inactivo */
+}
+
+/* Estado Activo: Rojo Altxerri */
+.btn-mode.active {
+    background-color: var(--color-primario-rojo) !important;
+    color: #fff !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+/* 2. FIX CALENDARIO MOBILE (SCROLL HORIZONTAL) */
+/* Contenedor que permite deslizar si no entra */
+.news-calendar-grid {
+    display: grid;
+    /* Forzamos un ancho mínimo para que no se apilen como cartas */
+    min-width: 600px; 
+    grid-template-columns: 40px repeat(7, 1fr); 
+    gap: 4px;
+    padding-bottom: 10px; /* Espacio para la barra de scroll si aparece */
+}
+
+/* El padre directo de la grilla necesita permitir scroll */
+.news-col-calendar .form-alta-evento {
+    overflow-x: auto; /* Habilita scroll horizontal */
+    -webkit-overflow-scrolling: touch; /* Suavidad en iPhone */
+}
+
+/* 3. FIX HEADER MOBILE (TITULO ARRIBA, TOGGLE ABAJO) */
+@media (max-width: 768px) {
+    /* Seleccionamos el header del newsletter */
+    #gestion-newsletter > div:first-child {
+        flex-direction: column;
+        align-items: stretch !important; /* Estirar a lo ancho */
+        gap: 15px;
+    }
+
+    .switch-mode-container {
+        display: flex;
+        justify-content: center; /* Centrar botones */
+        width: 100%;
+    }
+
+    .btn-mode {
+        flex: 1; /* Que ocupen 50% cada uno */
+        text-align: center;
+    }
+}
