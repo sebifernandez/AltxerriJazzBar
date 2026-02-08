@@ -2040,7 +2040,7 @@ async function subirImagenAlVuelo(file) {
 }
 
 // ==========================================
-// FUNCIÓN CORREGIDA: GENERAR HTML FINAL
+// FUNCIÓN: GENERAR HTML FINAL (DISEÑO JAZZ CLUB PRO)
 // ==========================================
 
 function generarHTMLFinal(config) {
@@ -2049,137 +2049,218 @@ function generarHTMLFinal(config) {
     const intro = document.getElementById('news-intro').value;
     const footer = document.getElementById('news-footer-text').value;
 
-    const colors = { bg: "#121212", cardBg: "#1e1e1e", text: "#e0e0e0", accent: "#B71C1C", gold: "#FFD700" };
+    // --- RECURSOS GRÁFICOS ---
+    const URL_NAV_HEADER = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770510881/altxerri_jazz_club/fsofcrsytqgauzdbo6pg.png";
+    const URL_BG_TEXTURE = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770510788/altxerri_jazz_club/mflsoeegyr0lbr7osjxe.png";
     
-    // URLs PÚBLICAS (Cloudinary) - Asegúrate de que estas imágenes existan en tu nube
-    // Si no las tienes, reemplaza estas URLs con links de imágenes que sí tengas online.
+    // Fallbacks
     const IMG_CLOUD_BASE = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1/altxerri_jazz_club/";
-    const URL_BAR_ABIERTO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507545/altxerri_jazz_club/p59y29pvh6t7rbbxuo5w.jpg"; 
-    const URL_CERRADO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507506/altxerri_jazz_club/iroswh5blrl6tnplncnc.jpg";
-    const URL_PRIVADO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507610/altxerri_jazz_club/dop9klffc2xfzpq2x1ya.jpg";
-    const URL_GENERICA = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770508071/altxerri_jazz_club/rnyma3epql4uxvkgkglu.jpg";
+    const URL_BAR_ABIERTO = IMG_CLOUD_BASE + "diaSinBanda.jpg"; 
+    const URL_CERRADO = IMG_CLOUD_BASE + "cerrado.jpg";
+    const URL_PRIVADO = IMG_CLOUD_BASE + "eventoPrivado.jpg";
+    const URL_GENERICA = IMG_CLOUD_BASE + "imgBandaGenerica.jpg";
+
+    // PALETA DE COLORES
+    const c = {
+        gold: "#C8AA6E",      // Dorado Jazz
+        text: "#E0E0E0",      // Blanco suave
+        dark: "#080a0f",      // Fondo muy oscuro (casi negro)
+        cardBg: "#12141a",    // Fondo de las cards normales
+        accent: "#C8AA6E"
+    };
+
+    // INICIO DEL HTML
     let html = `
     <!DOCTYPE html>
     <html>
-    <body style="margin:0; padding:0; background-color:${colors.bg}; font-family: Arial, sans-serif; color:${colors.text};">
-        <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: ${colors.bg};">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+        <style>
+            body { margin: 0; padding: 0; min-width: 100%; font-family: 'Lato', Arial, sans-serif; }
+            h1, h2, h3 { font-family: 'Playfair Display', Georgia, serif; }
+            .card-standard-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+            /* Efecto desvanecimiento para clientes modernos */
+            .fade-overlay {
+                background: linear-gradient(to right, ${c.cardBg} 5%, transparent 100%);
+            }
+            @media (max-width: 600px) {
+                .col-mobile { width: 100% !important; display: block !important; }
+                .img-mobile { height: 200px !important; }
+                .text-mobile { padding: 20px !important; }
+            }
+        </style>
+    </head>
+    <body style="margin:0; padding:0; background-color:${c.dark}; background-image: url('${URL_BG_TEXTURE}'); background-repeat: repeat;">
+        
+        <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-image: url('${URL_BG_TEXTURE}'); background-repeat: repeat;">
     `;
 
+    // 1. HEADER (NAV + TITULOS)
     if (includeHeader) {
         html += `
-            <tr><td align="center" style="padding: 20px;">
-                <img src="${IMG_CLOUD_BASE + 'h26gwioqlrd2ygwjbwvu.png'}" width="150" alt="Altxerri">
+            <tr><td align="center" style="padding: 0;">
+                <img src="${URL_NAV_HEADER}" width="600" style="width:100%; max-width:600px; display:block;" alt="Altxerri Header">
             </td></tr>
+            
+            <tr><td align="center" style="padding: 20px 20px 10px 20px;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 28px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                    ${title}
+                </h1>
+                ${subtitle ? `
+                <h3 style="color: ${c.gold}; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: 3px; font-weight: normal;">
+                    ${subtitle}
+                </h3>` : ''}
+            </td></tr>
+            
+            ${intro ? `
+            <tr><td align="center" style="padding: 10px 30px 30px 30px;">
+                <p style="font-size: 15px; line-height: 1.6; color: #bbbbbb; margin: 0; font-style: italic;">
+                    "${intro}"
+                </p>
+            </td></tr>` : ''}
         `;
     }
 
-    html += `
-            <tr><td style="padding: 0 20px 20px 20px; text-align: center;">
-                <h1 style="color: #ffffff; margin-bottom: 5px; font-size: 24px;">${title}</h1>
-                ${subtitle ? `<h3 style="color: ${colors.accent}; margin: 0 0 15px 0; font-weight: normal;">${subtitle}</h3>` : ''}
-                ${intro ? `<p style="font-size: 16px; line-height: 1.5; color: #ccc;">${intro}</p>` : ''}
-            </td></tr>
-    `;
-
+    // CONTENIDO DINÁMICO
     if (newsState.mode === 'custom') {
+        // MODO CUSTOM (Solo Flyer)
         html += `
-            <tr><td align="center" style="padding: 0 0 20px 0;">
-                <img src="${urlFlyerCustom}" style="width: 100%; max-width: 600px; display: block; border-radius: 8px;">
+            <tr><td align="center" style="padding: 0 0 40px 0;">
+                <img src="${urlFlyerCustom}" style="width: 100%; max-width: 600px; display: block; border-radius: 4px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
             </td></tr>
         `;
     } else {
+        // MODO CALENDARIO
         const fechasOrdenadas = Array.from(newsState.seleccionados).sort();
         
         fechasOrdenadas.forEach(fecha => {
             const eventoDB = adminEventos.find(e => e.fecha === fecha);
             const mod = newsState.modificaciones.get(fecha) || {};
             
-            // 1. LÓGICA DE TEXTOS (Ahora maneja Cerrado y Privado explícitamente)
-            let titulo = mod.titulo;
-            let desc = mod.descripcion;
+            // Textos
+            let evtTitulo = mod.titulo;
+            let evtDesc = mod.descripcion;
 
-            if (!titulo) {
+            if (!evtTitulo) {
                 if (eventoDB) {
-                    if (eventoDB.tipoEvento === 'Cerrado') titulo = 'CERRADO';
-                    else if (eventoDB.tipoEvento === 'Privado') titulo = 'EVENTO PRIVADO';
-                    else titulo = eventoDB.titulo;
-                } else {
-                    titulo = 'BAR ABIERTO'; // Caso día vacío sin editar
-                }
+                    if (eventoDB.tipoEvento === 'Cerrado') evtTitulo = 'CERRADO';
+                    else if (eventoDB.tipoEvento === 'Privado') evtTitulo = 'EVENTO PRIVADO';
+                    else evtTitulo = eventoDB.titulo;
+                } else evtTitulo = 'BAR ABIERTO';
             }
 
-            if (!desc) {
-                if (eventoDB) desc = eventoDB.descripcion || '';
-                // Texto por defecto si está vacío
-                if (!desc && !eventoDB) desc = 'Ven a disfrutar de nuestros tragos y el mejor ambiente de Jazz.';
-                if (eventoDB && eventoDB.tipoEvento === 'Cerrado') desc = 'Disculpen las molestias.';
+            if (!evtDesc) {
+                if (eventoDB) evtDesc = eventoDB.descripcion || '';
+                if (!evtDesc && !eventoDB) evtDesc = 'Disfruta de nuestros cocteles y música ambiente.';
+                if (eventoDB && eventoDB.tipoEvento === 'Cerrado') evtDesc = 'Hoy descansamos.';
             }
 
-            // 2. LÓGICA DE IMÁGENES (Prioridad: Editada > DB > Tipo Evento > Default)
-            let imgUrl = URL_BAR_ABIERTO; // Por defecto (Bar Abierto)
-
-            if (mod.urlFinal) {
-                imgUrl = mod.urlFinal; // Imagen subida manualmente para el mail
-            } else if (eventoDB) {
+            // Imagen
+            let imgUrl = URL_BAR_ABIERTO;
+            if (mod.urlFinal) imgUrl = mod.urlFinal;
+            else if (eventoDB) {
                 if (eventoDB.tipoEvento === 'Cerrado') imgUrl = URL_CERRADO;
                 else if (eventoDB.tipoEvento === 'Privado') imgUrl = URL_PRIVADO;
                 else if (eventoDB.imagen) {
-                    // Solo usamos la imagen de DB si ya es un link de internet (Cloudinary)
                     if (eventoDB.imagen.startsWith('http')) imgUrl = eventoDB.imagen;
-                    else imgUrl = URL_GENERICA; // Si es local, usamos genérica para que no salga rota
+                    else imgUrl = URL_GENERICA;
                 }
             }
 
-            // Estilos
             const isFeatured = newsState.destacados.has(fecha);
             const fechaTxt = DateTime.fromISO(fecha).setLocale('es').toFormat('EEEE d').toUpperCase();
             
-            const heightImg = isFeatured ? "250px" : "180px";
-            const borderStyle = isFeatured ? `border: 2px solid ${colors.gold};` : `border: 1px solid #333;`;
-            const titleColor = isFeatured ? colors.gold : "#ffffff";
-            const titleSize = isFeatured ? "22px" : "18px";
-            
-            html += `
-            <tr><td style="padding: 0 20px 20px 20px;">
-                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${colors.cardBg}; border-radius: 8px; overflow: hidden; ${borderStyle}">
-                    <tr>
-                        <td height="${heightImg}" style="background-image: url('${imgUrl}'); background-size: cover; background-position: center; background-color: #333;">
-                            <div></div>
-                            </td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 15px;">
-                            <p style="margin: 0 0 5px 0; color: ${colors.accent}; font-weight: bold; font-size: 12px; text-transform: uppercase;">
-                                ${fechaTxt}
+            // --- RENDERIZADO SEGÚN TIPO ---
+
+            if (isFeatured) {
+                // ==========================================
+                // ESTILO DESTACADO (Tipo "Midtown Horns")
+                // ==========================================
+                html += `
+                <tr><td style="padding: 0 10px 30px 10px;">
+                    <div style="background-image: url('${imgUrl}'); background-size: cover; background-position: center; border-radius: 8px; overflow: hidden; height: 300px; position: relative; border: 1px solid #333; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                        
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%); padding: 20px;">
+                            <p style="color: ${c.gold}; font-weight: bold; margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
+                                ${fechaTxt} | DESTACADO
                             </p>
-                            <h2 style="margin: 0 0 10px 0; color: ${titleColor}; font-size: ${titleSize};">
-                                ${titulo}
+                            <h2 style="color: #fff; margin: 5px 0 0 0; font-size: 26px; text-shadow: 0 2px 4px #000;">
+                                ${evtTitulo}
                             </h2>
-                            <p style="margin: 0; font-size: 14px; line-height: 1.4; color: #ccc;">
-                                ${desc}
-                            </p>
-                        </td>
-                    </tr>
-                </table>
-            </td></tr>
-            `;
+                        </div>
+
+                        <div style="position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 100%); padding: 30px 20px 20px 20px; text-align: center;">
+                            <div style="background: ${c.gold}; color: #000; padding: 8px 20px; display: inline-block; font-weight: bold; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; border-radius: 2px;">
+                                ${evtDesc}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    </td></tr>`;
+
+            } else {
+                // ==========================================
+                // ESTILO ESTÁNDAR (Tipo "Bop City Quartet")
+                // Texto Izquierda | Imagen Derecha (con fade simulado)
+                // ==========================================
+                html += `
+                <tr><td style="padding: 0 10px 20px 10px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${c.cardBg}; border-radius: 8px; border: 1px solid #333; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+                        <tr>
+                            <td width="55%" class="col-mobile text-mobile" valign="middle" style="padding: 25px;">
+                                <p style="color: ${c.gold}; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 5px 0;">
+                                    ${fechaTxt}
+                                </p>
+                                <h3 style="color: #fff; margin: 0 0 10px 0; font-size: 20px; line-height: 1.2;">
+                                    ${evtTitulo}
+                                </h3>
+                                <p style="color: #aaa; margin: 0; font-size: 13px; line-height: 1.5;">
+                                    ${evtDesc}
+                                </p>
+                                <div style="margin-top: 15px;">
+                                    <span style="background: transparent; border: 1px solid ${c.gold}; color: ${c.gold}; padding: 5px 10px; font-size: 10px; text-transform: uppercase; border-radius: 2px;">
+                                        Reservar
+                                    </span>
+                                </div>
+                            </td>
+                            
+                            <td width="45%" class="col-mobile img-mobile" style="height: 200px; position: relative; background-color: #000;">
+                                <div style="width: 100%; height: 100%; background-image: url('${imgUrl}'); background-size: cover; background-position: center;">
+                                    <div style="width: 100%; height: 100%; box-shadow: inset 40px 0 60px -10px ${c.cardBg};"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td></tr>`;
+            }
         });
     }
 
+    // FOOTER
     html += `
-            ${footer ? `<tr><td align="center" style="padding: 20px; color:#aaa; font-style:italic;">${footer}</td></tr>` : ''}
+            ${footer ? `
+            <tr><td align="center" style="padding: 20px 20px 10px 20px;">
+                <p style="color: #ccc; font-style: italic; font-size: 14px; margin: 0;">${footer}</p>
+            </td></tr>` : ''}
             
-            <tr><td align="center" style="padding-bottom: 30px;">
+            <tr><td align="center" style="padding: 10px 20px;">
+                <div style="border-top: 1px solid ${c.gold}; width: 100px; opacity: 0.5;"></div>
+            </td></tr>
+
+            <tr><td align="center" style="padding-bottom: 20px;">
                 <a href="https://instagram.com/altxerribar" style="text-decoration: none; margin: 0 10px;">
-                    <img src="https://cdn-icons-png.flaticon.com/512/174/174855.png" width="32" alt="Instagram">
+                    <img src="https://cdn-icons-png.flaticon.com/512/174/174855.png" width="24" style="filter: grayscale(100%) brightness(150%);" alt="IG">
                 </a>
                 <a href="https://www.youtube.com/@AltxerriJazzClub" style="text-decoration: none; margin: 0 10px;">
-                    <img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" width="32" alt="YouTube">
+                    <img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" width="24" style="filter: grayscale(100%) brightness(150%);" alt="YT">
                 </a>
             </td></tr>
             
-            <tr><td align="center" style="font-size: 12px; color: #666; padding-bottom: 20px;">
-                Altxerri Jazz Bar<br>Donostia - San Sebastián
+            <tr><td align="center" style="font-size: 11px; color: #666; padding-bottom: 40px; font-family: sans-serif;">
+                <p style="margin: 0;">Altxerri Jazz Bar | San Sebastián</p>
+                <p style="margin: 5px 0;"><a href="#" style="color: #666; text-decoration: underline;">Darse de baja</a></p>
             </td></tr>
         </table>
     </body>
