@@ -1433,16 +1433,18 @@ input:checked + .slider:before {
 }
 .news-week-chk:hover { background: #333; }
 
-/* --- ADMIN.CSS - FIXES NEWSLETTER & MOBILE --- */
+/* --- ADMIN.CSS - FIXES NEWSLETTER & MOBILE (V2 CORREGIDO) --- */
 
 /* 1. ESTILOS DEL TOGGLE (ROJO Y LIMPIO) */
 .switch-mode-container {
-    background: var(--color-bg); /* Fondo oscuro base */
+    background: var(--color-bg);
     padding: 4px;
     border-radius: 25px;
     border: 1px solid #444;
     display: inline-flex;
     gap: 5px;
+    /* Aseguramos que no se deforme */
+    flex-shrink: 0;
 }
 
 .btn-mode {
@@ -1454,64 +1456,81 @@ input:checked + .slider:before {
     font-size: 0.9rem;
     transition: all 0.3s ease;
     background: transparent;
-    color: #888; /* Color inactivo */
+    color: #888;
+    white-space: nowrap; /* Evita que el texto se rompa */
 }
 
-/* Estado Activo: Rojo Altxerri */
 .btn-mode.active {
     background-color: var(--color-primario-rojo) !important;
     color: #fff !important;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }
 
-/* 2. FIX CALENDARIO MOBILE (SCROLL HORIZONTAL MEJORADO) */
+/* 2. FIX CRÍTICO CALENDARIO MOBILE (SCROLL REAL) */
 
-/* El contenedor padre (la caja gris) maneja el scroll */
-.news-col-calendar .form-alta-evento {
-    overflow-x: auto; /* Permite deslizar el dedo */
-    padding-bottom: 15px; /* Espacio para que la barra de scroll no tape contenido */
-    -webkit-overflow-scrolling: touch; /* Scroll suave en iPhone */
+/* Esto evita que la página entera se agrande */
+.news-col-calendar {
+    min-width: 0; /* ¡CRUCIAL! Evita que el Grid padre se expanda */
+    width: 100%;  /* Se adapta al ancho disponible del celular */
 }
 
-/* La Grilla en sí misma */
+/* El contenedor gris con borde */
+.news-col-calendar .form-alta-evento {
+    width: 100%;
+    overflow-x: auto; /* Aquí vive el scroll */
+    padding-bottom: 15px;
+    -webkit-overflow-scrolling: touch;
+    display: block; /* Asegura estructura de bloque */
+}
+
+/* La Grilla Gigante (Hija) */
 .newsletter-calendar-grid {
     display: grid;
-    /* CAMBIO CLAVE: Aumentamos de 600px a 1100px */
-    /* Esto asegura que cada día tenga aprox 140px de ancho */
-    min-width: 1100px; 
-    
+    /* Forzamos el ancho grande AQUÍ ADENTRO */
+    min-width: 1000px; 
     grid-template-columns: 40px repeat(7, 1fr); 
-    gap: 10px; /* Más separación entre días */
+    gap: 8px;
 }
 
-/* Ajuste extra para que las celdas no se vean enanas en altura */
+/* Ajuste de celdas */
 .news-cal-day {
-    min-height: 140px; /* Forzamos altura para que se vea bien la foto */
-    font-size: 1rem; /* Texto legible */
+    min-height: 120px; 
+    font-size: 0.9rem;
 }
 
-/* Ajuste para el checkbox de la semana (primera columna) */
 .news-week-chk {
-    min-width: 40px;
+    min-width: 30px;
 }
 
-/* 3. FIX HEADER MOBILE (TITULO ARRIBA, TOGGLE ABAJO) */
-@media (max-width: 768px) {
-    /* Seleccionamos el header del newsletter */
+/* 3. FIX HEADER MOBILE (ORDENADO Y BOTONES NORMALES) */
+@media (max-width: 900px) {
+    
+    /* Forzamos que los botones de acción no se estiren al infinito */
+    .news-col-actions {
+        width: 100%;
+        max-width: 100vw; /* Límite de seguridad */
+    }
+
+    /* Header: Título arriba, Toggle abajo */
     #gestion-newsletter > div:first-child {
+        display: flex;
         flex-direction: column;
-        align-items: stretch !important; /* Estirar a lo ancho */
+        align-items: flex-start !important; /* Alineado a la izquierda */
         gap: 15px;
     }
 
+    /* El contenedor del toggle ocupa el ancho disponible pero centrado */
     .switch-mode-container {
         display: flex;
-        justify-content: center; /* Centrar botones */
         width: 100%;
+        max-width: 400px; /* Que no sea infinito en tablets */
+        margin: 0 auto; /* Centrado */
     }
 
     .btn-mode {
-        flex: 1; /* Que ocupen 50% cada uno */
+        flex: 1; /* 50% cada uno */
         text-align: center;
+        padding: 8px 10px; /* Un poco menos de padding lateral */
+        font-size: 0.85rem;
     }
 }
