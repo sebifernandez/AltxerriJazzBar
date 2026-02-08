@@ -1709,6 +1709,15 @@ let newsState = {
 
 // Inicialización
 function inicializarGestorNewsletter() {
+    const botonesEntrada = document.querySelectorAll('[data-target="gestion-newsletter"]');
+    botonesEntrada.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Esperamos 100ms a que la pestaña sea visible y redibujamos
+            setTimeout(() => {
+                renderizarCalendarioNewsletter();
+            }, 100);
+        });
+    });
     // 1. Botones de Navegación
     const btnPrev = document.getElementById('news-cal-prev');
     const btnNext = document.getElementById('news-cal-next');
@@ -1785,6 +1794,12 @@ function renderizarCalendarioNewsletter() {
     const labelMes = document.getElementById('news-cal-month');
     if(!grid) return;
 
+    // --- 1. DEFINICIÓN DE URLs (Las mismas que en el Mail) ---
+    const URL_BAR_ABIERTO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507545/altxerri_jazz_club/p59y29pvh6t7rbbxuo5w.jpg";
+    const URL_CERRADO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507506/altxerri_jazz_club/iroswh5blrl6tnplncnc.jpg";
+    const URL_PRIVADO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507610/altxerri_jazz_club/dop9klffc2xfzpq2x1ya.jpg";
+    const URL_GENERICA = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770508071/altxerri_jazz_club/rnyma3epql4uxvkgkglu.jpg";
+
     labelMes.textContent = newsState.fechaCursor.setLocale('es').toFormat('MMMM yyyy').toUpperCase();
     grid.innerHTML = '';
 
@@ -1794,17 +1809,16 @@ function renderizarCalendarioNewsletter() {
 
     const primerDiaMes = newsState.fechaCursor.startOf('month');
     const diasEnMes = newsState.fechaCursor.daysInMonth;
-    
-    // Luxon: 1=Lunes...7=Domingo. Ajustamos para que Domingo sea 0 visualmente en el offset
     const diaSemanaInicio = primerDiaMes.weekday; 
     let offset = (diaSemanaInicio === 7) ? 0 : diaSemanaInicio;
 
-    // --- CORRECCIÓN 1: Checkbox Semana Lógico ---
-    // Pasamos el día de inicio (1) para el primer checkbox
+    // Checkbox Semana
     grid.appendChild(crearCeldaSemana(1, diasEnMes));
 
+    // Espacios vacíos
     for(let i=0; i<offset; i++) grid.appendChild(document.createElement('div'));
 
+    // Bucle de días
     for(let i=1; i<=diasEnMes; i++) {
         const fechaDia = newsState.fechaCursor.set({ day: i });
         const fechaIso = fechaDia.toISODate();
@@ -1814,22 +1828,26 @@ function renderizarCalendarioNewsletter() {
         
         let titulo = modificacion?.titulo || (eventoDB ? eventoDB.titulo : 'Bar Abierto');
         
-        // --- CORRECCIÓN 3A: Rutas visuales en el Admin ---
-        let imgUrl = '../img/diaSinBanda.jpg'; // Default local
+        // --- 2. LÓGICA DE IMAGEN VISUAL (Actualizada) ---
+        let imgUrl = URL_BAR_ABIERTO; // Por defecto
 
         if (modificacion?.urlImgPreview) {
+            // Si hay una edición manual temporal, usamos esa
             imgUrl = modificacion.urlImgPreview;
         } else if (eventoDB) {
+            // Si viene de la base de datos
             if (eventoDB.tipoEvento === 'Cerrado') {
                 titulo = eventoDB.titulo || 'Cerrado';
-                imgUrl = '../img/cerrado.jpg';
+                imgUrl = URL_CERRADO;
             }
             else if (eventoDB.tipoEvento === 'Privado') {
                 titulo = eventoDB.titulo || 'Evento Privado';
-                imgUrl = '../img/eventoPrivado.jpg';
+                imgUrl = URL_PRIVADO;
             }
             else if (eventoDB.imagen) {
-                imgUrl = eventoDB.imagen.startsWith('http') ? eventoDB.imagen : `../img/${eventoDB.imagen}`;
+                // Si la imagen ya es una URL (Cloudinary), la usamos.
+                // Si es un nombre de archivo local viejo, usamos la GENÉRICA para que no se vea roto.
+                imgUrl = eventoDB.imagen.startsWith('http') ? eventoDB.imagen : URL_GENERICA;
             }
         }
 
@@ -1848,6 +1866,7 @@ function renderizarCalendarioNewsletter() {
             <div class="news-action-btn btn-edit"><i class='bx bxs-pencil'></i></div>
         `;
 
+        // Event Listeners
         celda.querySelector('.btn-star').addEventListener('click', (e) => {
             e.stopPropagation();
             if(newsState.destacados.has(fechaIso)) newsState.destacados.delete(fechaIso);
@@ -1873,7 +1892,6 @@ function renderizarCalendarioNewsletter() {
 
         grid.appendChild(celda);
 
-        // Si es Sábado (6), cerramos fila. Si quedan días, metemos otro Check Semana
         if (fechaDia.weekday === 6 && i < diasEnMes) {
             grid.appendChild(crearCeldaSemana(i + 1, diasEnMes));
         }
@@ -2040,7 +2058,7 @@ async function subirImagenAlVuelo(file) {
 }
 
 // ==========================================
-// FUNCIÓN: GENERAR HTML FINAL (DISEÑO JAZZ CLUB PRO)
+// FUNCIÓN: GENERAR HTML FINAL (REDISEÑO OVERLAY)
 // ==========================================
 
 function generarHTMLFinal(config) {
@@ -2053,23 +2071,19 @@ function generarHTMLFinal(config) {
     const URL_NAV_HEADER = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770510881/altxerri_jazz_club/fsofcrsytqgauzdbo6pg.png";
     const URL_BG_TEXTURE = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770510788/altxerri_jazz_club/mflsoeegyr0lbr7osjxe.png";
     
-    // Fallbacks
-    const IMG_CLOUD_BASE = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1/altxerri_jazz_club/";
-    const URL_BAR_ABIERTO = IMG_CLOUD_BASE + "diaSinBanda.jpg"; 
-    const URL_CERRADO = IMG_CLOUD_BASE + "cerrado.jpg";
-    const URL_PRIVADO = IMG_CLOUD_BASE + "eventoPrivado.jpg";
-    const URL_GENERICA = IMG_CLOUD_BASE + "imgBandaGenerica.jpg";
+    // URLs EVENTOS (Tus nuevas URLs)
+    const URL_GENERICA = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770508071/altxerri_jazz_club/rnyma3epql4uxvkgkglu.jpg";
+    const URL_PRIVADO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507610/altxerri_jazz_club/dop9klffc2xfzpq2x1ya.jpg";
+    const URL_BAR_ABIERTO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507545/altxerri_jazz_club/p59y29pvh6t7rbbxuo5w.jpg";
+    const URL_CERRADO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507506/altxerri_jazz_club/iroswh5blrl6tnplncnc.jpg";
 
-    // PALETA DE COLORES
     const c = {
-        gold: "#C8AA6E",      // Dorado Jazz
-        text: "#E0E0E0",      // Blanco suave
-        dark: "#080a0f",      // Fondo muy oscuro (casi negro)
-        cardBg: "#12141a",    // Fondo de las cards normales
-        accent: "#C8AA6E"
+        gold: "#C8AA6E",      
+        text: "#E0E0E0",      
+        dark: "#080a0f",      
+        cardBg: "#12141a"
     };
 
-    // INICIO DEL HTML
     let html = `
     <!DOCTYPE html>
     <html>
@@ -2080,16 +2094,6 @@ function generarHTMLFinal(config) {
         <style>
             body { margin: 0; padding: 0; min-width: 100%; font-family: 'Lato', Arial, sans-serif; }
             h1, h2, h3 { font-family: 'Playfair Display', Georgia, serif; }
-            .card-standard-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-            /* Efecto desvanecimiento para clientes modernos */
-            .fade-overlay {
-                background: linear-gradient(to right, ${c.cardBg} 5%, transparent 100%);
-            }
-            @media (max-width: 600px) {
-                .col-mobile { width: 100% !important; display: block !important; }
-                .img-mobile { height: 200px !important; }
-                .text-mobile { padding: 20px !important; }
-            }
         </style>
     </head>
     <body style="margin:0; padding:0; background-color:${c.dark}; background-image: url('${URL_BG_TEXTURE}'); background-repeat: repeat;">
@@ -2097,42 +2101,38 @@ function generarHTMLFinal(config) {
         <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-image: url('${URL_BG_TEXTURE}'); background-repeat: repeat;">
     `;
 
-    // 1. HEADER (NAV + TITULOS)
+    // 1. HEADER CON TEXTO SUPERPUESTO (OVERLAY)
     if (includeHeader) {
         html += `
-            <tr><td align="center" style="padding: 0;">
-                <img src="${URL_NAV_HEADER}" width="600" style="width:100%; max-width:600px; display:block;" alt="Altxerri Header">
-            </td></tr>
-            
-            <tr><td align="center" style="padding: 20px 20px 10px 20px;">
-                <h1 style="color: #ffffff; margin: 0; font-size: 28px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+        <tr><td valign="middle" style="height: 160px; background-image: url('${URL_NAV_HEADER}'); background-size: cover; background-position: center; text-align: center;">
+            <div style="padding-top: 55px;"> <h1 style="color: #ffffff; margin: 0; font-size: 32px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px rgba(0,0,0,0.8);">
                     ${title}
                 </h1>
                 ${subtitle ? `
-                <h3 style="color: ${c.gold}; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: 3px; font-weight: normal;">
+                <h3 style="color: ${c.gold}; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: 3px; font-weight: normal; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
                     ${subtitle}
                 </h3>` : ''}
+            </div>
+
             </td></tr>
-            
-            ${intro ? `
-            <tr><td align="center" style="padding: 10px 30px 30px 30px;">
-                <p style="font-size: 15px; line-height: 1.6; color: #bbbbbb; margin: 0; font-style: italic;">
-                    "${intro}"
-                </p>
-            </td></tr>` : ''}
+
+        ${intro ? `
+        <tr><td align="center" style="padding: 20px 30px 30px 30px;">
+            <p style="font-size: 15px; line-height: 1.6; color: #bbbbbb; margin: 0; font-style: italic;">
+                "${intro}"
+            </p>
+        </td></tr>` : ''}
         `;
     }
 
     // CONTENIDO DINÁMICO
     if (newsState.mode === 'custom') {
-        // MODO CUSTOM (Solo Flyer)
         html += `
             <tr><td align="center" style="padding: 0 0 40px 0;">
                 <img src="${urlFlyerCustom}" style="width: 100%; max-width: 600px; display: block; border-radius: 4px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
             </td></tr>
         `;
     } else {
-        // MODO CALENDARIO
         const fechasOrdenadas = Array.from(newsState.seleccionados).sort();
         
         fechasOrdenadas.forEach(fecha => {
@@ -2172,76 +2172,49 @@ function generarHTMLFinal(config) {
             const isFeatured = newsState.destacados.has(fecha);
             const fechaTxt = DateTime.fromISO(fecha).setLocale('es').toFormat('EEEE d').toUpperCase();
             
-            // --- RENDERIZADO SEGÚN TIPO ---
+            // --- CONFIGURACIÓN DE ESTILOS (Diferencias entre Destacado y Estándar) ---
+            const cardHeight = isFeatured ? "350px" : "220px";
+            const borderColor = isFeatured ? c.gold : "#333333";
+            const titleSize = isFeatured ? "28px" : "20px";
+            const labelText = isFeatured ? "EVENTO DESTACADO" : fechaTxt; // Destacado dice "DESTACADO", Normal dice Fecha
+            
+            // Si es destacado, agregamos la fecha arriba del label también
+            const topLabelHTML = isFeatured 
+                ? `<span style="color:#fff;">${fechaTxt}</span> <span style="color:${c.gold}; margin: 0 5px;">|</span> <span style="color:${c.gold};">EVENTO DESTACADO</span>`
+                : `<span style="color:${c.gold};">${fechaTxt}</span>`;
 
-            if (isFeatured) {
-                // ==========================================
-                // ESTILO DESTACADO (Tipo "Midtown Horns")
-                // ==========================================
-                html += `
-                <tr><td style="padding: 0 10px 30px 10px;">
-                    <div style="background-image: url('${imgUrl}'); background-size: cover; background-position: center; border-radius: 8px; overflow: hidden; height: 300px; position: relative; border: 1px solid #333; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-                        
-                        <div style="position: absolute; top: 0; left: 0; width: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%); padding: 20px;">
-                            <p style="color: ${c.gold}; font-weight: bold; margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
-                                ${fechaTxt} | DESTACADO
+            html += `
+            <tr><td style="padding: 0 10px 25px 10px;">
+                <div style="background-image: url('${imgUrl}'); background-size: cover; background-position: center; border-radius: 6px; overflow: hidden; height: ${cardHeight}; position: relative; border: 1px solid ${borderColor}; box-shadow: 0 10px 20px rgba(0,0,0,0.6);">
+                    
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 60%; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);">
+                        <div style="padding: 20px;">
+                            <p style="font-weight: bold; margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                                ${topLabelHTML}
                             </p>
-                            <h2 style="color: #fff; margin: 5px 0 0 0; font-size: 26px; text-shadow: 0 2px 4px #000;">
+                            <h2 style="color: #fff; margin: 5px 0 0 0; font-size: ${titleSize}; text-shadow: 0 2px 4px #000; line-height: 1.1;">
                                 ${evtTitulo}
                             </h2>
                         </div>
+                    </div>
 
-                        <div style="position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 100%); padding: 30px 20px 20px 20px; text-align: center;">
-                            <div style="background: ${c.gold}; color: #000; padding: 8px 20px; display: inline-block; font-weight: bold; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; border-radius: 2px;">
+                    <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 50%; background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 100%); display: flex; align-items: flex-end;">
+                        <div style="padding: 20px; width: 100%;">
+                            <p style="color: #ddd; margin: 0; font-size: 14px; line-height: 1.4; text-shadow: 0 1px 2px #000;">
                                 ${evtDesc}
-                            </div>
+                            </p>
                         </div>
                     </div>
-                    
-                    </td></tr>`;
-
-            } else {
-                // ==========================================
-                // ESTILO ESTÁNDAR (Tipo "Bop City Quartet")
-                // Texto Izquierda | Imagen Derecha (con fade simulado)
-                // ==========================================
-                html += `
-                <tr><td style="padding: 0 10px 20px 10px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${c.cardBg}; border-radius: 8px; border: 1px solid #333; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
-                        <tr>
-                            <td width="55%" class="col-mobile text-mobile" valign="middle" style="padding: 25px;">
-                                <p style="color: ${c.gold}; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 5px 0;">
-                                    ${fechaTxt}
-                                </p>
-                                <h3 style="color: #fff; margin: 0 0 10px 0; font-size: 20px; line-height: 1.2;">
-                                    ${evtTitulo}
-                                </h3>
-                                <p style="color: #aaa; margin: 0; font-size: 13px; line-height: 1.5;">
-                                    ${evtDesc}
-                                </p>
-                                <div style="margin-top: 15px;">
-                                    <span style="background: transparent; border: 1px solid ${c.gold}; color: ${c.gold}; padding: 5px 10px; font-size: 10px; text-transform: uppercase; border-radius: 2px;">
-                                        Reservar
-                                    </span>
-                                </div>
-                            </td>
-                            
-                            <td width="45%" class="col-mobile img-mobile" style="height: 200px; position: relative; background-color: #000;">
-                                <div style="width: 100%; height: 100%; background-image: url('${imgUrl}'); background-size: cover; background-position: center;">
-                                    <div style="width: 100%; height: 100%; box-shadow: inset 40px 0 60px -10px ${c.cardBg};"></div>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
+                </div>
+                
                 </td></tr>`;
-            }
         });
     }
 
-    // FOOTER
+    // FOOTER (Igual que antes)
     html += `
             ${footer ? `
-            <tr><td align="center" style="padding: 20px 20px 10px 20px;">
+            <tr><td align="center" style="padding: 10px 20px;">
                 <p style="color: #ccc; font-style: italic; font-size: 14px; margin: 0;">${footer}</p>
             </td></tr>` : ''}
             
