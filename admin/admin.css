@@ -1467,7 +1467,7 @@ input:checked + .slider:before {
 }
 
 /* 2. FIX CRÍTICO CALENDARIO MOBILE (SCROLL REAL) */
-
+@media (max-width: 900px) {
 /* Esto evita que la página entera se agrande */
 .news-col-calendar {
     min-width: 0; /* ¡CRUCIAL! Evita que el Grid padre se expanda */
@@ -1503,7 +1503,7 @@ input:checked + .slider:before {
 }
 
 /* 3. FIX HEADER MOBILE (ORDENADO Y BOTONES NORMALES) */
-@media (max-width: 900px) {
+
     
     /* Forzamos que los botones de acción no se estiren al infinito */
     .news-col-actions {
