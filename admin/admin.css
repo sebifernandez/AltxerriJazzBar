@@ -1464,21 +1464,35 @@ input:checked + .slider:before {
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }
 
-/* 2. FIX CALENDARIO MOBILE (SCROLL HORIZONTAL) */
-/* Contenedor que permite deslizar si no entra */
-.news-calendar-grid {
-    display: grid;
-    /* Forzamos un ancho mínimo para que no se apilen como cartas */
-    min-width: 600px; 
-    grid-template-columns: 40px repeat(7, 1fr); 
-    gap: 4px;
-    padding-bottom: 10px; /* Espacio para la barra de scroll si aparece */
+/* 2. FIX CALENDARIO MOBILE (SCROLL HORIZONTAL MEJORADO) */
+
+/* El contenedor padre (la caja gris) maneja el scroll */
+.news-col-calendar .form-alta-evento {
+    overflow-x: auto; /* Permite deslizar el dedo */
+    padding-bottom: 15px; /* Espacio para que la barra de scroll no tape contenido */
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iPhone */
 }
 
-/* El padre directo de la grilla necesita permitir scroll */
-.news-col-calendar .form-alta-evento {
-    overflow-x: auto; /* Habilita scroll horizontal */
-    -webkit-overflow-scrolling: touch; /* Suavidad en iPhone */
+/* La Grilla en sí misma */
+.newsletter-calendar-grid {
+    display: grid;
+    /* CAMBIO CLAVE: Aumentamos de 600px a 1100px */
+    /* Esto asegura que cada día tenga aprox 140px de ancho */
+    min-width: 1100px; 
+    
+    grid-template-columns: 40px repeat(7, 1fr); 
+    gap: 10px; /* Más separación entre días */
+}
+
+/* Ajuste extra para que las celdas no se vean enanas en altura */
+.news-cal-day {
+    min-height: 140px; /* Forzamos altura para que se vea bien la foto */
+    font-size: 1rem; /* Texto legible */
+}
+
+/* Ajuste para el checkbox de la semana (primera columna) */
+.news-week-chk {
+    min-width: 40px;
 }
 
 /* 3. FIX HEADER MOBILE (TITULO ARRIBA, TOGGLE ABAJO) */
