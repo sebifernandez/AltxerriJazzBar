@@ -2137,3 +2137,37 @@ body {
         height: 300px; /* Menos altura en móvil */
     }
 }
+
+/* --- NOTIFICACIONES PUSH APILABLES --- */
+#notificaciones-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 320px;
+    z-index: 99999; /* Por encima de todo */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none; /* Permite clic a través de lo transparente */
+}
+
+.notificacion-push {
+    pointer-events: auto; /* Reactiva el clic en la tarjeta */
+    position: relative; /* Ya no fixed, para respetar el flex del padre */
+    right: auto;
+    top: auto;
+    margin-left: auto;
+    /* Mantenemos tus estilos visuales existentes... */
+    background: rgba(18, 18, 18, 0.95);
+    border-left: 4px solid #B71C1C;
+    padding: 15px;
+    border-radius: 4px;
+    color: #fff;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    transform: translateX(120%);
+    transition: transform 0.5s ease-out;
+}
+
+.notificacion-push.entra {
+    transform: translateX(0);
+}

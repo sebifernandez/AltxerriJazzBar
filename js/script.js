@@ -796,121 +796,155 @@ if (newsletterForm) {
 }
 
 // ======================================================
-// 7. SISTEMA DE NOTIFICACIONES PUSH (Time-Aware)
+// 7. SISTEMA DE NOTIFICACIONES PUSH (Time-Aware & Multilanguage)
 // ======================================================
 
-let pushInterval;
-const PUSH_STATE = { closed: false }; // Para recordar si el usuario la cerró
+const notificacionesVistas = new Set(); // Historial para no repetir alertas en la misma sesión
 
 function inicializarSistemaPush() {
-    // 1. Carga inicial
-    evaluarEstadoPush();
-    
-    // 2. Polling Inteligente (Cada 60s)
-    pushInterval = setInterval(async () => {
-        // RE-FETCH SILENCIOSO: Buscamos datos frescos de la API
+    // 1. Crear contenedor de apilamiento si no existe (CSS lo posiciona)
+    if (!document.getElementById('notificaciones-container')) {
+        const container = document.createElement('div');
+        container.id = 'notificaciones-container';
+        document.body.appendChild(container);
+    }
+
+    // 2. Loop de chequeo (Cada 60s)
+    chequearEstadoConcierto();
+    setInterval(async () => {
+        // Re-fetch silencioso para mantener horarios actualizados
         try {
             const res = await fetch("/api/eventos");
-            if (res.ok) {
-                const data = await res.json();
-                // Actualizamos la variable global
-                eventos = data; 
-                // Re-calculamos el estado con los datos nuevos
-                evaluarEstadoPush();
-            }
+            if (res.ok) eventos = await res.json();
         } catch (e) { console.error("Error polling eventos:", e); }
+        
+        chequearEstadoConcierto();
     }, 60000);
-
-    // Listeners UI
-    const btnClose = document.getElementById('btn-close-push');
-    const trigger = document.getElementById('push-trigger');
-    if(btnClose) btnClose.addEventListener('click', () => togglePush(false));
-    if(trigger) trigger.addEventListener('click', () => togglePush(true));
 }
 
-function togglePush(mostrar) {
-    const box = document.getElementById('push-notification');
-    const trigger = document.getElementById('push-trigger');
+function chequearEstadoConcierto() {
+    if (!eventos || eventos.length === 0) return;
+
+    // Usamos Luxon para hora Madrid
+    const ahora = DateTimeLuxon.now().setZone('Europe/Madrid');
+    const hoyISO = ahora.toISODate(); 
     
-    if (mostrar) {
-        box.classList.add('visible');
-        trigger.classList.remove('visible'); // Oculta trompeta
-        PUSH_STATE.closed = false;
-    } else {
-        box.classList.remove('visible');
-        trigger.classList.add('visible'); // Muestra trompeta
-        PUSH_STATE.closed = true;
+    // Filtramos eventos de HOY
+    const eventosHoy = eventos.filter(e => e.fecha === hoyISO);
+
+    // Si no hay eventos hoy, no hacemos nada (evitamos molestar con "No hay eventos")
+    if (eventosHoy.length === 0) return;
+
+    eventosHoy.forEach(evento => {
+        procesarNotificacionEvento(evento, ahora);
+    });
+}
+
+function procesarNotificacionEvento(evento, ahora) {
+    const textos = textosUI_Push(); // Obtenemos textos en idioma actual
+    
+    // ID base único para este evento
+    const idBase = `notif-${evento._id || evento.fecha}`;
+
+    // --- A. Lógica para Eventos Especiales (Cerrado/Privado) ---
+    // Se muestran una sola vez al entrar si coincide la fecha
+    if (evento.tipoEvento === 'Cerrado') {
+        lanzarNotificacion(idBase + '-closed', 'F', evento, textos);
+        return;
+    }
+    if (evento.tipoEvento === 'Privado') {
+        lanzarNotificacion(idBase + '-private', 'G', evento, textos);
+        return;
+    }
+
+    // --- B. Lógica para Eventos Regulares (Horarios) ---
+    
+    // Fallback para eventos viejos sin hora (Asume 20:00 - 22:00)
+    const hInicioStr = evento.horaInicio || "20:00";
+    const hFinStr = evento.horaFin || "22:00";
+
+    const [hIni, mIni] = hInicioStr.split(':').map(Number);
+    const [hFin, mFin] = hFinStr.split(':').map(Number);
+
+    // Crear objetos DateTime
+    const inicio = ahora.set({ hour: hIni, minute: mIni, second: 0 });
+    let fin = ahora.set({ hour: hFin, minute: mFin, second: 0 });
+    
+    // Si fin es menor a inicio (ej: termina a la madrugada), sumamos 1 día
+    if (fin < inicio) fin = fin.plus({ days: 1 });
+
+    const diffInicio = inicio.diff(ahora, 'minutes').minutes; 
+    const diffFin = fin.diff(ahora, 'minutes').minutes; 
+
+    // Reglas de Tiempo (Usamos tus tipos A, B, C, D, E)
+    
+    // 1. Falta media hora (30 a 25 min antes) -> TIPO B (Adaptado)
+    if (diffInicio <= 30 && diffInicio > 25) {
+        lanzarNotificacion(idBase + '-30', 'B', evento, textos, diffInicio);
+    }
+    // 2. Faltan 5 minutos (5 a 0 min antes) -> TIPO C
+    else if (diffInicio <= 5 && diffInicio > 0) {
+        lanzarNotificacion(idBase + '-5', 'C', evento, textos, diffInicio);
+    }
+    // 3. EN VIVO (Primeros 15 min del show) -> TIPO D
+    else if (diffInicio <= 0 && diffInicio >= -15) {
+        lanzarNotificacion(idBase + '-live', 'D', evento, textos);
+    }
+    // 4. Terminó (Recién terminado, ventana de 10 min) -> TIPO E
+    else if (diffFin <= 0 && diffFin > -10) {
+        lanzarNotificacion(idBase + '-end', 'E', evento, textos);
     }
 }
 
-function evaluarEstadoPush() {
-    if (eventos.length === 0) return;
+// Función encargada de crear el HTML y meterlo en el DOM
+function lanzarNotificacion(idUnico, tipo, evento, textos, minutos = 0) {
+    // Si ya mostramos esta notificación específica en esta sesión, no repetimos
+    if (notificacionesVistas.has(idUnico)) return;
+    notificacionesVistas.add(idUnico);
 
-    // 1. Determinar "Hoy" según regla de negocio (cambio de día a las 06:00 AM)
-    const ahora = DateTimeLuxon.now().setZone("Europe/Madrid");
-    // Si son las 02:00 AM del dia 20, para el bar sigue siendo la noche del 19.
-    const fechaOperativa = ahora.minus({ hours: 6 }).toISODate(); // YYYY-MM-DD
+    const container = document.getElementById('notificaciones-container');
+    
+    // Generamos el contenido usando TU función auxiliar
+    const htmlContenido = generarMensajePush(tipo, evento, textos, minutos);
 
-    // 2. Buscar evento para la fecha operativa
-    const eventoHoy = eventos.find(ev => ev.fecha === fechaOperativa);
+    // Creamos la "Card" flotante
+    const div = document.createElement('div');
+    div.className = 'notificacion-push'; // Usa tus estilos CSS actuales o los nuevos apilables
+    div.innerHTML = `
+        <div style="position:relative; padding-right: 20px;">
+            ${htmlContenido}
+            <span class="cerrar-push" style="position:absolute; top:-5px; right:-5px; cursor:pointer; font-size:1.2rem; color:#999;">&times;</span>
+        </div>
+    `;
 
-    // 3. Definir contenido según estado
-    let contenido = null;
+    // Animación de entrada
+    // Pequeño timeout para permitir que el DOM renderice y la transición CSS funcione
+    setTimeout(() => div.classList.add('entra'), 50);
 
-    if (!eventoHoy) {
-        // PUSH H: No hay concierto hoy
-        // (Opcional: decidir si mostrar algo o no. Por ahora mostramos genérico)
-        contenido = generarMensajePush('H', null, textosUI_Push());
-    } else if (eventoHoy.tipoEvento === 'Cerrado') {
-        // PUSH F: Cerrado
-        contenido = generarMensajePush('F', eventoHoy, textosUI_Push());
-    } else if (eventoHoy.tipoEvento === 'Privado') {
-        // PUSH G: Privado
-        contenido = generarMensajePush('G', eventoHoy, textosUI_Push());
-    } else {
-        // Evento Regular: Calculamos tiempos
-        // Asumimos hora inicio 20:00 Madrid (según tu descripción)
-        const horaInicio = DateTimeLuxon.fromISO(`${eventoHoy.fecha}T20:00:00`, { zone: "Europe/Madrid" });
-        const diffMinutos = horaInicio.diff(ahora, 'minutes').minutes;
+    // Lógica Cerrar (Click en la X)
+    div.querySelector('.cerrar-push').addEventListener('click', (e) => {
+        e.stopPropagation(); // Evitar click en links
+        cerrarNotificacion(div);
+    });
 
-        if (diffMinutos > 60) {
-            // PUSH A: Falta > 1 hora
-            contenido = generarMensajePush('A', eventoHoy, textosUI_Push(), diffMinutos);
-        } else if (diffMinutos > 10) {
-            // PUSH B: Falta < 1 hora
-            contenido = generarMensajePush('B', eventoHoy, textosUI_Push(), diffMinutos);
-        } else if (diffMinutos > 0) {
-            // PUSH C: En 10 min arranca!
-            contenido = generarMensajePush('C', eventoHoy, textosUI_Push(), diffMinutos);
-        } else if (diffMinutos > -120) { // Asumimos show de 2 horas (hasta 22:00)
-            // PUSH D: Ya empezó (En vivo)
-            contenido = generarMensajePush('D', eventoHoy, textosUI_Push());
-        } else {
-            // PUSH E: Terminó (Revivir)
-            contenido = generarMensajePush('E', eventoHoy, textosUI_Push());
-        }
-    }
+    container.appendChild(div);
 
-    // 4. Renderizar
-    if (contenido) {
-        const container = document.getElementById('push-content');
-        container.innerHTML = contenido;
-        
-        // Lógica de visualización automática
-        // Solo mostramos la caja automáticamente si NO fue cerrada por el usuario
-        const trigger = document.getElementById('push-trigger');
-        
-        if (!PUSH_STATE.closed) {
-            document.getElementById('push-notification').classList.add('visible');
-            trigger.classList.remove('visible');
-        } else {
-            // Si estaba cerrada, aseguramos que la trompetita esté visible
-            trigger.classList.add('visible');
-        }
+    // Auto-Cerrar a los 10 segundos (para no llenar la pantalla)
+    setTimeout(() => cerrarNotificacion(div), 10000);
+}
+
+function cerrarNotificacion(div) {
+    if (div.parentNode) {
+        div.classList.remove('entra'); // Animación salida
+        setTimeout(() => div.remove(), 500); // Borrar del DOM
     }
 }
 
-// Helper: Textos según idioma actual (AHORA COMPLETO)
+// ======================================================
+// HELPERS (TUS FUNCIONES ORIGINALES DE TEXTO Y HTML)
+// ======================================================
+
+// 1. Textos según idioma actual
 function textosUI_Push() {
     const es = (idiomaActual === 'es');
     return {
@@ -927,7 +961,7 @@ function textosUI_Push() {
         t_privado: es ? "Evento Privado" : "Private Event",
         t_sinEvento: es ? "Altxerri Jazz Bar" : "Altxerri Jazz Bar",
 
-        // Frases del cuerpo (Las que faltaban)
+        // Frases del cuerpo
         p_preparate: es ? "Preparate para" : "Get ready for",
         p_comenzar: es ? "está por comenzar." : "is about to start.",
         p_tocando: es ? "está tocando ahora." : "is playing right now.",
@@ -944,7 +978,7 @@ function textosUI_Push() {
     };
 }
 
-// Helper: Generador de HTML según estado (USANDO VARIABLES)
+// 2. Generador de HTML (Tu lógica original adaptada)
 function generarMensajePush(tipo, evento, txt, minutos = 0) {
     const tituloEv = evento ? (idiomaActual === 'en' && evento.titulo_en ? evento.titulo_en : evento.titulo) : '';
     
@@ -958,20 +992,20 @@ function generarMensajePush(tipo, evento, txt, minutos = 0) {
     let html = '';
 
     switch (tipo) {
-        case 'A': // Falta mucho
+        case 'A': // Falta mucho (No usado en loop automático, pero dejado por compatibilidad)
             html = `<h4>${txt.hoy}</h4>
                     <p><strong>${tituloEv}</strong></p>
                     <span class="push-timer">⏳ ${txt.falta} ${tiempoTexto}</span>`;
             break;
-        case 'B': // Falta 1 hora
+        case 'B': // Falta 30 min
             html = `<h4>🚀 ${txt.t_inicio}</h4>
                     <p>${txt.p_preparate} <strong>${tituloEv}</strong>.</p>
                     <span class="push-timer">⏳ ${txt.falta} ${tiempoTexto}</span>`;
             break;
-        case 'C': // Falta 10 min
+        case 'C': // Falta 5 min
             html = `<h4 style="color:#FFD700">🔥 ${txt.t_inicio}</h4>
                     <p><strong>${tituloEv}</strong> ${txt.p_comenzar}</p>
-                    <span class="push-timer">⏳ ${minsRestantes} ${txt.minutos}!</span>`;
+                    <span class="push-timer">⏳ ${Math.ceil(minutos)} ${txt.minutos}!</span>`;
             break;
         case 'D': // En Vivo
             html = `<h4 style="animation: pulse 1s infinite">🔴 ${txt.t_vivo}</h4>
@@ -991,18 +1025,16 @@ function generarMensajePush(tipo, evento, txt, minutos = 0) {
             break;
         case 'F': // Cerrado
             html = `<h4>💤 ${txt.t_cerrado}</h4>
-                    <p>${txt.p_descanso}</p>
-                    <a href="#eventos" class="btn-push" onclick="document.getElementById('btn-close-push').click()">${txt.agenda}</a>`;
+                    <p>${txt.p_descanso}</p>`;
             break;
         case 'G': // Privado
             html = `<h4>🔒 ${txt.t_privado}</h4>
-                    <p>${txt.p_reservado}</p>
-                    <a href="#eventos" class="btn-push" onclick="document.getElementById('btn-close-push').click()">${txt.agenda}</a>`;
+                    <p>${txt.p_reservado}</p>`;
             break;
         case 'H': // Sin Evento
             html = `<h4>🎹 ${txt.t_sinEvento}</h4>
                     <p>${txt.p_revisa}</p>
-                    <a href="#eventos" class="btn-push" onclick="document.getElementById('btn-close-push').click()">${txt.agenda}</a>`;
+                    <a href="#eventos" class="btn-push">${txt.agenda}</a>`;
             break;
     }
     return html;

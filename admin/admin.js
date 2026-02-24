@@ -51,6 +51,7 @@ const plantillasBloques = {
     unicos_imagen_vino: `<div class="form-section"><h4>Imagen del Producto (¡Obligatoria para Vinos!)</h4><div class="form-group"><label for="producto-imagen-upload">Subir Imagen *</label><input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp" required></div></div>`,
     unicos_vino_destacado: `<div class="form-group-checkbox-inline"><input type="checkbox" id="producto-destacado"><label for="producto-destacado">Marcar como "Vino Destacado de la Semana"</label></div>`,
     unicos_vino_smart: `<div class="form-section"><h4>Visibilidad y Destacado</h4><div style="background: var(--color-bg); padding: 1rem; border-radius: 8px; border: 1px solid #444; display: flex; align-items: center; justify-content: space-between;"><label for="producto-destacado" style="font-weight:bold; color:#FFC107; margin:0; cursor:pointer;"><i class='bx bxs-star'></i> Marcar como Destacado (Con Foto)</label><label class="switch"><input type="checkbox" id="producto-destacado"><span class="slider"></span></label></div><div id="contenedor-imagen-vino" style="display:none; margin-top:1rem; border-left: 3px solid #FFC107; padding-left: 1rem;"><div class="form-group"><label for="producto-imagen-upload">Subir Imagen del Banner</label><input type="file" id="producto-imagen-upload" class="form-input-file" accept="image/jpeg, image/png, image/webp"></div><p id="msg-imagen-existente" style="font-size:0.85rem; color:#aaa; display:none;">Imagen guardada: <strong style="color:#fff;">(Ninguna)</strong></p></div></div>`,
+    unicos_horarios: `<div class="form-group" style="display:flex; gap:15px; align-items:flex-end;"><div style="flex:1;"><label>Hora Inicio</label><input type="time" id="evento-hora-inicio" class="form-input" value="20:00"></div><div style="flex:1;"><label>Hora Fin</label><input type="time" id="evento-hora-fin" class="form-input" value="22:00"></div></div>`,
 
     // --- CAMPOS TRADUCIBLES ESTÁNDAR (Obligatorios) ---
     trad_es_titulo: `<div class="form-group"><label for="producto-titulo-es">Título (ES) *</label><input type="text" id="producto-titulo-es" class="form-input" required></div>`,
@@ -345,6 +346,8 @@ function inicializarFormularioAlta() {
 
         const data = {
             fecha: document.getElementById('evento-fecha').value,
+            horaInicio: document.getElementById('evento-hora-inicio').value,
+            horaFin: document.getElementById('evento-hora-fin').value,
             tipoEvento: tipoEventoSelect.value,
             titulo: tituloES.value.trim(),
             titulo_en: tituloEN.value.trim(),
@@ -675,6 +678,8 @@ function prellenarFormularioModEvento(ev) {
 
     // Datos Básicos
     document.getElementById('evento-fecha').value = ev.fecha;
+    document.getElementById('evento-hora-inicio').value = ev.horaInicio || "20:00";
+    document.getElementById('evento-hora-fin').value = ev.horaFin || "22:00";
     document.getElementById('evento-tipo').value = ev.tipoEvento;
     document.getElementById('evento-titulo').value = ev.titulo || '';
     document.getElementById('evento-descripcion').value = ev.descripcion || '';
