@@ -939,19 +939,33 @@ function calcularContenidoEvento(evento, ahora) {
     const inicio = ahora.set({ hour: hIni, minute: mIni, second: 0 });
     let fin = ahora.set({ hour: hFin, minute: mFin, second: 0 });
     
-    // Si termina al día siguiente (ej: 02:00 AM)
     if (fin < inicio) fin = fin.plus({ days: 1 });
 
     const diffMin = inicio.diff(ahora, 'minutes').minutes;
     const diffFin = fin.diff(ahora, 'minutes').minutes;
 
-    // Reglas de Visualización (Ventanas de Tiempo)
-    if (diffMin > 60) return null; // Falta mucho (>1h), silencio
-    if (diffMin > 30) return generarMensajePush('A', evento, textos, diffMin); // 1h a 30m
-    if (diffMin > 10) return generarMensajePush('B', evento, textos, diffMin); // 30m a 10m
-    if (diffMin > 0) return generarMensajePush('C', evento, textos, diffMin); // 10m a 0m
-    if (diffMin <= 0 && diffFin > 0) return generarMensajePush('D', evento, textos); // En Vivo
-    if (diffFin <= 0 && diffFin > -30) return generarMensajePush('E', evento, textos); // Terminó (30m post show)
+    // --- REGLAS DE TIEMPO (Lógica Mejorada) ---
+    
+    // CASO A: Falta más de 1 hora (Mostramos la hora del show)
+    if (diffMin > 60) {
+        return generarMensajePush('A', evento, textos, diffMin); 
+    }
+    // CASO B: Falta entre 1 hora y 5 minutos (Cuenta regresiva)
+    else if (diffMin <= 60 && diffMin > 5) {
+        return generarMensajePush('B', evento, textos, diffMin); 
+    }
+    // CASO C: Faltan 5 minutos o menos (Urgencia)
+    else if (diffMin <= 5 && diffMin > 0) {
+        return generarMensajePush('C', evento, textos, diffMin); 
+    }
+    // CASO D: En Vivo
+    else if (diffMin <= 0 && diffFin > 0) {
+        return generarMensajePush('D', evento, textos); 
+    }
+    // CASO E: Recién terminó
+    else if (diffFin <= 0 && diffFin > -30) {
+        return generarMensajePush('E', evento, textos); 
+    }
 
     return null;
 }
@@ -987,33 +1001,50 @@ function textosUI_Push() {
 function generarMensajePush(tipo, evento, txt, minutos = 0) {
     const tituloEv = evento ? (idiomaActual === 'en' && evento.titulo_en ? evento.titulo_en : evento.titulo) : '';
     const mins = Math.ceil(minutos);
+    const hInicio = evento ? (evento.horaInicio || "20:00") : "20:00";
 
     let html = '';
     switch (tipo) {
-        case 'A': // Falta 1h
-        case 'B': // Falta 30m
+        case 'A': // Falta mucho -> Mostramos HORA
+            html = `<h4>📅 ${txt.hoy}</h4>
+                    <p><strong>${tituloEv}</strong></p>
+                    <span class="push-timer">⏰ ${txt.horas}: ${hInicio} hs</span>`;
+            break;
+
+        case 'B': // Falta menos de 1h -> Cuenta regresiva
             html = `<h4>🚀 ${txt.t_inicio}</h4>
                     <p>${txt.p_preparate} <strong>${tituloEv}</strong></p>
                     <span class="push-timer">⏳ ${txt.falta} ${mins} ${txt.minutos}</span>`;
             break;
-        case 'C': // Falta 10m
+
+        case 'C': // Falta muy poco
             html = `<h4 style="color:#FFD700">🔥 ${txt.t_inicio}</h4>
                     <p><strong>${tituloEv}</strong> ${txt.p_comenzar}</p>
                     <span class="push-timer">⏳ ${mins} ${txt.minutos}!</span>`;
             break;
+
         case 'D': // En Vivo
             html = `<h4 style="animation: pulse 1s infinite; color:#FF5252">🔴 ${txt.t_vivo}</h4>
                     <p><strong>${tituloEv}</strong> ${txt.p_tocando}</p>`;
             if (evento.live) html += `<a href="${evento.live}" target="_blank" class="btn-push">${txt.verVivo}</a>`;
             break;
+
         case 'E': // Terminó
             html = `<h4>${txt.t_termino}</h4><p>${txt.p_gracias} <strong>${tituloEv}</strong></p>`;
             break;
+
         case 'F': // Cerrado
             html = `<h4>💤 ${txt.t_cerrado}</h4><p>${txt.p_descanso}</p>`;
             break;
+
         case 'G': // Privado
             html = `<h4>🔒 ${txt.t_privado}</h4><p>${txt.p_reservado}</p>`;
+            break;
+
+        case 'H': // Sin Evento (Agenda)
+            html = `<h4>🎹 ${txt.t_sinEvento}</h4>
+                    <p>${txt.p_revisa}</p>
+                    <a href="#eventos" class="btn-push" onclick="document.getElementById('btn-close-push').click()">${txt.agenda}</a>`;
             break;
     }
     return html;

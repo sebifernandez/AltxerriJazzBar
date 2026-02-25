@@ -1719,8 +1719,8 @@ body {
 /* 2. La "Trompetita" Flotante */
 .push-trigger {
     position: fixed;
-    bottom: 20px;
-    right: 20px; 
+    bottom: 50px;
+    right: 50px; 
     width: 10px !important;
     height: 10px !important;
     background: #000;
@@ -1759,6 +1759,33 @@ body {
 .push-trigger img {
   height: 50px;
   width: 50px;
+}
+
+.push-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 20px;
+    height: 20px;
+    background-color: var(--color-primario-rojo); /* Rojo */
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid #fff; /* Borde blanco para separar */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    
+    /* Animación de latido para llamar la atención */
+    animation: bounceBadge 2s infinite;
+}
+
+@keyframes bounceBadge {
+    0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+    40% {transform: translateY(-3px);}
+    60% {transform: translateY(-1.5px);}
 }
 
 /* Globito rojo de aviso en la trompeta */
