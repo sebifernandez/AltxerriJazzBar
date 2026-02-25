@@ -978,6 +978,7 @@ function textosUI_Push() {
         hoy: es ? "Hoy:" : "Today:",
         falta: es ? "Faltan" : "Starts in",
         minutos: es ? "min" : "min",
+        horas: es ? "Hora" : "Time",
         
         t_inicio: es ? "¡Inicio Inminente!" : "Starting Soon!",
         t_vivo: es ? "¡EN VIVO!" : "LIVE NOW!",
