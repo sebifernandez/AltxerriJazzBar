@@ -1721,8 +1721,8 @@ body {
     position: fixed;
     bottom: 20px;
     right: 20px; 
-    width: 40px;
-    height: 40px;
+    width: 10px !important;
+    height: 10px !important;
     background: #000;
     border: 2px solid var(--color-primario-rojo);
     border-radius: 50%;
@@ -1753,7 +1753,7 @@ body {
 /* Estilo del ícono (FontAwesome) */
 .push-trigger i {
     color: #fff;
-    font-size: 1rem;
+    font-size: 10px !important;
 }
 
 /* Globito rojo de aviso en la trompeta */
