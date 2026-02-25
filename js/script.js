@@ -343,10 +343,9 @@ function cargarEventos() {
 }
 
 function createEventCard(evento) {
-    // OBTIENE LOS TEXTOS TRADUCIDOS DE LA BD (O usa fallback si no cargó aún)
+    // OBTIENE LOS TEXTOS TRADUCIDOS DE LA BD
     const textosUI = contenidoWeb[idiomaActual]?.eventos?.ui || {};
     
-    // Textos por defecto para botones
     const txtReservar = idiomaActual === 'en' ? 'Book' : 'Reservar';
     const txtFinalizado = idiomaActual === 'en' ? 'Ended' : 'Finalizado';
 
@@ -359,13 +358,12 @@ function createEventCard(evento) {
         .set({ hour: HORA_LIMITE, minute: 0, second: 0, millisecond: 0 });
     const esPasado = ahoraMadrid >= fechaCorteFinalizado;
     
-    // 2. Especiales (Cerrado/Privado) - ESTE BLOQUE RETORNA Y TERMINA LA FUNCIÓN SI ES ESPECIAL
+    // 2. Especiales (Cerrado/Privado)
     if (evento.tipoEvento === "Cerrado" || evento.tipoEvento === "Privado") {
         const isClosed = evento.tipoEvento === "Cerrado";
         const specialImage = isClosed ? "cerrado.jpg" : "eventoPrivado.jpg";
         const specialClass = isClosed ? "closed" : "private";
         
-        // Textos traducidos
         const specialTitle = isClosed 
             ? (textosUI.labelCerrado || "Cerrado") 
             : (textosUI.labelPrivado || "Privado");
@@ -394,14 +392,9 @@ function createEventCard(evento) {
         `;
     }
     
-    // 3. LÓGICA DE EVENTOS REGULARES (Si no entró en el if anterior, sigue aquí)
-    
-    // --- AQUÍ ESTÁ LA LÓGICA BILINGÜE (NUEVO) ---
-    // Si estamos en inglés Y existe título en inglés, úsalo. Si no, usa el normal.
+    // 3. LÓGICA DE EVENTOS REGULARES
     const tituloMostrar = (idiomaActual === 'en' && evento.titulo_en) ? evento.titulo_en : evento.titulo;
-    // Lo mismo para la descripción
     const descData = (idiomaActual === 'en' && evento.descripcion_en) ? evento.descripcion_en : evento.descripcion;
-    // ---------------------------------------------
 
     let botonAdicionalHTML = '';
     let descripcionHTML = '';
@@ -421,7 +414,6 @@ function createEventCard(evento) {
                 const txtVivo = textosUI.btnVivo || "Ver en Vivo";
                 botonAdicionalHTML = `<a href="${evento.live}" target="_blank" class="btn-adicional btn-live">${txtVivo}</a>`;
             }
-            // Usamos la variable traducida 'descData'
             if (descData && descData.trim() !== '') {
                 descripcionHTML = `<p class="card-descripcion-precio">${descData}</p>`;
             }
@@ -440,13 +432,20 @@ function createEventCard(evento) {
         imagenMostrar = `img/${evento.imagen || 'imgBandaGenerica.jpg'}`; 
     }
 
-    // HTML FINAL PARA EVENTOS REGULARES
+    // --- NUEVO: HORARIO (BADGE ROJO) ---
+    const hInicio = evento.horaInicio || "20:00";
+    const badgeHorario = `
+        <div style="position:absolute; bottom:10px; right:10px; background:#B71C1C; color:#fff; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.5); z-index:2;">
+            <i class='bx bx-time-five'></i> ${hInicio} hs
+        </div>
+    `;
+
     return `
         <div class="event-card ${finalizadoClass}">
             <div class="card-image">
                 <img src="${imagenMostrar}" alt="${tituloMostrar}">
                 <div class="event-date">${luxonFecha.toFormat("dd LLLL")}</div>
-            </div>
+                ${badgeHorario} </div>
             <div class="card-content">
                 <h3>${tituloMostrar}</h3> ${descripcionHTML}
                 <button class="btn-reservar" ${finalizadoDisabled}>
@@ -802,7 +801,7 @@ if (newsletterForm) {
 const notificacionesVistas = new Set(); // Historial para no repetir alertas en la misma sesión
 
 function inicializarSistemaPush() {
-    // 1. Crear contenedor de apilamiento si no existe (CSS lo posiciona)
+    // 1. Crear contenedor de apilamiento si no existe
     if (!document.getElementById('notificaciones-container')) {
         const container = document.createElement('div');
         container.id = 'notificaciones-container';
@@ -812,7 +811,7 @@ function inicializarSistemaPush() {
     // 2. Loop de chequeo (Cada 60s)
     chequearEstadoConcierto();
     setInterval(async () => {
-        // Re-fetch silencioso para mantener horarios actualizados
+        // Re-fetch silencioso
         try {
             const res = await fetch("/api/eventos");
             if (res.ok) eventos = await res.json();
@@ -825,15 +824,18 @@ function inicializarSistemaPush() {
 function chequearEstadoConcierto() {
     if (!eventos || eventos.length === 0) return;
 
-    // Usamos Luxon para hora Madrid
+    // Hora Madrid
     const ahora = DateTimeLuxon.now().setZone('Europe/Madrid');
-    const hoyISO = ahora.toISODate(); 
+    // "Hoy" operativo: hasta las 6 AM del día siguiente sigue siendo "hoy"
+    const hoyISO = ahora.minus({ hours: 6 }).toISODate();
     
     // Filtramos eventos de HOY
     const eventosHoy = eventos.filter(e => e.fecha === hoyISO);
 
-    // Si no hay eventos hoy, no hacemos nada (evitamos molestar con "No hay eventos")
     if (eventosHoy.length === 0) return;
+
+    // Ordenamos por hora para procesar en orden
+    eventosHoy.sort((a,b) => (a.horaInicio || "20:00").localeCompare(b.horaInicio || "20:00"));
 
     eventosHoy.forEach(evento => {
         procesarNotificacionEvento(evento, ahora);
@@ -841,13 +843,10 @@ function chequearEstadoConcierto() {
 }
 
 function procesarNotificacionEvento(evento, ahora) {
-    const textos = textosUI_Push(); // Obtenemos textos en idioma actual
-    
-    // ID base único para este evento
+    const textos = textosUI_Push();
     const idBase = `notif-${evento._id || evento.fecha}`;
 
-    // --- A. Lógica para Eventos Especiales (Cerrado/Privado) ---
-    // Se muestran una sola vez al entrar si coincide la fecha
+    // A. Especiales
     if (evento.tipoEvento === 'Cerrado') {
         lanzarNotificacion(idBase + '-closed', 'F', evento, textos);
         return;
@@ -857,59 +856,51 @@ function procesarNotificacionEvento(evento, ahora) {
         return;
     }
 
-    // --- B. Lógica para Eventos Regulares (Horarios) ---
-    
-    // Fallback para eventos viejos sin hora (Asume 20:00 - 22:00)
+    // B. Regulares
     const hInicioStr = evento.horaInicio || "20:00";
     const hFinStr = evento.horaFin || "22:00";
 
     const [hIni, mIni] = hInicioStr.split(':').map(Number);
     const [hFin, mFin] = hFinStr.split(':').map(Number);
 
-    // Crear objetos DateTime
     const inicio = ahora.set({ hour: hIni, minute: mIni, second: 0 });
     let fin = ahora.set({ hour: hFin, minute: mFin, second: 0 });
     
-    // Si fin es menor a inicio (ej: termina a la madrugada), sumamos 1 día
     if (fin < inicio) fin = fin.plus({ days: 1 });
 
     const diffInicio = inicio.diff(ahora, 'minutes').minutes; 
     const diffFin = fin.diff(ahora, 'minutes').minutes; 
 
-    // Reglas de Tiempo (Usamos tus tipos A, B, C, D, E)
-    
-    // 1. Falta media hora (30 a 25 min antes) -> TIPO B (Adaptado)
-    if (diffInicio <= 30 && diffInicio > 25) {
-        lanzarNotificacion(idBase + '-30', 'B', evento, textos, diffInicio);
+    // Reglas de Tiempo
+    if (diffInicio <= 60 && diffInicio > 30) {
+        lanzarNotificacion(idBase + '-60', 'B', evento, textos, diffInicio); // Falta 1h (Usamos tipo B adaptado)
     }
-    // 2. Faltan 5 minutos (5 a 0 min antes) -> TIPO C
+    else if (diffInicio <= 30 && diffInicio > 5) {
+        lanzarNotificacion(idBase + '-30', 'B', evento, textos, diffInicio); // Falta 30m
+    }
     else if (diffInicio <= 5 && diffInicio > 0) {
-        lanzarNotificacion(idBase + '-5', 'C', evento, textos, diffInicio);
+        lanzarNotificacion(idBase + '-5', 'C', evento, textos, diffInicio); // Falta 5m
     }
-    // 3. EN VIVO (Primeros 15 min del show) -> TIPO D
-    else if (diffInicio <= 0 && diffInicio >= -15) {
-        lanzarNotificacion(idBase + '-live', 'D', evento, textos);
+    else if (diffInicio <= 0 && diffFin > 0) {
+        lanzarNotificacion(idBase + '-live', 'D', evento, textos); // En Vivo
     }
-    // 4. Terminó (Recién terminado, ventana de 10 min) -> TIPO E
-    else if (diffFin <= 0 && diffFin > -10) {
-        lanzarNotificacion(idBase + '-end', 'E', evento, textos);
+    else if (diffFin <= 0 && diffFin > -15) {
+        lanzarNotificacion(idBase + '-end', 'E', evento, textos); // Terminó
     }
 }
 
 // Función encargada de crear el HTML y meterlo en el DOM
 function lanzarNotificacion(idUnico, tipo, evento, textos, minutos = 0) {
-    // Si ya mostramos esta notificación específica en esta sesión, no repetimos
     if (notificacionesVistas.has(idUnico)) return;
     notificacionesVistas.add(idUnico);
 
     const container = document.getElementById('notificaciones-container');
-    
-    // Generamos el contenido usando TU función auxiliar
     const htmlContenido = generarMensajePush(tipo, evento, textos, minutos);
 
-    // Creamos la "Card" flotante
     const div = document.createElement('div');
-    div.className = 'notificacion-push'; // Usa tus estilos CSS actuales o los nuevos apilables
+    div.className = 'notificacion-push';
+    
+    // Estructura interna
     div.innerHTML = `
         <div style="position:relative; padding-right: 20px;">
             ${htmlContenido}
@@ -917,26 +908,24 @@ function lanzarNotificacion(idUnico, tipo, evento, textos, minutos = 0) {
         </div>
     `;
 
-    // Animación de entrada
-    // Pequeño timeout para permitir que el DOM renderice y la transición CSS funcione
     setTimeout(() => div.classList.add('entra'), 50);
 
-    // Lógica Cerrar (Click en la X)
+    // Cerrar manual
     div.querySelector('.cerrar-push').addEventListener('click', (e) => {
-        e.stopPropagation(); // Evitar click en links
+        e.stopPropagation();
         cerrarNotificacion(div);
     });
 
     container.appendChild(div);
 
-    // Auto-Cerrar a los 10 segundos (para no llenar la pantalla)
+    // Auto-Cerrar a los 10 segundos
     setTimeout(() => cerrarNotificacion(div), 10000);
 }
 
 function cerrarNotificacion(div) {
     if (div.parentNode) {
-        div.classList.remove('entra'); // Animación salida
-        setTimeout(() => div.remove(), 500); // Borrar del DOM
+        div.classList.remove('entra');
+        setTimeout(() => div.remove(), 500);
     }
 }
 
