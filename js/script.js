@@ -852,57 +852,74 @@ function togglePush(mostrar) {
 }
 
 function evaluarEstadoPush() {
-    if (!eventos || eventos.length === 0) return;
+    if (!eventos) return;
 
-    // Hora Madrid y Fecha Operativa (hasta las 06:00 AM cuenta como el día anterior)
+    // Hora Madrid
     const ahora = DateTimeLuxon.now().setZone("Europe/Madrid");
     const fechaOperativa = ahora.minus({ hours: 6 }).toISODate(); 
 
     // Buscar TODOS los eventos de hoy
     const eventosHoy = eventos.filter(e => e.fecha === fechaOperativa);
+    const textos = textosUI_Push();
 
-    // Si no hay eventos hoy, nos aseguramos de ocultar todo
+    // --- CAMBIO: SI NO HAY EVENTOS, MOSTRAR MENSAJE GENÉRICO (CASO H) ---
     if (eventosHoy.length === 0) {
-        const box = document.getElementById('push-notification');
-        const trigger = document.getElementById('push-trigger');
-        if(box) box.classList.remove('visible');
-        if(trigger) trigger.classList.remove('visible');
+        // Generamos mensaje tipo 'H' (Sin evento / Ver agenda)
+        const htmlGenerico = generarMensajePush('H', null, textos);
+        actualizarCajaPush(htmlGenerico);
         return;
     }
+    // ---------------------------------------------------------------------
 
-    // Ordenar por hora de inicio
+    // Si SÍ hay eventos, ordenamos y procesamos
     eventosHoy.sort((a,b) => (a.horaInicio || "20:00").localeCompare(b.horaInicio || "20:00"));
 
     let htmlAcumulado = '';
     let hayContenido = false;
 
-    // Generar HTML para cada evento
-    eventosHoy.forEach((evento, index) => {
+    eventosHoy.forEach((evento) => {
         const contenido = calcularContenidoEvento(evento, ahora);
         if (contenido) {
-            // Si hay más de uno, ponemos separador
             if (hayContenido) htmlAcumulado += `<hr style="border:0; border-top:1px solid rgba(255,255,255,0.2); margin:10px 0;">`;
             htmlAcumulado += contenido;
             hayContenido = true;
         }
     });
 
-    // Renderizar
+    // Si estamos en día de evento pero fuera de horario (ej: muy temprano), mostramos el recordatorio del primero
+    if (!hayContenido && eventosHoy.length > 0) {
+        // Mostramos el primero como "Falta..." (Tipo A forzado)
+        const primerEvento = eventosHoy[0];
+        // Calculamos diff solo para pasar el dato, aunque forzaremos A
+        const hInicioStr = primerEvento.horaInicio || "20:00";
+        const [hIni, mIni] = hInicioStr.split(':').map(Number);
+        const inicio = ahora.set({ hour: hIni, minute: mIni, second: 0 });
+        const diff = inicio.diff(ahora, 'minutes').minutes;
+        
+        htmlAcumulado = generarMensajePush('A', primerEvento, textos, diff);
+        hayContenido = true;
+    }
+
     if (hayContenido) {
-        const container = document.getElementById('push-content');
-        if(container) container.innerHTML = htmlAcumulado;
-        
-        // Auto-mostrar si el usuario no lo cerró explícitamente
-        const box = document.getElementById('push-notification');
-        const trigger = document.getElementById('push-trigger');
-        
-        if (box && trigger) {
-            if (!PUSH_STATE.closed) {
-                box.classList.add('visible');
-                trigger.classList.remove('visible');
-            } else {
-                trigger.classList.add('visible');
-            }
+        actualizarCajaPush(htmlAcumulado);
+    }
+}
+
+// Función auxiliar para no repetir código de mostrar/ocultar
+function actualizarCajaPush(html) {
+    const container = document.getElementById('push-content');
+    const box = document.getElementById('push-notification');
+    const trigger = document.getElementById('push-trigger');
+    
+    if (container) container.innerHTML = html;
+
+    if (box && trigger) {
+        if (!PUSH_STATE.closed) {
+            box.classList.add('visible');
+            trigger.classList.remove('visible');
+        } else {
+            box.classList.remove('visible');
+            trigger.classList.add('visible');
         }
     }
 }

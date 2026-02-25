@@ -1719,10 +1719,10 @@ body {
 /* 2. La "Trompetita" Flotante */
 .push-trigger {
     position: fixed;
-    bottom: 30px;
-    right: 30px; 
-    width: 50px;
-    height: 50px;
+    bottom: 20px;
+    right: 20px; 
+    width: 40px;
+    height: 40px;
     background: #000;
     border: 2px solid var(--color-primario-rojo);
     border-radius: 50%;
@@ -1753,7 +1753,7 @@ body {
 /* Estilo del ícono (FontAwesome) */
 .push-trigger i {
     color: #fff;
-    font-size: 1.2rem;
+    font-size: 1rem;
 }
 
 /* Globito rojo de aviso en la trompeta */
