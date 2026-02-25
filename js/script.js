@@ -795,235 +795,208 @@ if (newsletterForm) {
 }
 
 // ======================================================
-// 7. SISTEMA DE NOTIFICACIONES PUSH (Time-Aware & Multilanguage)
+// 7. SISTEMA DE NOTIFICACIONES PUSH (HÍBRIDO: CAJA + TROMPETA)
 // ======================================================
 
-const notificacionesVistas = new Set(); // Historial para no repetir alertas en la misma sesión
+let pushInterval;
+const PUSH_STATE = { closed: false }; 
 
 function inicializarSistemaPush() {
-    // 1. Crear contenedor de apilamiento si no existe
-    if (!document.getElementById('notificaciones-container')) {
-        const container = document.createElement('div');
-        container.id = 'notificaciones-container';
-        document.body.appendChild(container);
+    // 1. Listeners de UI (Trompeta y Botón Cerrar)
+    const btnClose = document.getElementById('btn-close-push');
+    const trigger = document.getElementById('push-trigger');
+
+    if (btnClose) {
+        btnClose.addEventListener('click', (e) => {
+            e.preventDefault();
+            togglePush(false);
+        });
+    }
+    
+    if (trigger) {
+        trigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            togglePush(true);
+        });
     }
 
-    // 2. Loop de chequeo (Cada 60s)
-    chequearEstadoConcierto();
-    setInterval(async () => {
-        // Re-fetch silencioso
+    // 2. Loop de chequeo (Inmediato y cada 60s)
+    evaluarEstadoPush(); 
+    pushInterval = setInterval(async () => {
         try {
             const res = await fetch("/api/eventos");
-            if (res.ok) eventos = await res.json();
+            if (res.ok) {
+                eventos = await res.json();
+                evaluarEstadoPush();
+            }
         } catch (e) { console.error("Error polling eventos:", e); }
-        
-        chequearEstadoConcierto();
     }, 60000);
 }
 
-function chequearEstadoConcierto() {
-    if (!eventos || eventos.length === 0) return;
-
-    // Hora Madrid
-    const ahora = DateTimeLuxon.now().setZone('Europe/Madrid');
-    // "Hoy" operativo: hasta las 6 AM del día siguiente sigue siendo "hoy"
-    const hoyISO = ahora.minus({ hours: 6 }).toISODate();
+function togglePush(mostrar) {
+    const box = document.getElementById('push-notification');
+    const trigger = document.getElementById('push-trigger');
     
-    // Filtramos eventos de HOY
-    const eventosHoy = eventos.filter(e => e.fecha === hoyISO);
+    // Si los elementos no existen en el HTML, no hacemos nada para evitar errores
+    if (!box || !trigger) return;
 
-    if (eventosHoy.length === 0) return;
-
-    // Ordenamos por hora para procesar en orden
-    eventosHoy.sort((a,b) => (a.horaInicio || "20:00").localeCompare(b.horaInicio || "20:00"));
-
-    eventosHoy.forEach(evento => {
-        procesarNotificacionEvento(evento, ahora);
-    });
+    if (mostrar) {
+        box.classList.add('visible');
+        trigger.classList.remove('visible'); // Oculta trompeta
+        PUSH_STATE.closed = false;
+    } else {
+        box.classList.remove('visible');
+        trigger.classList.add('visible'); // Muestra trompeta
+        PUSH_STATE.closed = true;
+    }
 }
 
-function procesarNotificacionEvento(evento, ahora) {
+function evaluarEstadoPush() {
+    if (!eventos || eventos.length === 0) return;
+
+    // Hora Madrid y Fecha Operativa (hasta las 06:00 AM cuenta como el día anterior)
+    const ahora = DateTimeLuxon.now().setZone("Europe/Madrid");
+    const fechaOperativa = ahora.minus({ hours: 6 }).toISODate(); 
+
+    // Buscar TODOS los eventos de hoy
+    const eventosHoy = eventos.filter(e => e.fecha === fechaOperativa);
+
+    // Si no hay eventos hoy, nos aseguramos de ocultar todo
+    if (eventosHoy.length === 0) {
+        const box = document.getElementById('push-notification');
+        const trigger = document.getElementById('push-trigger');
+        if(box) box.classList.remove('visible');
+        if(trigger) trigger.classList.remove('visible');
+        return;
+    }
+
+    // Ordenar por hora de inicio
+    eventosHoy.sort((a,b) => (a.horaInicio || "20:00").localeCompare(b.horaInicio || "20:00"));
+
+    let htmlAcumulado = '';
+    let hayContenido = false;
+
+    // Generar HTML para cada evento
+    eventosHoy.forEach((evento, index) => {
+        const contenido = calcularContenidoEvento(evento, ahora);
+        if (contenido) {
+            // Si hay más de uno, ponemos separador
+            if (hayContenido) htmlAcumulado += `<hr style="border:0; border-top:1px solid rgba(255,255,255,0.2); margin:10px 0;">`;
+            htmlAcumulado += contenido;
+            hayContenido = true;
+        }
+    });
+
+    // Renderizar
+    if (hayContenido) {
+        const container = document.getElementById('push-content');
+        if(container) container.innerHTML = htmlAcumulado;
+        
+        // Auto-mostrar si el usuario no lo cerró explícitamente
+        const box = document.getElementById('push-notification');
+        const trigger = document.getElementById('push-trigger');
+        
+        if (box && trigger) {
+            if (!PUSH_STATE.closed) {
+                box.classList.add('visible');
+                trigger.classList.remove('visible');
+            } else {
+                trigger.classList.add('visible');
+            }
+        }
+    }
+}
+
+function calcularContenidoEvento(evento, ahora) {
     const textos = textosUI_Push();
-    const idBase = `notif-${evento._id || evento.fecha}`;
 
-    // A. Especiales
-    if (evento.tipoEvento === 'Cerrado') {
-        lanzarNotificacion(idBase + '-closed', 'F', evento, textos);
-        return;
-    }
-    if (evento.tipoEvento === 'Privado') {
-        lanzarNotificacion(idBase + '-private', 'G', evento, textos);
-        return;
-    }
+    if (evento.tipoEvento === 'Cerrado') return generarMensajePush('F', evento, textos);
+    if (evento.tipoEvento === 'Privado') return generarMensajePush('G', evento, textos);
 
-    // B. Regulares
+    // Calcular Tiempos
     const hInicioStr = evento.horaInicio || "20:00";
     const hFinStr = evento.horaFin || "22:00";
-
     const [hIni, mIni] = hInicioStr.split(':').map(Number);
     const [hFin, mFin] = hFinStr.split(':').map(Number);
 
     const inicio = ahora.set({ hour: hIni, minute: mIni, second: 0 });
     let fin = ahora.set({ hour: hFin, minute: mFin, second: 0 });
     
+    // Si termina al día siguiente (ej: 02:00 AM)
     if (fin < inicio) fin = fin.plus({ days: 1 });
 
-    const diffInicio = inicio.diff(ahora, 'minutes').minutes; 
-    const diffFin = fin.diff(ahora, 'minutes').minutes; 
+    const diffMin = inicio.diff(ahora, 'minutes').minutes;
+    const diffFin = fin.diff(ahora, 'minutes').minutes;
 
-    // Reglas de Tiempo
-    if (diffInicio <= 60 && diffInicio > 30) {
-        lanzarNotificacion(idBase + '-60', 'B', evento, textos, diffInicio); // Falta 1h (Usamos tipo B adaptado)
-    }
-    else if (diffInicio <= 30 && diffInicio > 5) {
-        lanzarNotificacion(idBase + '-30', 'B', evento, textos, diffInicio); // Falta 30m
-    }
-    else if (diffInicio <= 5 && diffInicio > 0) {
-        lanzarNotificacion(idBase + '-5', 'C', evento, textos, diffInicio); // Falta 5m
-    }
-    else if (diffInicio <= 0 && diffFin > 0) {
-        lanzarNotificacion(idBase + '-live', 'D', evento, textos); // En Vivo
-    }
-    else if (diffFin <= 0 && diffFin > -15) {
-        lanzarNotificacion(idBase + '-end', 'E', evento, textos); // Terminó
-    }
+    // Reglas de Visualización (Ventanas de Tiempo)
+    if (diffMin > 60) return null; // Falta mucho (>1h), silencio
+    if (diffMin > 30) return generarMensajePush('A', evento, textos, diffMin); // 1h a 30m
+    if (diffMin > 10) return generarMensajePush('B', evento, textos, diffMin); // 30m a 10m
+    if (diffMin > 0) return generarMensajePush('C', evento, textos, diffMin); // 10m a 0m
+    if (diffMin <= 0 && diffFin > 0) return generarMensajePush('D', evento, textos); // En Vivo
+    if (diffFin <= 0 && diffFin > -30) return generarMensajePush('E', evento, textos); // Terminó (30m post show)
+
+    return null;
 }
 
-// Función encargada de crear el HTML y meterlo en el DOM
-function lanzarNotificacion(idUnico, tipo, evento, textos, minutos = 0) {
-    if (notificacionesVistas.has(idUnico)) return;
-    notificacionesVistas.add(idUnico);
+// --- HELPERS (Tus funciones originales integradas) ---
 
-    const container = document.getElementById('notificaciones-container');
-    const htmlContenido = generarMensajePush(tipo, evento, textos, minutos);
-
-    const div = document.createElement('div');
-    div.className = 'notificacion-push';
-    
-    // Estructura interna
-    div.innerHTML = `
-        <div style="position:relative; padding-right: 20px;">
-            ${htmlContenido}
-            <span class="cerrar-push" style="position:absolute; top:-5px; right:-5px; cursor:pointer; font-size:1.2rem; color:#999;">&times;</span>
-        </div>
-    `;
-
-    setTimeout(() => div.classList.add('entra'), 50);
-
-    // Cerrar manual
-    div.querySelector('.cerrar-push').addEventListener('click', (e) => {
-        e.stopPropagation();
-        cerrarNotificacion(div);
-    });
-
-    container.appendChild(div);
-
-    // Auto-Cerrar a los 10 segundos
-    setTimeout(() => cerrarNotificacion(div), 10000);
-}
-
-function cerrarNotificacion(div) {
-    if (div.parentNode) {
-        div.classList.remove('entra');
-        setTimeout(() => div.remove(), 500);
-    }
-}
-
-// ======================================================
-// HELPERS (TUS FUNCIONES ORIGINALES DE TEXTO Y HTML)
-// ======================================================
-
-// 1. Textos según idioma actual
 function textosUI_Push() {
     const es = (idiomaActual === 'es');
     return {
-        hoy: es ? "Hoy en Altxerri:" : "Today at Altxerri:",
+        hoy: es ? "Hoy:" : "Today:",
         falta: es ? "Faltan" : "Starts in",
-        minutos: es ? "minutos" : "minutes",
-        horas: es ? "horas" : "hours",
+        minutos: es ? "min" : "min",
         
-        // Títulos
         t_inicio: es ? "¡Inicio Inminente!" : "Starting Soon!",
-        t_vivo: es ? "¡EN VIVO AHORA!" : "LIVE NOW!",
-        t_termino: es ? "El show ha finalizado" : "The show has ended",
-        t_cerrado: es ? "Hoy estamos cerrados" : "We are closed today",
+        t_vivo: es ? "¡EN VIVO!" : "LIVE NOW!",
+        t_termino: es ? "Finalizado" : "Ended",
+        t_cerrado: es ? "Cerrado" : "Closed",
         t_privado: es ? "Evento Privado" : "Private Event",
-        t_sinEvento: es ? "Altxerri Jazz Bar" : "Altxerri Jazz Bar",
 
-        // Frases del cuerpo
         p_preparate: es ? "Preparate para" : "Get ready for",
         p_comenzar: es ? "está por comenzar." : "is about to start.",
-        p_tocando: es ? "está tocando ahora." : "is playing right now.",
-        p_gracias: es ? "Gracias por acompañarnos en" : "Thanks for joining us at",
-        p_descanso: es ? "Nos tomamos un descanso. ¡Volvemos pronto!" : "We are taking a break. Back soon!",
-        p_reservado: es ? "Hoy el local está reservado. ¡Te esperamos el resto de la semana!" : "The venue is booked today. See you the rest of the week!",
-        p_revisa: es ? "Hoy no hay concierto programado. Revisa nuestra agenda:" : "No concert scheduled for today. Check our calendar:",
+        p_tocando: es ? "está tocando." : "is playing.",
+        p_gracias: es ? "Gracias por venir a" : "Thanks for joining",
+        p_descanso: es ? "Hoy descansamos." : "We are closed today.",
+        p_reservado: es ? "Local reservado." : "Venue booked.",
 
-        // Botones / Links
-        verVivo: es ? "Ver en Vivo" : "Watch Live",
-        revivir: es ? "Reviví el concierto" : "Watch Replay",
-        proximo: es ? "¡Te esperamos mañana!" : "See you tomorrow!",
-        agenda: es ? "Ver Agenda" : "See Calendar"
+        verVivo: es ? "Ver" : "Watch",
+        revivir: es ? "Revivir" : "Replay",
+        agenda: es ? "Agenda" : "Calendar"
     };
 }
 
-// 2. Generador de HTML (Tu lógica original adaptada)
 function generarMensajePush(tipo, evento, txt, minutos = 0) {
     const tituloEv = evento ? (idiomaActual === 'en' && evento.titulo_en ? evento.titulo_en : evento.titulo) : '';
-    
-    // Formato de tiempo
-    const horasRestantes = Math.floor(minutos / 60);
-    const minsRestantes = Math.floor(minutos % 60);
-    const tiempoTexto = horasRestantes > 0 
-        ? `${horasRestantes}h ${minsRestantes}m` 
-        : `${minsRestantes}m`;
+    const mins = Math.ceil(minutos);
 
     let html = '';
-
     switch (tipo) {
-        case 'A': // Falta mucho (No usado en loop automático, pero dejado por compatibilidad)
-            html = `<h4>${txt.hoy}</h4>
-                    <p><strong>${tituloEv}</strong></p>
-                    <span class="push-timer">⏳ ${txt.falta} ${tiempoTexto}</span>`;
-            break;
-        case 'B': // Falta 30 min
+        case 'A': // Falta 1h
+        case 'B': // Falta 30m
             html = `<h4>🚀 ${txt.t_inicio}</h4>
-                    <p>${txt.p_preparate} <strong>${tituloEv}</strong>.</p>
-                    <span class="push-timer">⏳ ${txt.falta} ${tiempoTexto}</span>`;
+                    <p>${txt.p_preparate} <strong>${tituloEv}</strong></p>
+                    <span class="push-timer">⏳ ${txt.falta} ${mins} ${txt.minutos}</span>`;
             break;
-        case 'C': // Falta 5 min
+        case 'C': // Falta 10m
             html = `<h4 style="color:#FFD700">🔥 ${txt.t_inicio}</h4>
                     <p><strong>${tituloEv}</strong> ${txt.p_comenzar}</p>
-                    <span class="push-timer">⏳ ${Math.ceil(minutos)} ${txt.minutos}!</span>`;
+                    <span class="push-timer">⏳ ${mins} ${txt.minutos}!</span>`;
             break;
         case 'D': // En Vivo
-            html = `<h4 style="animation: pulse 1s infinite">🔴 ${txt.t_vivo}</h4>
+            html = `<h4 style="animation: pulse 1s infinite; color:#FF5252">🔴 ${txt.t_vivo}</h4>
                     <p><strong>${tituloEv}</strong> ${txt.p_tocando}</p>`;
-            if (evento.live) {
-                html += `<a href="${evento.live}" target="_blank" class="btn-push">${txt.verVivo}</a>`;
-            }
+            if (evento.live) html += `<a href="${evento.live}" target="_blank" class="btn-push">${txt.verVivo}</a>`;
             break;
         case 'E': // Terminó
-            html = `<h4>${txt.t_termino}</h4>
-                    <p>${txt.p_gracias} <strong>${tituloEv}</strong>.</p>`;
-            if (evento.concierto) {
-                html += `<p>${txt.revivir}:</p><a href="${evento.concierto}" target="_blank" class="btn-push">▶ Play</a>`;
-            } else {
-                html += `<small>${txt.proximo}</small>`;
-            }
+            html = `<h4>${txt.t_termino}</h4><p>${txt.p_gracias} <strong>${tituloEv}</strong></p>`;
             break;
         case 'F': // Cerrado
-            html = `<h4>💤 ${txt.t_cerrado}</h4>
-                    <p>${txt.p_descanso}</p>`;
+            html = `<h4>💤 ${txt.t_cerrado}</h4><p>${txt.p_descanso}</p>`;
             break;
         case 'G': // Privado
-            html = `<h4>🔒 ${txt.t_privado}</h4>
-                    <p>${txt.p_reservado}</p>`;
-            break;
-        case 'H': // Sin Evento
-            html = `<h4>🎹 ${txt.t_sinEvento}</h4>
-                    <p>${txt.p_revisa}</p>
-                    <a href="#eventos" class="btn-push">${txt.agenda}</a>`;
+            html = `<h4>🔒 ${txt.t_privado}</h4><p>${txt.p_reservado}</p>`;
             break;
     }
     return html;
