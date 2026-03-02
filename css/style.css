@@ -198,6 +198,9 @@ body {
     width: 100vw;
     height: 100vh;
     overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   /* UTILIZAR UNICAMENTE CON VIDEO MEDIANTE ENLACE */
@@ -216,11 +219,39 @@ body {
     position: absolute;
     bottom: -50%;
     right: -50%;
-    object-fit: cover;
-    min-width: 100%;
-    min-height: 100%;
+    pointer-events: none;
     transform: translate(-50%, -50%);
   }
+
+    /* CASO A: Pantallas "Altas" o Normales (Menos anchas que 16:9) */
+/* Aquí priorizamos que cubra la ALTURA (height) */
+@media (max-aspect-ratio: 16/9) {
+    .video-container .fondo {
+        width: 177.78vh; /* 16/9 = 1.77. Forzamos el ratio */
+        height: 100vh;
+    }
+}
+
+/* CASO B: Pantallas "Anchas" (Más anchas que 16:9, como laptops modernas) */
+/* Aquí priorizamos que cubra la ANCHURA (width) */
+@media (min-aspect-ratio: 16/9) {
+    .video-container .fondo {
+        width: 100vw;
+        height: 56.25vw; /* 9/16 = 0.5625. Mantiene el ratio */
+    }
+}
+
+/* CASO C: EL FRENO DE MANO para Ultra-Wide (Opcional pero recomendado) */
+/* Si la pantalla es RIDÍCULAMENTE ancha (ej. más de 2000px), dejamos de estirar */
+@media (min-width: 2000px) { 
+    .video-container .fondo {
+        width: 2000px !important; /* Tope máximo de ancho */
+        height: 1125px !important; /* El alto proporcional (2000 * 0.5625) */
+        
+        /* Como el contenedor tiene background negro y flex-center, 
+           el video quedará centrado y con bordes negros elegantes a los lados */
+    }
+}
 
   .scroll-down {
   position: absolute;
