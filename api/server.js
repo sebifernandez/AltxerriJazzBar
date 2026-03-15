@@ -24,6 +24,13 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 const router = express.Router();
 
+// --- CONFIGURACIÓN DE MARCA BLANCA (SaaS) ---
+const BAR_NAME = process.env.BAR_NAME || 'Altxerri Jazz Bar';
+const SENDER_EMAIL = process.env.SENDER_EMAIL || 'info@altxerri.com';
+const BANNER_URL = process.env.BANNER_URL || 'https://res.cloudinary.com/dpcrozjx0/image/upload/v1770510881/altxerri_jazz_club/fsofcrsytqgauzdbo6pg.png'; 
+const FONDO_URL = process.env.FONDO_URL || 'https://res.cloudinary.com/dpcrozjx0/image/upload/v1770510788/altxerri_jazz_club/mflsoeegyr0lbr7osjxe.png';
+const DOMINIO_WEB = process.env.DOMINIO_WEB || 'https://altxerri.com'; // Necesario para el link de baja
+
 // --- 1. CONFIGURACIÓN DE RESEND ---
 const { Resend } = require('resend');
 
@@ -909,29 +916,109 @@ router.post('/suscribir', async (req, res) => {
         if (!email || !email.includes('@')) {
             return res.status(400).json({ success: false, message: 'Email inválido.' });
         }
+// 1. Verificamos si el correo ya existe en la base de datos
+        const existe = await db.collection('subscribers').findOne({ email: email });
 
-        // Usamos updateOne con upsert:true para no duplicar emails
-        await db.collection('subscribers').updateOne(
+        if (existe) {
+            // Si ya existe, le decimos al frontend que aborte y le avise al usuario
+            return res.status(400).json({ 
+                success: false, 
+                message: '¡Este correo ya está suscrito a nuestro newsletter!' 
+            });
+        }
+
+        // 2. Si no existe, lo insertamos como un usuario nuevo
+        await db.collection('subscribers').insertOne({
+            email: email,
+            nombre: nombre,
+            activo: true,
+            fecha_registro: new Date().toISOString()
+        });
+
+// 3. ENVIAMOS EL CORREO DE BIENVENIDA CON RESEND Y DISEÑO HTML
+        const nombreMostrar = nombre || 'Amante de la música'; 
+        
+        await resend.emails.send({
+            from: `${BAR_NAME} <${SENDER_EMAIL}>`,
+            to: email, 
+            subject: `¡Bienvenido a ${BAR_NAME}! 🎷`,
+            html: `
+            <div style="background-color: #1a1a1a; padding: 40px 20px; text-align: center; font-family: Arial, sans-serif; background-image: url('${FONDO_URL}'); background-size: cover; background-position: center;">
+                <div style="max-width: 600px; margin: 0 auto; background: rgba(15, 15, 15, 0.95); border: 1px solid #B71C1C; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+                    
+                    <img src="${BANNER_URL}" alt="${BAR_NAME}" style="width: 100%; height: auto; display: block; border-bottom: 2px solid #B71C1C;">
+                    
+                    <div style="padding: 40px 30px; color: #ffffff;">
+                        <h1 style="color: #B71C1C; margin-top: 0; font-size: 28px; font-family: 'Georgia', serif;">¡Hola ${nombreMostrar}!</h1>
+                        <h3 style="color: #FFD700; font-weight: normal; font-size: 18px; margin-bottom: 30px;">Tu lugar para la mejor música en vivo</h3>
+                        
+                        <p style="font-size: 16px; line-height: 1.6; color: #dddddd; margin-bottom: 20px;">
+                            Gracias por sumarte a nuestra comunidad. A partir de ahora, vas a ser el primero en recibir nuestra agenda semanal, enterarte de eventos especiales y acceder a novedades exclusivas.
+                        </p>
+                        
+                        <p style="font-size: 16px; color: #dddddd; font-weight: bold;">
+                            ¡Nos vemos pronto en el bar!
+                        </p>
+                    </div>
+                    
+                    <div style="background: #000000; padding: 20px; text-align: center; border-top: 1px solid #333;">
+                        <p style="color: #888; font-size: 12px; margin: 0 0 10px 0;">Recibís este correo porque te suscribiste en nuestra web.</p>
+                        <a href="${DOMINIO_WEB}/api/baja?email=${email}" style="color: #B71C1C; font-size: 12px; text-decoration: underline;">Darse de baja del newsletter</a>
+                    </div>
+                </div>
+            </div>
+            `
+        });
+
+        // --- RUTA PARA DARSE DE BAJA DEL NEWSLETTER ---
+router.get('/baja', async (req, res) => {
+    try {
+        const email = req.query.email;
+        if (!email) {
+            return res.status(400).send("Enlace inválido.");
+        }
+
+        const db = await connectToDb();
+        
+        // Cambiamos el estado 'activo' a false
+        const resultado = await db.collection('subscribers').updateOne(
             { email: email },
-            { 
-                $set: { 
-                    nombre: nombre, 
-                    activo: true, 
-                    ultimo_registro: new Date().toISOString() 
-                } 
-            },
-            { upsert: true }
+            { $set: { activo: false, fecha_baja: new Date().toISOString() } }
         );
 
-        res.json({ success: true, message: '¡Suscripción exitosa!' });
+        if (resultado.matchedCount === 0) {
+            return res.send("El correo no se encuentra en nuestra base de datos.");
+        }
 
+        // Devolvemos una pantalla HTML amigable confirmando la baja
+        res.send(`
+            <div style="background-color: #1a1a1a; color: white; height: 100vh; display: flex; align-items: center; justify-content: center; font-family: Arial, sans-serif; text-align: center;">
+                <div style="padding: 40px; border: 1px solid #B71C1C; border-radius: 8px; background: #0f0f0f;">
+                    <h2 style="color: #B71C1C;">Te has dado de baja correctamente</h2>
+                    <p style="color: #ddd;">Ya no recibirás correos de ${BAR_NAME}.</p>
+                    <p style="color: #888; font-size: 14px; margin-top: 20px;">Podés cerrar esta pestaña.</p>
+                </div>
+            </div>
+        `);
+
+    } catch (error) {
+        console.error("Error procesando baja:", error);
+        res.status(500).send("Error interno al procesar la solicitud.");
+    }
+});
+
+        // 4. Respondemos éxito al frontend
+        res.json({ 
+            success: true, 
+            message: '¡Suscripción exitosa! Te hemos enviado un correo de bienvenida.' 
+        });
     } catch (error) {
         console.error("Error suscripción:", error);
         res.status(500).json({ success: false, message: 'Error interno.' });
     }
 });
 
-// 2. ENVIAR NEWSLETTER (Privada - Requiere Auth)
+// 2. ENVIAR NEWSLETTER (Privada - Requiere Auth) - VERSIÓN BATCH (SAAS PRO)
 router.post('/newsletter/enviar', checkAuth, async (req, res) => {
     try {
         const db = await connectToDb();
@@ -944,39 +1031,50 @@ router.post('/newsletter/enviar', checkAuth, async (req, res) => {
             return res.status(400).json({ success: false, message: 'No hay suscriptores activos.' });
         }
 
-        // Extraer solo los emails
-        // NOTA: Para producción real masiva, se recomienda usar "Audiences" de Resend o enviar en lotes.
-        // Para este MVP, enviaremos como copia oculta (BCC) para proteger privacidad.
-        const emails = suscriptores.map(s => s.email);
+        // 2. Sistema Batch: Enviar en bloques de 100 (Límite de la API de Resend)
+        const batchSize = 100; 
+        let enviadosCorrectamente = 0;
 
-        // Limitación de Resend Free: Máximo 50 destinatarios por batch si usas "to" o "bcc".
-        // Vamos a hacer un loop simple para enviar en tandas de 45 para estar seguros.
-        const batchSize = 45;
-        for (let i = 0; i < emails.length; i += batchSize) {
-            const lote = emails.slice(i, i + batchSize);
+        // Recorremos la lista de suscriptores saltando de a 100
+        for (let i = 0; i < suscriptores.length; i += batchSize) {
+            const lote = suscriptores.slice(i, i + batchSize);
             
-            await resend.emails.send({
-                from: 'Altxerri Jazz Bar <onboarding@resend.dev>', // IMPORTANTE: Cambiar esto cuando verifiques tu dominio en Resend
-                to: ['delivered@resend.dev'], // Dirección "dummy" requerida por Resend si usas BCC masivo en testing
-                bcc: lote,
-                subject: subject,
-                html: htmlContent
+            // Construimos el array de objetos, personalizando el HTML para cada uno
+            const correosDelLote = lote.map(sub => {
+                // Inyectamos el email real en el botón de baja
+                const htmlPersonalizado = htmlContent.replace(/{{EMAIL_DESTINATARIO}}/g, sub.email);
+                
+                return {
+                    from: `${BAR_NAME} <${SENDER_EMAIL}>`,
+                    to: sub.email,
+                    subject: subject,
+                    html: htmlPersonalizado
+                };
             });
+
+            try {
+                // Disparamos los 100 correos de un solo golpe a los servidores de Resend
+                await resend.batch.send(correosDelLote);
+                enviadosCorrectamente += lote.length;
+            } catch (errBatch) {
+                console.error(`Error enviando el lote que empieza en el índice ${i}:`, errBatch);
+                // Si falla un lote (ej. se cayó internet), el bucle sigue con el próximo lote de 100
+            }
         }
 
-        // 2. Guardar historial
+        // 3. Guardar historial en la base de datos
         await db.collection('newsletters').insertOne({
             fecha: new Date().toISOString(),
             subject: subject,
-            contenido: htmlContent,
-            destinatarios_conteo: emails.length
+            contenido: htmlContent, // Guardamos la plantilla base sin el mail inyectado
+            destinatarios_conteo: enviadosCorrectamente
         });
 
-        res.json({ success: true, message: `Newsletter enviado a ${emails.length} personas.` });
+        res.json({ success: true, message: `Newsletter procesado. Enviado a ${enviadosCorrectamente} personas.` });
 
     } catch (error) {
         console.error("Error enviando newsletter:", error);
-        res.status(500).json({ success: false, message: 'Error al enviar emails: ' + error.message });
+        res.status(500).json({ success: false, message: 'Error al procesar el envío masivo.' });
     }
 });
 

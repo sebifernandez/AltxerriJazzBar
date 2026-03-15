@@ -2124,7 +2124,7 @@ function generarHTMLFinal(config) {
         ${intro ? `
         <tr><td align="center" style="padding: 20px 30px 30px 30px;">
             <p style="font-size: 15px; line-height: 1.6; color: #bbbbbb; margin: 0; font-style: italic;">
-                "${intro}"
+                ${intro}
             </p>
         </td></tr>` : ''}
         `;
@@ -2238,7 +2238,7 @@ function generarHTMLFinal(config) {
             
             <tr><td align="center" style="font-size: 11px; color: #666; padding-bottom: 40px; font-family: sans-serif;">
                 <p style="margin: 0;">Altxerri Jazz Bar | San Sebastián</p>
-                <p style="margin: 5px 0;"><a href="#" style="color: #666; text-decoration: underline;">Darse de baja</a></p>
+                <p style="margin: 5px 0;"><a href="${window.location.origin}/api/baja?email={{EMAIL_DESTINATARIO}}" style="color: #666; text-decoration: underline;">Darse de baja</a></p>
             </td></tr>
         </table>
     </body>
