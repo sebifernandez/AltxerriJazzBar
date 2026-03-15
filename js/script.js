@@ -31,6 +31,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // G. INICIALIZAR REPRODUCTOR DE VIDEO
     inicializarReproductorVideo();
+
+    // G. INICIALIZAR FORMULARIOS DE CONTACTO
+    inicializarFormulariosContacto()
 });
 
 // ======================================================
@@ -1396,3 +1399,54 @@ function extraerIDYoutube(url) {
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
 }
+
+// ======================================================
+// 10. LÓGICA DE FORMULARIOS DE CONTACTO
+// ======================================================
+function inicializarFormulariosContacto() {
+    const contactForms = document.querySelectorAll('.contact-form');
+
+    contactForms.forEach(form => {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Evitamos que la página recargue
+
+            // Efecto visual de carga
+            const btn = form.querySelector('button[type="submit"]');
+            const txtOriginal = btn.innerText;
+            btn.disabled = true;
+            btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Enviando...";
+
+            // Recolectamos los datos del formulario específico
+            const formData = new FormData(form);
+            const datos = Object.fromEntries(formData.entries());
+            const tipo = form.id; // Nos dice si es 'cliente', 'banda', etc.
+
+            try {
+                const res = await fetch('/api/contacto', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tipo, datos })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    alert("¡Mensaje enviado con éxito! Nos pondremos en contacto pronto.");
+                    form.reset(); // Vaciamos los campos
+                } else {
+                    alert("Error: " + data.message);
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Error de conexión. Inténtalo de nuevo más tarde.");
+            } finally {
+                // Restauramos el botón
+                btn.disabled = false;
+                btn.innerText = txtOriginal;
+            }
+        });
+    });
+}
+
+// IMPORTANTE: Asegurate de llamar a inicializarFormulariosContacto() 
+// dentro de tu document.addEventListener('DOMContentLoaded', ...) arriba de todo.

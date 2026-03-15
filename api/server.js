@@ -24,6 +24,10 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 const router = express.Router();
 
+// Permite guardar varios mails separados por coma en Netlify. Si no hay, usa el por defecto.
+const CONTACT_EMAILS = process.env.CONTACT_EMAILS 
+    ? process.env.CONTACT_EMAILS.split(',') 
+    : ['info@altxerri.com'];
 // --- CONFIGURACIÓN DE MARCA BLANCA (SaaS) ---
 const BAR_NAME = process.env.BAR_NAME || 'Altxerri Jazz Bar';
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'info@altxerri.com';
@@ -904,6 +908,48 @@ router.get('/contenido/backups/:uid', checkAuth, async (req, res) => {
     } catch (error) {
         console.error("Error en GET /contenido/backups:", error);
         res.status(500).json({ success: false, message: "Error al leer backups." });
+    }
+});
+
+// --- RUTA DE CONTACTO (DINÁMICA Y SAAS) ---
+router.post('/contacto', async (req, res) => {
+    try {
+        // Recibimos de qué pestaña viene y todos los datos que el usuario llenó
+        const { tipo, datos } = req.body; 
+
+        // 1. Armamos el "cuerpo" del mail dinámicamente leyendo qué campos llegaron
+        let htmlCampos = '';
+        for (const [key, value] of Object.entries(datos)) {
+            // Reemplazamos guiones bajos por espacios y ponemos en mayúscula (ej: nombre_banda -> NOMBRE BANDA)
+            const nombreCampo = key.replace(/_/g, ' ').toUpperCase();
+            htmlCampos += `<p style="margin-bottom: 10px;"><strong>${nombreCampo}:</strong><br> ${value}</p>`;
+        }
+
+        // 2. Enviamos el correo a los dueños
+        await resend.emails.send({
+            from: `Web ${BAR_NAME} <${SENDER_EMAIL}>`, // Quién lo envía (El servidor)
+            to: CONTACT_EMAILS,                        // A quiénes le llega (A los 3 chicos)
+            reply_to: datos.email,                     // ¡CLAVE! Si los chicos le dan a "Responder", le responden al cliente
+            subject: `Nuevo mensaje de ${tipo.toUpperCase()} - ${BAR_NAME}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                    <h2 style="color: #B71C1C; margin-top: 0;">Nuevo mensaje desde la web</h2>
+                    <h4 style="color: #555; border-bottom: 2px solid #eee; padding-bottom: 10px;">Categoría: ${tipo.toUpperCase()}</h4>
+                    <div style="padding-top: 10px; color: #333;">
+                        ${htmlCampos}
+                    </div>
+                    <p style="color: #888; font-size: 12px; margin-top: 30px; text-align: center;">
+                        Enviado automáticamente desde el formulario de contacto de ${BAR_NAME}
+                    </p>
+                </div>
+            `
+        });
+
+        res.json({ success: true, message: '¡Mensaje enviado correctamente!' });
+
+    } catch (error) {
+        console.error("Error en el formulario de contacto:", error);
+        res.status(500).json({ success: false, message: 'Error interno al enviar el mensaje.' });
     }
 });
 
