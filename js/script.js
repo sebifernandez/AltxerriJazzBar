@@ -305,7 +305,7 @@ function inicializarEfectosVisuales() {
 const track = document.querySelector('.carousel-track');
 const leftBtn = document.querySelector('.carousel-btn.left');
 const rightBtn = document.querySelector('.carousel-btn.right');
-const HORA_LIMITE = 10; 
+const HORA_LIMITE = 6; 
 const HORA_CADUCIDAD_LIVE = 3; 
 
 let cards = [];
