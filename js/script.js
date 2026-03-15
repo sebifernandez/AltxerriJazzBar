@@ -851,59 +851,219 @@ function togglePush(mostrar) {
     }
 }
 
+
+
+//--------------------------------------------------------
+//--------------------------------------------------------
+//--------------------------------------------------------
+
+// --- 1. EVALUAR ESTADO GENERAL PUSH ---
 function evaluarEstadoPush() {
     if (!eventos) return;
 
-    // Hora Madrid
+    // Hora Madrid. El "día" cambia a las 6 AM (minus 6 hours)
     const ahora = DateTimeLuxon.now().setZone("Europe/Madrid");
     const fechaOperativa = ahora.minus({ hours: 6 }).toISODate(); 
+    
+    // Obtenemos qué día es "mañana" operativamente
+    const fechaManana = ahora.minus({ hours: 6 }).plus({ days: 1 }).toISODate();
 
-    // Buscar TODOS los eventos de hoy
-    const eventosHoy = eventos.filter(e => e.fecha === fechaOperativa);
+    // Filtramos todos los eventos de "Hoy" (Operativo)
+    let eventosHoy = eventos.filter(e => e.fecha === fechaOperativa);
     const textos = textosUI_Push();
 
-    // --- CAMBIO: SI NO HAY EVENTOS, MOSTRAR MENSAJE GENÉRICO (CASO H) ---
+    // Caso H: No hay eventos hoy
     if (eventosHoy.length === 0) {
-        // Generamos mensaje tipo 'H' (Sin evento / Ver agenda)
         const htmlGenerico = generarMensajePush('H', null, textos);
         actualizarCajaPush(htmlGenerico);
         return;
     }
-    // ---------------------------------------------------------------------
 
-    // Si SÍ hay eventos, ordenamos y procesamos
+    // Ordenamos los eventos de hoy por hora de inicio (temprano a tarde)
     eventosHoy.sort((a,b) => (a.horaInicio || "20:00").localeCompare(b.horaInicio || "20:00"));
 
-    let htmlAcumulado = '';
-    let hayContenido = false;
+    let notificacionesHTML = []; // Array para guardar máximo 2 notificaciones
 
-    eventosHoy.forEach((evento) => {
-        const contenido = calcularContenidoEvento(evento, ahora);
-        if (contenido) {
-            if (hayContenido) htmlAcumulado += `<hr style="border:0; border-top:1px solid rgba(255,255,255,0.2); margin:10px 0;">`;
-            htmlAcumulado += contenido;
-            hayContenido = true;
-        }
+    // Analizamos cada evento de hoy para ver su estado temporal
+    const estadosEventos = eventosHoy.map(evento => {
+        return {
+            evento: evento,
+            estado: calcularEstadoTemporal(evento, ahora) // Devuelve: 'FUTURO', 'CUENTA_REGRESIVA', 'INMINENTE', 'VIVO', 'TERMINADO'
+        };
     });
 
-    // Si estamos en día de evento pero fuera de horario (ej: muy temprano), mostramos el recordatorio del primero
-    if (!hayContenido && eventosHoy.length > 0) {
-        // Mostramos el primero como "Falta..." (Tipo A forzado)
-        const primerEvento = eventosHoy[0];
-        // Calculamos diff solo para pasar el dato, aunque forzaremos A
-        const hInicioStr = primerEvento.horaInicio || "20:00";
-        const [hIni, mIni] = hInicioStr.split(':').map(Number);
-        const inicio = ahora.set({ hour: hIni, minute: mIni, second: 0 });
-        const diff = inicio.diff(ahora, 'minutes').minutes;
+    // 1. ¿Hay algún evento en VIVO? (Prioridad 1)
+    const eventosEnVivo = estadosEventos.filter(e => e.estado.tipo === 'VIVO');
+    
+    // 2. Eventos Futuros o en Cuenta Regresiva
+    const eventosPorVenir = estadosEventos.filter(e => ['FUTURO', 'CUENTA_REGRESIVA', 'INMINENTE'].includes(e.estado.tipo));
+    
+    // 3. Eventos Terminados
+    const eventosTerminados = estadosEventos.filter(e => e.estado.tipo === 'TERMINADO');
+
+    // --- LÓGICA DE DECISIÓN (EL DIRECTOR DE ORQUESTA) ---
+
+    // A. YA TERMINARON TODOS LOS SHOWS DE HOY (La madrugada, antes de las 6am)
+    if (eventosPorVenir.length === 0 && eventosEnVivo.length === 0 && eventosTerminados.length > 0) {
+        // Buscamos el primer evento de "Mañana"
+        const eventosManana = eventos.filter(e => e.fecha === fechaManana).sort((a,b) => (a.horaInicio || "20:00").localeCompare(b.horaInicio || "20:00"));
+        const evtManana = eventosManana.length > 0 ? eventosManana[0] : null;
         
-        htmlAcumulado = generarMensajePush('A', primerEvento, textos, diff);
-        hayContenido = true;
+        notificacionesHTML.push(generarMensajePush('E_FINAL', evtManana, textos));
+    } 
+    // B. HAY EVENTOS POR VENIR O EN VIVO
+    else {
+        // Construimos la lista de eventos a mostrar, máximo 2
+        let eventosAMostrar = [];
+
+        // Si hay eventos en vivo, van primero
+        if (eventosEnVivo.length > 0) {
+            eventosAMostrar.push(eventosEnVivo[0]); // Metemos el primer en vivo (arriba)
+            
+            // Si hay un segundo evento por venir, lo ponemos abajo
+            if (eventosPorVenir.length > 0) {
+                eventosAMostrar.push(eventosPorVenir[0]);
+            }
+        } 
+        // Si no hay en vivo, pero hay varios por venir
+        else if (eventosPorVenir.length > 0) {
+            eventosAMostrar.push(eventosPorVenir[0]); // El próximo show (arriba)
+            
+            // Si hay un segundo show futuro, armamos la card múltiple
+            if (eventosPorVenir.length > 1) {
+                // Acá le pasamos a la función todos los eventos futuros restantes
+                const futurosRestantes = eventosPorVenir.slice(1);
+                notificacionesHTML.push(generarMensajePush(eventosAMostrar[0].estado.tipo, eventosAMostrar[0].evento, textos, eventosAMostrar[0].estado.mins));
+                notificacionesHTML.push(generarMensajePush('MULTIPLE_FUTURO', futurosRestantes, textos));
+                eventosAMostrar = []; // Vaciamos para no iterar de nuevo abajo
+            }
+        }
+
+        // Si no usamos la lógica 'MULTIPLE_FUTURO', iteramos normalmente
+        eventosAMostrar.forEach(item => {
+            notificacionesHTML.push(generarMensajePush(item.estado.tipo, item.evento, textos, item.estado.mins));
+        });
     }
 
-    if (hayContenido) {
-        actualizarCajaPush(htmlAcumulado);
+    // Unimos los HTML con un separador si hay más de 1
+    const htmlFinal = notificacionesHTML.join(`<hr style="border:0; border-top:1px solid rgba(255,255,255,0.2); margin:10px 0;">`);
+    
+    if (htmlFinal) {
+        actualizarCajaPush(htmlFinal);
     }
 }
+
+
+// --- 2. CALCULADORA DE TIEMPO EXACTO ---
+function calcularEstadoTemporal(evento, ahora) {
+    if (evento.tipoEvento === 'Cerrado') return { tipo: 'CERRADO' };
+    if (evento.tipoEvento === 'Privado') return { tipo: 'PRIVADO' };
+
+    const hInicioStr = evento.horaInicio || "20:00";
+    const hFinStr = evento.horaFin || "22:00";
+    const [hIni, mIni] = hInicioStr.split(':').map(Number);
+    const [hFin, mFin] = hFinStr.split(':').map(Number);
+
+    const inicio = ahora.set({ hour: hIni, minute: mIni, second: 0 });
+    let fin = ahora.set({ hour: hFin, minute: mFin, second: 0 });
+    if (fin < inicio) fin = fin.plus({ days: 1 });
+
+    const diffMinInicio = inicio.diff(ahora, 'minutes').minutes;
+    const diffMinFin = fin.diff(ahora, 'minutes').minutes;
+
+    if (diffMinInicio > 60) return { tipo: 'FUTURO', mins: diffMinInicio };
+    if (diffMinInicio <= 60 && diffMinInicio > 5) return { tipo: 'CUENTA_REGRESIVA', mins: diffMinInicio };
+    if (diffMinInicio <= 5 && diffMinInicio > 0) return { tipo: 'INMINENTE', mins: diffMinInicio };
+    if (diffMinInicio <= 0 && diffMinFin > 0) return { tipo: 'VIVO', mins: 0 };
+    return { tipo: 'TERMINADO', mins: diffMinFin };
+}
+
+
+// --- 3. DIBUJANTE DEL MENSAJE (HTML) ---
+function generarMensajePush(tipo, eventoOArray, txt, minutos = 0) {
+    const mins = Math.ceil(minutos);
+    let html = '';
+
+    // Si es tipo MULTIPLE_FUTURO, recibimos un array de estados
+    if (tipo === 'MULTIPLE_FUTURO') {
+        const eventosArray = eventoOArray;
+        let listadoHTML = '';
+        
+        // Armamos el string: "banda B a las 19 hs, banda C a las 20 hs..."
+        eventosArray.forEach((item, index) => {
+            const ev = item.evento;
+            const tituloEv = idiomaActual === 'en' && ev.titulo_en ? ev.titulo_en : ev.titulo;
+            const horaStr = ev.horaInicio || "20:00";
+            
+            listadoHTML += `<strong>${tituloEv}</strong> a las ${horaStr} hs`;
+            if (index < eventosArray.length - 2) listadoHTML += ', ';
+            else if (index === eventosArray.length - 2) listadoHTML += ' y ';
+        });
+
+        return `<h4>📅 ${txt.hoy}</h4><p>${listadoHTML}.</p>`;
+    }
+
+    // Para el resto, asumimos que es un solo evento
+    const evento = eventoOArray;
+    const tituloEv = evento ? (idiomaActual === 'en' && evento.titulo_en ? evento.titulo_en : evento.titulo) : '';
+    const hInicio = evento ? (evento.horaInicio || "20:00") : "20:00";
+
+    switch (tipo) {
+        case 'FUTURO': 
+            html = `<h4>📅 ${txt.hoy}</h4>
+                    <p><strong>${tituloEv}</strong></p>
+                    <span class="push-timer">⏰ ${txt.horas}: ${hInicio} hs</span>`;
+            break;
+
+        case 'CUENTA_REGRESIVA': 
+            html = `<h4>🚀 ${txt.t_inicio}</h4>
+                    <p>${txt.p_preparate} <strong>${tituloEv}</strong></p>
+                    <span class="push-timer">⏳ ${txt.falta} ${mins} ${txt.minutos}</span>`;
+            break;
+
+        case 'INMINENTE': 
+            html = `<h4 style="color:#FFD700">🔥 ${txt.t_inicio}</h4>
+                    <p><strong>${tituloEv}</strong> ${txt.p_comenzar}</p>
+                    <span class="push-timer">⏳ ${mins} ${txt.minutos}!</span>`;
+            break;
+
+        case 'VIVO': 
+            html = `<h4 style="animation: pulse 1s infinite; color:#FF5252">🔴 ${txt.t_vivo}</h4>
+                    <p><strong>${tituloEv}</strong> ${txt.p_tocando}</p>`;
+            if (evento.live) html += `<a href="${evento.live}" target="_blank" class="btn-push">${txt.verVivo}</a>`;
+            break;
+
+        case 'E_FINAL': // Cuando terminan TODOS los shows (Madrugada)
+            let txtManana = '';
+            if (evento) { // Si encontramos un evento para el día siguiente
+                const titManana = idiomaActual === 'en' && evento.titulo_en ? evento.titulo_en : evento.titulo;
+                const hManana = evento.horaInicio || "20:00";
+                txtManana = `<br><span style="color:#FFD700; font-size:0.9em;">Mañana: <strong>${titManana}</strong> a las ${hManana} hs!</span>`;
+            }
+            html = `<h4>💤 ${txt.t_termino}</h4>
+                    <p>${txt.p_gracias} ${txtManana}</p>`;
+            break;
+
+        case 'CERRADO': 
+            html = `<h4>💤 ${txt.t_cerrado}</h4><p>${txt.p_descanso}</p>`;
+            break;
+
+        case 'PRIVADO': 
+            html = `<h4>🔒 ${txt.t_privado}</h4><p>${txt.p_reservado}</p>`;
+            break;
+
+        case 'H': // Sin Evento hoy
+            html = `<h4>🎹 ${txt.t_sinEvento}</h4>
+                    <p>${txt.p_revisa}</p>
+                    <a href="#eventos" class="btn-push" onclick="document.getElementById('btn-close-push').click()">${txt.agenda}</a>`;
+            break;
+    }
+    return html;
+}
+
+//--------------------------------------------------------
+//--------------------------------------------------------
+//--------------------------------------------------------
 
 // Función auxiliar para no repetir código de mostrar/ocultar
 function actualizarCajaPush(html) {
@@ -924,131 +1084,32 @@ function actualizarCajaPush(html) {
     }
 }
 
-function calcularContenidoEvento(evento, ahora) {
-    const textos = textosUI_Push();
-
-    if (evento.tipoEvento === 'Cerrado') return generarMensajePush('F', evento, textos);
-    if (evento.tipoEvento === 'Privado') return generarMensajePush('G', evento, textos);
-
-    // Calcular Tiempos
-    const hInicioStr = evento.horaInicio || "20:00";
-    const hFinStr = evento.horaFin || "22:00";
-    const [hIni, mIni] = hInicioStr.split(':').map(Number);
-    const [hFin, mFin] = hFinStr.split(':').map(Number);
-
-    const inicio = ahora.set({ hour: hIni, minute: mIni, second: 0 });
-    let fin = ahora.set({ hour: hFin, minute: mFin, second: 0 });
-    
-    if (fin < inicio) fin = fin.plus({ days: 1 });
-
-    const diffMin = inicio.diff(ahora, 'minutes').minutes;
-    const diffFin = fin.diff(ahora, 'minutes').minutes;
-
-    // --- REGLAS DE TIEMPO (Lógica Mejorada) ---
-    
-    // CASO A: Falta más de 1 hora (Mostramos la hora del show)
-    if (diffMin > 60) {
-        return generarMensajePush('A', evento, textos, diffMin); 
-    }
-    // CASO B: Falta entre 1 hora y 5 minutos (Cuenta regresiva)
-    else if (diffMin <= 60 && diffMin > 5) {
-        return generarMensajePush('B', evento, textos, diffMin); 
-    }
-    // CASO C: Faltan 5 minutos o menos (Urgencia)
-    else if (diffMin <= 5 && diffMin > 0) {
-        return generarMensajePush('C', evento, textos, diffMin); 
-    }
-    // CASO D: En Vivo
-    else if (diffMin <= 0 && diffFin > 0) {
-        return generarMensajePush('D', evento, textos); 
-    }
-    // CASO E: Recién terminó
-    else if (diffFin <= 0 && diffFin > -30) {
-        return generarMensajePush('E', evento, textos); 
-    }
-
-    return null;
-}
-
 // --- HELPERS (Tus funciones originales integradas) ---
 
 function textosUI_Push() {
     const es = (idiomaActual === 'es');
     return {
-        hoy: es ? "Hoy:" : "Today:",
+hoy: es ? "Hoy:" : "Today:",
         falta: es ? "Faltan" : "Starts in",
         minutos: es ? "min" : "min",
         horas: es ? "Hora" : "Time",
-        
         t_inicio: es ? "¡Inicio Inminente!" : "Starting Soon!",
         t_vivo: es ? "¡EN VIVO!" : "LIVE NOW!",
-        t_termino: es ? "Finalizado" : "Ended",
-        t_cerrado: es ? "Cerrado" : "Closed",
-        t_privado: es ? "Evento Privado" : "Private Event",
-
-        p_preparate: es ? "Preparate para" : "Get ready for",
+        verVivo: es ? "Ver en Vivo" : "Watch Live",
+        p_tocando: es ? "está tocando ahora mismo." : "is playing right now.",
         p_comenzar: es ? "está por comenzar." : "is about to start.",
-        p_tocando: es ? "está tocando." : "is playing.",
-        p_gracias: es ? "Gracias por venir a" : "Thanks for joining",
-        p_descanso: es ? "Hoy descansamos." : "We are closed today.",
-        p_reservado: es ? "Local reservado." : "Venue booked.",
-
-        verVivo: es ? "Ver" : "Watch",
-        revivir: es ? "Revivir" : "Replay",
-        agenda: es ? "Agenda" : "Calendar"
+        p_preparate: es ? "Prepárate, se viene:" : "Get ready for:",
+        t_termino: es ? "¡El show terminó!" : "Show is over!",
+        p_gracias: es ? "El show en vivo de esta noche ya terminó. ¡Mañana te esperamos con más jazz!" : "Tonight's live show has ended. See you tomorrow for more jazz!",
+        t_cerrado: es ? "Cerrado" : "Closed",
+        p_descanso: es ? "Hoy descansamos. ¡Revisa la agenda!" : "Resting today. Check the schedule!",
+        t_privado: es ? "Evento Privado" : "Private Event",
+        p_reservado: es ? "El bar está reservado hoy." : "The bar is booked today.",
+        t_sinEvento: es ? "¡Agenda Abierta!" : "Open Schedule!",
+        p_revisa: es ? "Revisa nuestra agenda de próximos conciertos." : "Check our upcoming concerts schedule.",
+        agenda: es ? "Ver Agenda" : "View Schedule",
+        y_mas: es ? "y más shows" : "and more shows"
     };
-}
-
-function generarMensajePush(tipo, evento, txt, minutos = 0) {
-    const tituloEv = evento ? (idiomaActual === 'en' && evento.titulo_en ? evento.titulo_en : evento.titulo) : '';
-    const mins = Math.ceil(minutos);
-    const hInicio = evento ? (evento.horaInicio || "20:00") : "20:00";
-
-    let html = '';
-    switch (tipo) {
-        case 'A': // Falta mucho -> Mostramos HORA
-            html = `<h4>📅 ${txt.hoy}</h4>
-                    <p><strong>${tituloEv}</strong></p>
-                    <span class="push-timer">⏰ ${txt.horas}: ${hInicio} hs</span>`;
-            break;
-
-        case 'B': // Falta menos de 1h -> Cuenta regresiva
-            html = `<h4>🚀 ${txt.t_inicio}</h4>
-                    <p>${txt.p_preparate} <strong>${tituloEv}</strong></p>
-                    <span class="push-timer">⏳ ${txt.falta} ${mins} ${txt.minutos}</span>`;
-            break;
-
-        case 'C': // Falta muy poco
-            html = `<h4 style="color:#FFD700">🔥 ${txt.t_inicio}</h4>
-                    <p><strong>${tituloEv}</strong> ${txt.p_comenzar}</p>
-                    <span class="push-timer">⏳ ${mins} ${txt.minutos}!</span>`;
-            break;
-
-        case 'D': // En Vivo
-            html = `<h4 style="animation: pulse 1s infinite; color:#FF5252">🔴 ${txt.t_vivo}</h4>
-                    <p><strong>${tituloEv}</strong> ${txt.p_tocando}</p>`;
-            if (evento.live) html += `<a href="${evento.live}" target="_blank" class="btn-push">${txt.verVivo}</a>`;
-            break;
-
-        case 'E': // Terminó
-            html = `<h4>${txt.t_termino}</h4><p>${txt.p_gracias} <strong>${tituloEv}</strong></p>`;
-            break;
-
-        case 'F': // Cerrado
-            html = `<h4>💤 ${txt.t_cerrado}</h4><p>${txt.p_descanso}</p>`;
-            break;
-
-        case 'G': // Privado
-            html = `<h4>🔒 ${txt.t_privado}</h4><p>${txt.p_reservado}</p>`;
-            break;
-
-        case 'H': // Sin Evento (Agenda)
-            html = `<h4>🎹 ${txt.t_sinEvento}</h4>
-                    <p>${txt.p_revisa}</p>
-                    <a href="#eventos" class="btn-push" onclick="document.getElementById('btn-close-push').click()">${txt.agenda}</a>`;
-            break;
-    }
-    return html;
 }
 
 // ======================================================
