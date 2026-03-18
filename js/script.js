@@ -471,6 +471,15 @@ function inicializarEventos() {
         const cardHTML = createEventCard(evento);
         track.insertAdjacentHTML('beforeend', cardHTML);
 
+        // --- MAGIA NUEVA: Habilitar click para Pop-up ---
+        const cardElement = track.lastElementChild;
+        cardElement.addEventListener('click', (e) => {
+            // Si el usuario hizo clic en un botón (Reservar, Vivo, IG), no abrimos el modal
+            if (e.target.closest('button, a')) return;
+            // Si hizo clic en la card, abrimos el modal con ese evento
+            abrirDetalleCentro(evento);
+        });
+
         const fechaCorteFinalizado = DateTimeLuxon.fromISO(evento.fecha, { zone: "Europe/Madrid" })
             .plus({ days: 1 })
             .set({ hour: HORA_LIMITE, minute: 0, second: 0, millisecond: 0 });
@@ -1188,12 +1197,19 @@ function renderizarGrillaCalendario(fecha) {
         const diaActual = fecha.set({ day: i });
         const fechaIso = diaActual.toISODate();
         
-        let evento = eventos.find(ev => ev.fecha === fechaIso);
-        let tipoVisual = 'open'; // Default (Plateado/Blanco)
+        // --- NUEVA LÓGICA DE AGRUPACIÓN MULTI-EVENTO ---
+        // Buscamos TODOS los eventos de ese día
+        let eventosDelDia = eventos.filter(ev => ev.fecha === fechaIso);
+        
+        let tipoVisual = 'open'; 
+        let imgUrl = 'img/imgBandaGenerica.jpg';
+        let tituloEv = '';
+        let infoParaElModal = [];
+        let hoverHint = idiomaActual === 'es' ? 'Ver Info' : 'View Info';
 
-        if (!evento) {
-            // Crear evento dummy "Sin Banda"
-            evento = {
+        if (eventosDelDia.length === 0) {
+            // CASO A: Día vacío (Dummy)
+            const dummy = {
                 _id: 'dummy-' + fechaIso,
                 fecha: fechaIso,
                 tipoEvento: 'Regular',
@@ -1205,10 +1221,30 @@ function renderizarGrillaCalendario(fecha) {
                 esDummy: true 
             };
             tipoVisual = 'open';
-        } else {
+            tituloEv = dummy.titulo;
+            imgUrl = 'img/diaSinBanda.jpg'; 
+            infoParaElModal = [dummy];
+            
+        } else if (eventosDelDia.length === 1) {
+            // CASO B: Un solo evento
+            let evento = eventosDelDia[0];
             if (evento.tipoEvento === 'Cerrado') tipoVisual = 'closed';
             else if (evento.tipoEvento === 'Privado') tipoVisual = 'private';
             else tipoVisual = 'future';
+            
+            imgUrl = (evento.imagen && evento.imagen.length > 3) ? (evento.imagen.startsWith('http') ? evento.imagen : `img/${evento.imagen}`) : imgUrl;
+            tituloEv = (idiomaActual === 'en' && evento.titulo_en) ? evento.titulo_en : evento.titulo;
+            infoParaElModal = [evento];
+            
+        } else {
+            // CASO C: Múltiples eventos (El Festival)
+            tipoVisual = 'future'; 
+            imgUrl = 'img/imgBandaGenerica.jpg'; // Imagen genérica para el día con muchas bandas
+            tituloEv = idiomaActual === 'es' ? `🔥 ${eventosDelDia.length} Shows` : `🔥 ${eventosDelDia.length} Shows`;
+            hoverHint = idiomaActual === 'es' ? 'Ver Lineup' : 'View Lineup';
+            
+            // Le mandamos al modal el array completo ordenado por hora
+            infoParaElModal = eventosDelDia.sort((a,b) => (a.horaInicio || "20:00").localeCompare(b.horaInicio || "20:00"));
         }
 
         if (fechaIso < hoy) tipoVisual = 'past'; // Amarillo si ya pasó
@@ -1216,47 +1252,46 @@ function renderizarGrillaCalendario(fecha) {
         const div = document.createElement('div');
         div.className = `cal-day status-${tipoVisual}`;
         
-        let imgUrl = 'img/imgBandaGenerica.jpg';
-        if (evento.imagen && evento.imagen.length > 3) {
-            imgUrl = evento.imagen.startsWith('http') ? evento.imagen : `img/${evento.imagen}`;
-        }
-        
-        const tituloEv = (idiomaActual === 'en' && evento.titulo_en) ? evento.titulo_en : evento.titulo;
-        
         div.innerHTML = `
             <img src="${imgUrl}" class="cal-day-bg" loading="lazy">
             <span class="cal-day-number">${i}</span>
             <span class="cal-day-title">${tituloEv}</span>
-            <span class="cal-hover-hint">Ver Info</span>
+            <span class="cal-hover-hint">${hoverHint}</span>
         `;
 
-        div.addEventListener('click', () => abrirDetalleCentro(evento));
+        // Al clickear, mandamos toda la info recolectada
+        div.addEventListener('click', () => abrirDetalleCentro(infoParaElModal));
         grid.appendChild(div);
     }
 }
 
-function abrirDetalleCentro(evento) {
+function abrirDetalleCentro(data) {
     const modal = document.getElementById('modal-detalle-centro');
     const container = document.getElementById('contenido-detalle-dinamico');
     
     modal.style.display = 'flex';
+    container.innerHTML = ''; 
+
+    // Convertimos lo que llegue a un Array. 
+    // Si viene del carrusel (1 solo evento), lo envuelve en []. Si viene del calendario con varias bandas, ya es un [].
+    const eventosArray = Array.isArray(data) ? data : [data];
+
+    let htmlApilado = '';
     
-    // Reutilizamos createEventCard PERO forzamos estilos para que se vea bien en el modal
-    // Creamos un wrapper temporal para no romper el CSS global
-    const cardHTML = createEventCard(evento);
-    container.innerHTML = cardHTML;
+    // Dibujamos una card debajo de la otra
+    eventosArray.forEach(ev => {
+        htmlApilado += createEventCard(ev);
+    });
+
+    container.innerHTML = htmlApilado;
     
-    // Ajustes post-render para el modal (quitamos márgenes o anchos fijos si los hubiera)
-    const card = container.querySelector('.event-card');
-    if(card) {
+    // Ajustes post-render para el modal (quitamos márgenes o anchos fijos a TODAS las cards apiladas)
+    const cards = container.querySelectorAll('.event-card');
+    cards.forEach(card => {
         card.style.minHeight = "auto";
-        card.style.margin = "0";
+        card.style.margin = "0 0 15px 0"; // Le damos margen abajo para que no se peguen si hay más de una
         card.style.width = "100%";
-        // Aseguramos que se vea la descripción si es dummy
-        if(evento.esDummy) {
-             // Forzar que parezca un evento regular simple
-        }
-    }
+    });
 }
 
 function filtrarEventosCalendario(texto) {

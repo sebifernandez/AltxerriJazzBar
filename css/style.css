@@ -2242,3 +2242,96 @@ body {
 .notificacion-push.entra {
     transform: translateX(0);
 }
+
+/* ======================================================
+   NUEVAS REGLAS UX/UI: CARDS FIJAS Y MODAL EXPANDIBLE 
+   ====================================================== */
+
+/* 1. FIJAMOS EL TAMAÑO DE LAS CARDS EN EL CARRUSEL */
+.carousel-track .event-card {
+    height: 420px !important; /* Altura Fija e inamovible */
+    min-height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    cursor: pointer; /* Manito para indicar que se abre */
+}
+
+.carousel-track .card-image {
+    height: 200px !important; /* Imagen fija */
+    flex-shrink: 0 !important;
+}
+
+.carousel-track .card-content {
+    height: 220px !important; /* Resto de la caja fijo */
+    padding: 1rem 1rem 75px 1rem !important;
+    position: relative !important;
+}
+
+/* Magia: Truncamos el texto GLOBALMENTE en el carrusel (no solo en móvil) */
+.carousel-track .card-content p {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 3 !important; 
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    margin-bottom: 0 !important;
+}
+
+/* 2. COMPORTAMIENTO DE LAS CARDS DENTRO DEL MODAL POP-UP */
+/* Acá queremos lo contrario: que la card se estire lo que necesite mostrar */
+.modal-detalle-centro .event-card {
+    height: auto !important; 
+    min-height: auto !important;
+    margin-bottom: 15px; /* Separación si hay varias bandas el mismo día */
+    cursor: default; /* Ya está abierta, no es clickeable */
+    transform: none !important; /* Quitamos el hover raro dentro del modal */
+}
+
+.modal-detalle-centro .card-image {
+    height: 250px !important; /* Foto un poco más grande para lucirse */
+}
+
+.modal-detalle-centro .card-content {
+    height: auto !important; /* Que el texto empuje la caja hacia abajo */
+    padding-bottom: 85px !important; /* Espacio para los botones */
+}
+
+.modal-detalle-centro .card-content p {
+    display: block !important;
+    -webkit-line-clamp: unset !important; /* Anulamos el recorte de líneas */
+    overflow: visible !important;
+    white-space: normal !important;
+}
+
+/* 3. ESTILO DEL CONTENEDOR DEL MODAL Y SCROLL INTERNO */
+.detalle-card-content {
+    position: relative; 
+    width: 95%; 
+    max-width: 500px;
+    max-height: 85vh; /* Si es muy largo, tope al 85% de la pantalla */
+    overflow-y: auto; /* Habilita el scroll interno */
+    background: #000; 
+    border-radius: 10px;
+    border: 1px solid #333;
+    padding: 10px;
+    
+    /* Scrollbar elegante */
+    scrollbar-width: thin;
+    scrollbar-color: #B71C1C #111;
+}
+
+.detalle-card-content::-webkit-scrollbar { width: 8px; }
+.detalle-card-content::-webkit-scrollbar-track { background: #111; border-radius: 10px; }
+.detalle-card-content::-webkit-scrollbar-thumb { background: #B71C1C; border-radius: 10px; }
+
+/* Movemos la cruz para que no estorbe con el scroll */
+.close-detalle {
+    position: absolute; 
+    top: 5px; 
+    right: 15px; 
+    font-size: 2.5rem; 
+    color: #fff; 
+    cursor: pointer;
+    z-index: 50;
+    text-shadow: 0 2px 5px #000;
+}
