@@ -2335,3 +2335,55 @@ body {
     z-index: 50;
     text-shadow: 0 2px 5px #000;
 }
+
+/* --- FIX PROPORCIONES DE IMAGEN EN IPAD Y MÓVILES --- */
+@media (max-width: 900px) {
+    /* Hacemos la card más alta en general */
+    .carousel-track .event-card {
+        height: 520px !important; 
+    }
+    
+    /* Le damos 100 píxeles más de pura foto para que no quede achatada */
+    .carousel-track .card-image {
+        height: 300px !important; 
+    }
+    
+    /* Mantenemos el mismo espacio para el texto y los botones */
+    .carousel-track .card-content {
+        height: 220px !important; 
+    }
+}
+
+/* --- FIX BOTÓN CERRAR NOTIFICACIÓN (LA CRUZ) --- */
+.close-push {
+    position: absolute !important;
+    top: -10px !important; /* Lo saca un poquito por arriba */
+    right: -10px !important; /* Lo lleva a la esquina derecha */
+    left: auto !important; /* Anulamos el left viejo */
+    
+    width: 32px !important;
+    height: 32px !important;
+    background: #B71C1C !important; /* Fondo rojo */
+    border: 2px solid #111 !important; /* Borde oscuro para despegarlo */
+    border-radius: 50% !important; /* 100% Redondito */
+    
+    color: #fff !important;
+    font-size: 1.2rem !important;
+    font-weight: bold !important;
+    font-family: Arial, sans-serif !important; /* Fuente segura para la X */
+    
+    /* Centramos la cruz perfecta en el círculo */
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    transition: transform 0.2s ease, background 0.2s ease;
+    z-index: 10001;
+}
+
+.close-push:hover {
+    background: #ff0000 !important;
+    transform: scale(1.15) !important; /* Crece un poquito al pasar el mouse */
+}

@@ -1067,7 +1067,13 @@ function generarMensajePush(tipo, eventoOArray, txt, minutos = 0) {
         case 'H': // Sin Evento hoy
             html = `<h4>🎹 ${txt.t_sinEvento}</h4>
                     <p>${txt.p_revisa}</p>
-                    <a href="#eventos" class="btn-push" onclick="document.getElementById('btn-close-push').click()">${txt.agenda}</a>`;
+                    <button class="btn-push" style="border:none; cursor:pointer;" 
+                        onclick="
+                            document.getElementById('btn-close-push').click(); 
+                            setTimeout(() => { document.getElementById('btn-abrir-calendario-full').click(); }, 300);
+                        ">
+                        ${txt.agenda}
+                    </button>`;
             break;
     }
     return html;
