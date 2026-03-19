@@ -2358,46 +2358,44 @@ body {
     }
 }
 
-#btn-close-push.close-push { /* Usamos ID + Clase para jerarquía máxima */
+/* --- FIX TOTAL UX/UI: LA X COMO ENLACE <a> (CIRCULO ROJO) --- */
+#btn-close-push.close-push {
     
-    /* 1. Resetear estilos predeterminados del navegador (User Agent Stylesheet) */
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    -moz-appearance: none !important;
-    border: none !important;
-    background: none !important;
-    padding: 0 !important;
-    outline: none !important;
+    /* 1. Resetear estilos base del enlace para que no parezca un link azul subrayado */
+    text-decoration: none !important;
+    display: flex !important; /* Para centrar la X interna */
+    justify-content: center !important;
+    align-items: center !important;
     
-    /* 2. Tus estilos visuales deseados */
+    /* 2. Posicionamiento: Esquina Superior Derecha */
     position: absolute !important;
-    top: -10px !important; /* Sacado un poquito por arriba */
-    right: -10px !important; /* Sacado un poquito por la derecha */
-    left: auto !important; /* Anulamos cualquier left previo */
+    top: -12px !important; /* Sacado un poquito más por arriba */
+    right: -12px !important; /* Sacado un poquito más por la derecha */
+    left: auto !important; /* Anulamos cualquier left viejo */
     
-    width: 32px !important;
-    height: 32px !important;
+    /* 3. El Círculo Rojo (Grande y fácil de tocar) */
+    width: 34px !important; /* Un pelín más grande aún */
+    height: 34px !important;
     background-color: #B71C1C !important; /* Fondo rojo sólido */
     border: 2px solid #111 !important; /* Borde oscuro para despegarlo */
     border-radius: 50% !important; /* 100% Redondito */
     
+    /* 4. La X interna */
     color: #fff !important;
-    font-size: 1.2rem !important;
-    font-weight: bold !important;
     font-family: Arial, sans-serif !important; /* Fuente segura para la X */
+    font-size: 1.4rem !important; /* X más grande y visible */
+    font-weight: bold !important;
+    line-height: 1 !important; /* Importante para el centrado vertical */
     
-    /* Centramos la cruz perfecta en el círculo */
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    
+    /* 5. Interacción y Sombras */
     cursor: pointer !important;
+    z-index: 10001 !important; /* Por encima de todo */
     box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important;
-    z-index: 10001 !important;
+    transition: transform 0.2s ease, background 0.2s ease;
 }
 
-/* Estado Hover (Al pasar el mouse) */
+/* Estado Hover (Al pasar el mouse en desktop) */
 #btn-close-push.close-push:hover {
-    background-color: #ff0000 !important;
-    transform: scale(1.15) !important; /* Crece un poquito */
+    background-color: #ff0000 !important; /* Rojo brillante */
+    transform: scale(1.1) rotate(5deg) !important; /* Crece un poquito */
 }
