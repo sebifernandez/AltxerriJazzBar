@@ -1478,9 +1478,13 @@ body {
     /* Ajuste de fuente en títulos para que "Evento Privado" no se rompa mal */
     .event-card h3 {
         font-size: 1.2rem !important; 
-        white-space: nowrap; /* Evita que se parta en dos líneas si es posible */
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: normal !important;
+        overflow-wrap: break-word !important; 
+        word-break: break-word !important; 
+        text-align: center !important;
+        width: 100% !important;
+        display: block !important;
+        overflow: hidden !important;
     }
 
     /* Botones compactos */
@@ -2354,16 +2358,26 @@ body {
     }
 }
 
-/* --- FIX BOTÓN CERRAR NOTIFICACIÓN (LA CRUZ) --- */
-.close-push {
+#btn-close-push.close-push { /* Usamos ID + Clase para jerarquía máxima */
+    
+    /* 1. Resetear estilos predeterminados del navegador (User Agent Stylesheet) */
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    border: none !important;
+    background: none !important;
+    padding: 0 !important;
+    outline: none !important;
+    
+    /* 2. Tus estilos visuales deseados */
     position: absolute !important;
-    top: -10px !important; /* Lo saca un poquito por arriba */
-    right: -10px !important; /* Lo lleva a la esquina derecha */
-    left: auto !important; /* Anulamos el left viejo */
+    top: -10px !important; /* Sacado un poquito por arriba */
+    right: -10px !important; /* Sacado un poquito por la derecha */
+    left: auto !important; /* Anulamos cualquier left previo */
     
     width: 32px !important;
     height: 32px !important;
-    background: #B71C1C !important; /* Fondo rojo */
+    background-color: #B71C1C !important; /* Fondo rojo sólido */
     border: 2px solid #111 !important; /* Borde oscuro para despegarlo */
     border-radius: 50% !important; /* 100% Redondito */
     
@@ -2377,13 +2391,13 @@ body {
     justify-content: center !important;
     align-items: center !important;
     
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    transition: transform 0.2s ease, background 0.2s ease;
-    z-index: 10001;
+    cursor: pointer !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important;
+    z-index: 10001 !important;
 }
 
-.close-push:hover {
-    background: #ff0000 !important;
-    transform: scale(1.15) !important; /* Crece un poquito al pasar el mouse */
+/* Estado Hover (Al pasar el mouse) */
+#btn-close-push.close-push:hover {
+    background-color: #ff0000 !important;
+    transform: scale(1.15) !important; /* Crece un poquito */
 }

@@ -345,6 +345,9 @@ function cargarEventos() {
         });
 }
 
+// ======================================================
+// FUNCIÓN GENERADORA DE CARDS (Con soporte para Enter/\n)
+// ======================================================
 function createEventCard(evento) {
     // OBTIENE LOS TEXTOS TRADUCIDOS DE LA BD
     const textosUI = contenidoWeb[idiomaActual]?.eventos?.ui || {};
@@ -371,9 +374,12 @@ function createEventCard(evento) {
             ? (textosUI.labelCerrado || "Cerrado") 
             : (textosUI.labelPrivado || "Privado");
         
-        const specialText = isClosed 
+        // --- MAGIA NUEVA: SOPORTE PARA ENTER ---
+        // Agarramos el texto de la descripción y reemplazamos los saltos de línea (\n) por <br>
+        const rawSpecialText = isClosed 
             ? (textosUI.txtCerrado || "...") 
             : (textosUI.txtPrivado || "...");
+        const specialTextProcessed = rawSpecialText.replace(/\n/g, '<br>'); // Reemplazo global
             
         const txtSigueAmbiente = textosUI.txtEspecial || "Sigue en ambiente:";
         const finalizadoClass = esPasado ? 'past' : '';
@@ -386,7 +392,7 @@ function createEventCard(evento) {
                 </div>
                 <div class="card-content">
                     <h3>${specialTitle}</h3>
-                    <p>${specialText}</p>
+                    <p>${specialTextProcessed}</p>
                     <div class="special-links">
                         ${txtSigueAmbiente} <a href="https://instagram.com/altxerribar" target="_blank">Instagram</a>
                     </div>
@@ -396,8 +402,13 @@ function createEventCard(evento) {
     }
     
     // 3. LÓGICA DE EVENTOS REGULARES
-    const tituloMostrar = (idiomaActual === 'en' && evento.titulo_en) ? evento.titulo_en : evento.titulo;
-    const descData = (idiomaActual === 'en' && evento.descripcion_en) ? evento.descripcion_en : evento.descripcion;
+    const rawTitulo = (idiomaActual === 'en' && evento.titulo_en) ? evento.titulo_en : evento.titulo;
+    // --- MAGIA NUEVA: SOPORTE PARA ENTER EN TÍTULO ---
+    const tituloMostrar = rawTitulo.replace(/\n/g, '<br>'); // También para títulos
+
+    const rawDesc = (idiomaActual === 'en' && evento.descripcion_en) ? evento.descripcion_en : evento.descripcion;
+    // --- MAGIA NUEVA: SOPORTE PARA ENTER EN DESCRIPCIÓN ---
+    const descProcessed = rawDesc ? rawDesc.replace(/\n/g, '<br>') : '';
 
     let botonAdicionalHTML = '';
     let descripcionHTML = '';
@@ -417,8 +428,9 @@ function createEventCard(evento) {
                 const txtVivo = textosUI.btnVivo || "Ver en Vivo";
                 botonAdicionalHTML = `<a href="${evento.live}" target="_blank" class="btn-adicional btn-live">${txtVivo}</a>`;
             }
-            if (descData && descData.trim() !== '') {
-                descripcionHTML = `<p class="card-descripcion-precio">${descData}</p>`;
+            if (descProcessed && descProcessed.trim() !== '') {
+                // Usamos la descripción procesada con <br>
+                descripcionHTML = `<p class="card-descripcion-precio">${descProcessed}</p>`;
             }
         }
     }
@@ -435,7 +447,6 @@ function createEventCard(evento) {
         imagenMostrar = `img/${evento.imagen || 'imgBandaGenerica.jpg'}`; 
     }
 
-    // --- NUEVO: HORARIO (BADGE ROJO) ---
     const hInicio = evento.horaInicio || "20:00";
     const badgeHorario = `
         <div style="position:absolute; bottom:10px; right:10px; background:#B71C1C; color:#fff; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.5); z-index:2;">
@@ -446,8 +457,7 @@ function createEventCard(evento) {
     return `
         <div class="event-card ${finalizadoClass}">
             <div class="card-image">
-                <img src="${imagenMostrar}" alt="${tituloMostrar}">
-                <div class="event-date">${luxonFecha.toFormat("dd LLLL")}</div>
+                <img src="${imagenMostrar}" alt="${rawTitulo}"> <div class="event-date">${luxonFecha.toFormat("dd LLLL")}</div>
                 ${badgeHorario} </div>
             <div class="card-content">
                 <h3>${tituloMostrar}</h3> ${descripcionHTML}
