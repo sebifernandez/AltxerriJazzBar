@@ -271,16 +271,25 @@ function inicializarEfectosVisuales() {
     ScrollReveal().reveal('.movimientoh3', { delay: 300, origin: 'bottom' });
     ScrollReveal().reveal('.btn-reservar2', { delay: 300, origin: 'bottom' });
 
-    // EFECTO PARALLAX
+// EFECTO PARALLAX (Optimizado para alto rendimiento)
+    let tickingParallax = false;
     window.addEventListener('scroll', function() {
-        const parallax = document.querySelector('.parallax-section');
-        if (parallax) {
-            const rect = parallax.getBoundingClientRect();
-            const viewportCenter = window.innerHeight / 2;
-            const sectionCenter = rect.top + parallax.offsetHeight / 2;
-            const distanceToCenter = viewportCenter - sectionCenter;
-            const backgroundPositionY = (distanceToCenter * 0.5);
-            parallax.style.backgroundPositionY = `calc(50% + ${backgroundPositionY}px)`;
+        if (!tickingParallax) {
+            window.requestAnimationFrame(function() {
+                const parallax = document.querySelector('.parallax-section');
+                if (parallax) {
+                    const rect = parallax.getBoundingClientRect();
+                    const viewportCenter = window.innerHeight / 2;
+                    const sectionCenter = rect.top + parallax.offsetHeight / 2;
+                    const distanceToCenter = viewportCenter - sectionCenter;
+                    
+                    // Suavizamos el multiplicador a 0.4 para que el efecto sea más fluido
+                    const backgroundPositionY = (distanceToCenter * 0.4); 
+                    parallax.style.backgroundPositionY = `calc(50% + ${backgroundPositionY}px)`;
+                }
+                tickingParallax = false;
+            });
+            tickingParallax = true;
         }
     });
 
