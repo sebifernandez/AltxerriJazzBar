@@ -791,8 +791,10 @@ if (newsletterForm) {
     newsletterForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const nombre = document.getElementById('newsletterName').value;
-        const email = document.getElementById('newsletterEmail').value;
+        const nombreInput = document.getElementById('newsletterName');
+        const emailInput = document.getElementById('newsletterEmail');
+        const nombre = nombreInput.value;
+        const email = emailInput.value;
         const btn = newsletterForm.querySelector('button');
         const txtOriginal = btn.innerText;
 
@@ -811,6 +813,15 @@ if (newsletterForm) {
             if (data.success) {
                 if(formContainer) formContainer.style.display = 'none';
                 if(successMessage) successMessage.style.display = 'block';
+                
+                // --- LA MAGIA: Le devolvemos la vida al botón ---
+                btn.disabled = false;
+                btn.innerText = txtOriginal;
+                
+                // --- LA YAPA: Vaciamos los inputs para la próxima ---
+                nombreInput.value = '';
+                emailInput.value = '';
+
             } else {
                 alert("Error: " + data.message);
                 btn.disabled = false;
