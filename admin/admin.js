@@ -2225,7 +2225,7 @@ const isFeatured = newsState.destacados.has(fecha);
                             </p>
                             
                             <p style="color: ${c.gold}; margin: 20px 0 0 0; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">
-                                Ver Detalles & Reserva &rarr;
+                                Mas información &rarr;
                             </p>
 
                         </div>
