@@ -345,6 +345,28 @@ function cargarEventos() {
             }
             // ------------------------
             
+            // --- MAGIA DEL NEWSLETTER (DEEP LINKING) ---
+            // Chequeamos si el usuario viene desde un click del correo
+            const urlParams = new URLSearchParams(window.location.search);
+            const fechaDesdeMail = urlParams.get('evento');
+            
+            if (fechaDesdeMail && eventos && eventos.length > 0) {
+                // Buscamos si hay eventos para esa fecha
+                const eventosDelDia = eventos.filter(ev => ev.fecha === fechaDesdeMail);
+                
+                if (eventosDelDia.length > 0) {
+                    // Le damos 800 milisegundos para que la página termine de acomodarse
+                    // y disparamos el popup en toda la pantalla.
+                    setTimeout(() => {
+                        abrirDetalleCentro(eventosDelDia);
+                    }, 800);
+                    
+                    // Limpiamos la URL para que quede prolija (opcional)
+                    window.history.replaceState({}, document.title, window.location.pathname + "#eventos");
+                }
+            }
+            // ------------------------------------------
+
             if (preloader) preloader.classList.add('preloader-hidden');
         })
         .catch(error => {

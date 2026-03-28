@@ -2186,44 +2186,52 @@ function generarHTMLFinal(config) {
                 }
             }
 
-            const isFeatured = newsState.destacados.has(fecha);
+const isFeatured = newsState.destacados.has(fecha);
             const fechaTxt = DateTime.fromISO(fecha).setLocale('es').toFormat('EEEE d').toUpperCase();
             
-            // --- CONFIGURACIÓN DE ESTILOS ---
-            const cardHeight = isFeatured ? "350px" : "220px";
+            // --- CONFIGURACIÓN DE ESTILOS (LIMPIA Y SIN DUPLICADOS) ---
             const borderColor = isFeatured ? c.gold : "#333333";
             const titleSize = isFeatured ? "28px" : "20px";
-            const labelText = isFeatured ? "EVENTO DESTACADO" : fechaTxt;
+            // Usamos un espaciador en lugar de altura fija para separar el titulo de la descripcion
+            const spacerHeight = isFeatured ? "60px" : "30px"; 
             
             const topLabelHTML = isFeatured 
-                ? `<span style="color:#fff;">${fechaTxt}</span> <span style="color:${c.gold}; margin: 0 5px;">|</span> <span style="color:${c.gold};">EVENTO DESTACADO</span>`
+                ? `<span style="color:#ffffff !important;">${fechaTxt}</span> <span style="color:${c.gold}; margin: 0 5px;">|</span> <span style="color:${c.gold};">EVENTO DESTACADO</span>`
                 : `<span style="color:${c.gold};">${fechaTxt}</span>`;
+
+            // --- MAGIA: EL ENLACE DIRECTO AL EVENTO ---
+            // Le agregamos ?evento=FECHA a la URL para que la web lo detecte
+            const linkEvento = `${window.location.origin}/?evento=${fecha}#eventos`;
 
             html += `
             <tr><td style="padding: 0 10px 25px 10px;">
-                <div style="background-image: url('${imgUrl}'); background-size: cover; background-position: center; border-radius: 6px; overflow: hidden; height: ${cardHeight}; position: relative; border: 1px solid ${borderColor}; box-shadow: 0 10px 20px rgba(0,0,0,0.6);">
+                <a href="${linkEvento}" target="_blank" style="text-decoration: none; display: block;">
                     
-                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 60%; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);">
-                        <div style="padding: 20px;">
-                            <p style="font-weight: bold; margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                    <div style="background-color: #111111; background-image: url('${imgUrl}'); background-size: cover; background-position: center; border-radius: 6px; border: 1px solid ${borderColor}; box-shadow: 0 10px 20px rgba(0,0,0,0.6);">
+                        
+                        <div style="background: rgba(0,0,0,0.7); background: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.95) 100%); padding: 25px; border-radius: 6px;">
+                            
+                            <p style="font-weight: bold; margin: 0 0 5px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #ffffff !important;">
                                 ${topLabelHTML}
                             </p>
-                            <h2 style="color: #fff; margin: 5px 0 0 0; font-size: ${titleSize}; text-shadow: 0 2px 4px #000; line-height: 1.1;">
+                            <h2 style="color: #ffffff !important; margin: 0; font-size: ${titleSize}; text-shadow: 0 2px 4px #000; line-height: 1.2;">
                                 ${evtTitulo}
                             </h2>
-                        </div>
-                    </div>
 
-                    <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 50%; background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 100%); display: flex; align-items: flex-end;">
-                        <div style="padding: 20px; width: 100%;">
-                            <p style="color: #ddd; margin: 0; font-size: 14px; line-height: 1.4; text-shadow: 0 1px 2px #000;">
+                            <div style="height: ${spacerHeight};"></div>
+
+                            <p style="color: #eeeeee !important; margin: 0; font-size: 14px; line-height: 1.6; text-shadow: 0 1px 2px #000;">
                                 ${evtDesc}
                             </p>
+                            
+                            <p style="color: ${c.gold}; margin: 20px 0 0 0; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">
+                                Ver Detalles & Reserva &rarr;
+                            </p>
+
                         </div>
                     </div>
-                </div>
-                
-                </td></tr>`;
+                </a>
+            </td></tr>`;
         });
     }
 
