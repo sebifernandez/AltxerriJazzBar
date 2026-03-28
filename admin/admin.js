@@ -2068,9 +2068,17 @@ async function subirImagenAlVuelo(file) {
 
 function generarHTMLFinal(config) {
     const { title, urlFlyerCustom, includeHeader } = config;
-    const subtitle = document.getElementById('news-subtitle').value;
-    const intro = document.getElementById('news-intro').value;
-    const footer = document.getElementById('news-footer-text').value;
+    
+    // Obtenemos los textos crudos
+    const subtitleRaw = document.getElementById('news-subtitle').value;
+    const introRaw = document.getElementById('news-intro').value;
+    const footerRaw = document.getElementById('news-footer-text').value;
+
+    // --- MAGIA: Reemplazamos \n por <br> en los textos generales ---
+    const titleHtml = title ? title.replace(/\n/g, '<br>') : '';
+    const subtitle = subtitleRaw ? subtitleRaw.replace(/\n/g, '<br>') : '';
+    const intro = introRaw ? introRaw.replace(/\n/g, '<br>') : '';
+    const footer = footerRaw ? footerRaw.replace(/\n/g, '<br>') : '';
 
     // --- RECURSOS GRÁFICOS ---
     const URL_NAV_HEADER = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770510881/altxerri_jazz_club/fsofcrsytqgauzdbo6pg.png";
@@ -2111,7 +2119,7 @@ function generarHTMLFinal(config) {
         html += `
         <tr><td valign="middle" style="height: 160px; background-image: url('${URL_NAV_HEADER}'); background-size: cover; background-position: center; text-align: center;">
             <div style="padding-top: 55px;"> <h1 style="color: #ffffff; margin: 0; font-size: 32px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px rgba(0,0,0,0.8);">
-                    ${title}
+                    ${titleHtml}
                 </h1>
                 ${subtitle ? `
                 <h3 style="color: ${c.gold}; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: 3px; font-weight: normal; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
@@ -2144,23 +2152,27 @@ function generarHTMLFinal(config) {
             const eventoDB = adminEventos.find(e => e.fecha === fecha);
             const mod = newsState.modificaciones.get(fecha) || {};
             
-            // Textos
-            let evtTitulo = mod.titulo;
-            let evtDesc = mod.descripcion;
+            // Textos Crudos
+            let evtTituloRaw = mod.titulo;
+            let evtDescRaw = mod.descripcion;
 
-            if (!evtTitulo) {
+            if (!evtTituloRaw) {
                 if (eventoDB) {
-                    if (eventoDB.tipoEvento === 'Cerrado') evtTitulo = 'CERRADO';
-                    else if (eventoDB.tipoEvento === 'Privado') evtTitulo = 'EVENTO PRIVADO';
-                    else evtTitulo = eventoDB.titulo;
-                } else evtTitulo = 'BAR ABIERTO';
+                    if (eventoDB.tipoEvento === 'Cerrado') evtTituloRaw = 'CERRADO';
+                    else if (eventoDB.tipoEvento === 'Privado') evtTituloRaw = 'EVENTO PRIVADO';
+                    else evtTituloRaw = eventoDB.titulo;
+                } else evtTituloRaw = 'BAR ABIERTO';
             }
 
-            if (!evtDesc) {
-                if (eventoDB) evtDesc = eventoDB.descripcion || '';
-                if (!evtDesc && !eventoDB) evtDesc = 'Disfruta de nuestros cocteles y música ambiente.';
-                if (eventoDB && eventoDB.tipoEvento === 'Cerrado') evtDesc = 'Hoy descansamos.';
+            if (!evtDescRaw) {
+                if (eventoDB) evtDescRaw = eventoDB.descripcion || '';
+                if (!evtDescRaw && !eventoDB) evtDescRaw = 'Disfruta de nuestros cocteles y música ambiente.';
+                if (eventoDB && eventoDB.tipoEvento === 'Cerrado') evtDescRaw = 'Hoy descansamos.';
             }
+
+            // --- MAGIA: Reemplazamos \n por <br> en las tarjetas ---
+            const evtTitulo = evtTituloRaw ? evtTituloRaw.replace(/\n/g, '<br>') : '';
+            const evtDesc = evtDescRaw ? evtDescRaw.replace(/\n/g, '<br>') : '';
 
             // Imagen
             let imgUrl = URL_BAR_ABIERTO;
@@ -2177,13 +2189,12 @@ function generarHTMLFinal(config) {
             const isFeatured = newsState.destacados.has(fecha);
             const fechaTxt = DateTime.fromISO(fecha).setLocale('es').toFormat('EEEE d').toUpperCase();
             
-            // --- CONFIGURACIÓN DE ESTILOS (Diferencias entre Destacado y Estándar) ---
+            // --- CONFIGURACIÓN DE ESTILOS ---
             const cardHeight = isFeatured ? "350px" : "220px";
             const borderColor = isFeatured ? c.gold : "#333333";
             const titleSize = isFeatured ? "28px" : "20px";
-            const labelText = isFeatured ? "EVENTO DESTACADO" : fechaTxt; // Destacado dice "DESTACADO", Normal dice Fecha
+            const labelText = isFeatured ? "EVENTO DESTACADO" : fechaTxt;
             
-            // Si es destacado, agregamos la fecha arriba del label también
             const topLabelHTML = isFeatured 
                 ? `<span style="color:#fff;">${fechaTxt}</span> <span style="color:${c.gold}; margin: 0 5px;">|</span> <span style="color:${c.gold};">EVENTO DESTACADO</span>`
                 : `<span style="color:${c.gold};">${fechaTxt}</span>`;
