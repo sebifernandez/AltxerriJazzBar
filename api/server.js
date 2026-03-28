@@ -962,24 +962,33 @@ router.post('/suscribir', async (req, res) => {
         if (!email || !email.includes('@')) {
             return res.status(400).json({ success: false, message: 'Email inválido.' });
         }
-// 1. Verificamos si el correo ya existe en la base de datos
+
+        // 1. Verificamos si el correo ya existe en la base de datos
         const existe = await db.collection('subscribers').findOne({ email: email });
 
         if (existe) {
-            // Si ya existe, le decimos al frontend que aborte y le avise al usuario
-            return res.status(400).json({ 
-                success: false, 
-                message: '¡Este correo ya está suscrito a nuestro newsletter!' 
+            if (existe.activo === true) {
+                // Ya existe y está activo: Lo rebotamos
+                return res.status(400).json({ 
+                    success: false, 
+                    message: '¡Este correo ya está suscrito a nuestro newsletter!' 
+                });
+            } else {
+                // Existe pero estaba dado de baja: Lo reactivamos silenciosamente
+                await db.collection('subscribers').updateOne(
+                    { email: email },
+                    { $set: { activo: true, nombre: nombre, fecha_registro: new Date().toISOString() } }
+                );
+            }
+        } else {
+            // 2. No existe en absoluto: Lo insertamos como usuario nuevo
+            await db.collection('subscribers').insertOne({
+                email: email,
+                nombre: nombre,
+                activo: true,
+                fecha_registro: new Date().toISOString()
             });
         }
-
-        // 2. Si no existe, lo insertamos como un usuario nuevo
-        await db.collection('subscribers').insertOne({
-            email: email,
-            nombre: nombre,
-            activo: true,
-            fecha_registro: new Date().toISOString()
-        });
 
 // 3. ENVIAMOS EL CORREO DE BIENVENIDA CON RESEND Y DISEÑO HTML
         const nombreMostrar = nombre || 'Amante de la música'; 
@@ -990,9 +999,9 @@ router.post('/suscribir', async (req, res) => {
             subject: `¡Bienvenido a ${BAR_NAME}! 🎷`,
             html: `
             <div style="background-color: #1a1a1a; padding: 40px 20px; text-align: center; font-family: Arial, sans-serif; background-image: url('${FONDO_URL}'); background-size: cover; background-position: center;">
-                <div style="max-width: 600px; margin: 0 auto; background: rgba(15, 15, 15, 0.95); border: 1px solid #B71C1C; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+                <div style="max-width: 600px; margin: 0 auto; background: rgba(15, 15, 15, 0.95); border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
                     
-                    <img src="${BANNER_URL}" alt="${BAR_NAME}" style="width: 100%; height: auto; display: block; border-bottom: 2px solid #B71C1C;">
+                    <img src="${BANNER_URL}" alt="${BAR_NAME}" style="width: 100%; height: auto; display: block;">
                     
                     <div style="padding: 40px 30px; color: #ffffff;">
                         <h1 style="color: #B71C1C; margin-top: 0; font-size: 28px; font-family: 'Georgia', serif;">¡Hola ${nombreMostrar}!</h1>
