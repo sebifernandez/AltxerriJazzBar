@@ -492,7 +492,7 @@
                                 <textarea id="news-footer-text" class="form-input" style="min-height: 60px;" placeholder="Esperamos verte pronto..."></textarea>
                             </div>
 
-<div id="custom-newsletter-fields" style="display: none; border-top: 1px solid #444; margin-top: 1rem; padding-top: 1rem;">
+                            <div id="custom-newsletter-fields" style="display: none; border-top: 1px solid #444; margin-top: 1rem; padding-top: 1rem;">
                                 <h4 style="color: #FFC107;">Imagen Principal (Flyer)</h4>
                                 <div class="form-group">
                                     <label>Subir Flyer Completo *</label>
@@ -514,30 +514,15 @@
                                         <input type="checkbox" id="news-custom-link-event">
                                         <span class="toggle-slider"></span>
                                     </label>
-                                    <label for="news-custom-link-event" style="color: #FFC107; font-weight: bold; cursor: pointer;">Vincular flyer a un evento específico</label>
+                                    <label for="news-custom-link-event" style="color: #FFC107; font-weight: bold; cursor: pointer;">Vincular flyer a un evento</label>
                                 </div>
-                                
-                                <div id="custom-link-visual-container" style="display: none; margin-top: 10px; background: rgba(255,193,7,0.05); padding: 15px; border-radius: 6px; border: 1px solid rgba(255,193,7,0.2);">
-                                    <p style="color: #ccc; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">
-                                        Seleccioná el evento en la grilla. Al hacer clic en el flyer del correo, el usuario irá directo a ese show.
-                                    </p>
 
-                                    <div class="news-cal-top-bar" style="margin-bottom: 10px;">
-                                        <div class="cal-nav-buttons" style="margin: 0 auto;">
-                                            <button type="button" class="btn btn-secondary btn-sm" id="sel-cal-prev"><i class='bx bx-chevron-left'></i></button>
-                                            <span id="sel-cal-month" style="font-weight: bold; color: #fff;">MES AÑO</span>
-                                            <button type="button" class="btn btn-secondary btn-sm" id="sel-cal-next"><i class='bx bx-chevron-right'></i></button>
-                                        </div>
-                                    </div>
-                                    <div class="newsletter-calendar-grid" id="selector-calendar-grid"></div>
-
-                                    <div id="selected-event-display" style="margin-top: 15px; padding: 10px; background: #111; border-left: 4px solid #C8AA6E; border-radius: 4px; display: none;">
-                                        <span style="color: #C8AA6E; font-size: 0.8rem; text-transform: uppercase;">Flyer Vinculado a:</span><br>
-                                        <strong id="selected-event-title" style="color: #fff; font-size: 1.1rem;">-</strong><br>
-                                        <small id="selected-event-date" style="color: #aaa;">-</small>
-                                    </div>
-                                    <input type="hidden" id="news-custom-date">
+                                <div id="selected-event-display" style="margin-top: 15px; padding: 10px; background: #111; border-left: 4px solid #C8AA6E; border-radius: 4px; display: none;">
+                                    <span style="color: #C8AA6E; font-size: 0.8rem; text-transform: uppercase;">Flyer Vinculado a:</span><br>
+                                    <strong id="selected-event-title" style="color: #fff; font-size: 1.1rem;">-</strong><br>
+                                    <small id="selected-event-date" style="color: #aaa;">-</small>
                                 </div>
+                                <input type="hidden" id="news-custom-date">
                             </div>
                         </div>
                     </div>
@@ -562,6 +547,25 @@
                                     <i class='bx bxs-star'></i> Destacar | <i class='bx bxs-pencil'></i> Editar para Mail
                                 </small>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="news-col-calendar" id="custom-link-visual-container" style="display: none;">
+                        <div class="form-alta-evento">
+                            <div class="news-cal-top-bar">
+                                <h4>Seleccioná el Evento</h4>
+                                <div class="cal-nav-buttons">
+                                    <button type="button" class="btn btn-secondary btn-sm" id="sel-cal-prev"><i class='bx bx-chevron-left'></i></button>
+                                    <span id="sel-cal-month" style="font-weight: bold; color: #fff;">MES AÑO</span>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="sel-cal-next"><i class='bx bx-chevron-right'></i></button>
+                                </div>
+                            </div>
+                            
+                            <p style="color: #ccc; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">
+                                Al hacer clic en el flyer del correo, el usuario irá directo al detalle de este show.
+                            </p>
+
+                            <div class="newsletter-calendar-grid" id="selector-calendar-grid"></div>
                         </div>
                     </div>
 
