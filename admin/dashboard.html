@@ -502,6 +502,21 @@
                                     <input type="checkbox" id="news-custom-header" checked>
                                     <label for="news-custom-header">Incluir Logo y Cabecera del Bar</label>
                                 </div>
+                                
+                                <hr style="border: 0; border-top: 1px solid #444; margin: 1rem 0;">
+                                
+                                <div class="form-group-checkbox">
+                                    <input type="checkbox" id="news-custom-link-event">
+                                    <label for="news-custom-link-event" style="color: #fff; font-weight: bold;">Vincular flyer a un evento específico</label>
+                                </div>
+                                
+                                <div id="custom-link-date-container" style="display: none; margin-top: 10px; background: rgba(255,193,7,0.1); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,193,7,0.3);">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="news-custom-date" style="color: #FFC107;">Seleccionar Fecha del Evento</label>
+                                        <input type="text" id="news-custom-date" class="form-input" placeholder="Clic para abrir calendario..." readonly style="background: #111; cursor: pointer;">
+                                        <small style="color: #aaa; display: block; margin-top: 5px;">Al hacer clic en el flyer del correo, el usuario irá directo al detalle de este evento.</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -632,6 +647,28 @@
             </div>
             <div id="preview-container" style="padding: 2rem 0; color: #fff;">
                 </div>
+        </div>
+    </div>
+
+    <div id="modal-multi-eventos-news" class="modal-buscador-imagenes">
+        <div class="modal-contenido" style="max-width: 500px; background: #1a1a1a; border: 1px solid #333;">
+            <div class="modal-header" style="border-bottom: 1px solid #333;">
+                <h3 style="color: #FFC107;">Eventos del <span id="multi-event-date-title">Día</span></h3>
+                <span class="cerrar-modal" id="close-multi-eventos-news">&times;</span>
+            </div>
+            
+            <div style="padding: 1rem 0;">
+                <p style="font-size: 0.9rem; color: #ccc; margin-bottom: 1rem;">
+                    Este día tiene varios shows. Seleccioná cuáles querés incluir en el correo, editalos o marcá el evento principal (destacado).
+                </p>
+                
+                <div id="multi-eventos-lista" style="display: flex; flex-direction: column; gap: 10px;">
+                    </div>
+            </div>
+            
+            <div class="form-actions" style="margin-top: 1rem; border-top: 1px solid #333; padding-top: 1rem;">
+                <button type="button" class="btn btn-primary" id="btn-save-multi-news" style="width: 100%;">Confirmar Selección</button>
+            </div>
         </div>
     </div>
     

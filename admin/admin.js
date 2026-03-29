@@ -1708,7 +1708,8 @@ let newsState = {
     mode: 'calendar', 
     seleccionados: new Set(), 
     destacados: new Set(), 
-    modificaciones: new Map(), 
+    modificaciones: new Map(),
+    excluidos: new Set(), // <-- NUEVO: Para guardar las bandas que NO queremos mandar
     customData: { archivo: null, header: true } 
 };
 
@@ -1768,6 +1769,23 @@ function inicializarGestorNewsletter() {
         currentMod.borrarImagen = true; 
     });
 
+    // 5. Lógica del Flyer Personalizado (Link Inteligente)
+    const chkLink = document.getElementById('news-custom-link-event');
+    const containerDate = document.getElementById('custom-link-date-container');
+    const inputDate = document.getElementById('news-custom-date');
+    
+    if (chkLink && containerDate && inputDate) {
+        chkLink.addEventListener('change', (e) => {
+            containerDate.style.display = e.target.checked ? 'block' : 'none';
+        });
+        // Le enchufamos el mismo calendario elegante que ya usás
+        new Litepicker({
+            element: inputDate,
+            format: 'YYYY-MM-DD',
+            lang: 'es-ES'
+        });
+    }
+
     renderizarCalendarioNewsletter();
 }
 
@@ -1793,13 +1811,14 @@ function setMode(mode) {
     }
 }
 
-// RENDERIZADO DEL CALENDARIO
+// RENDERIZADO DEL CALENDARIO INICIO DE CAMBIOS GRANDES
+
+// RENDERIZADO DEL CALENDARIO (SOPORTE MULTI-EVENTO)
 function renderizarCalendarioNewsletter() {
     const grid = document.getElementById('news-calendar-grid');
     const labelMes = document.getElementById('news-cal-month');
     if(!grid) return;
 
-    // --- 1. DEFINICIÓN DE URLs (Las mismas que en el Mail) ---
     const URL_BAR_ABIERTO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507545/altxerri_jazz_club/p59y29pvh6t7rbbxuo5w.jpg";
     const URL_CERRADO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507506/altxerri_jazz_club/iroswh5blrl6tnplncnc.jpg";
     const URL_PRIVADO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507610/altxerri_jazz_club/dop9klffc2xfzpq2x1ya.jpg";
@@ -1808,7 +1827,6 @@ function renderizarCalendarioNewsletter() {
     labelMes.textContent = newsState.fechaCursor.setLocale('es').toFormat('MMMM yyyy').toUpperCase();
     grid.innerHTML = '';
 
-    // Headers
     const diasSemana = ['Sem', 'Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     diasSemana.forEach(d => grid.innerHTML += `<div class="news-cal-header">${d}</div>`);
 
@@ -1817,160 +1835,222 @@ function renderizarCalendarioNewsletter() {
     const diaSemanaInicio = primerDiaMes.weekday; 
     let offset = (diaSemanaInicio === 7) ? 0 : diaSemanaInicio;
 
-    // Checkbox Semana
     grid.appendChild(crearCeldaSemana(1, diasEnMes));
-
-    // Espacios vacíos
     for(let i=0; i<offset; i++) grid.appendChild(document.createElement('div'));
 
-    // Bucle de días
     for(let i=1; i<=diasEnMes; i++) {
         const fechaDia = newsState.fechaCursor.set({ day: i });
         const fechaIso = fechaDia.toISODate();
         
-        const eventoDB = adminEventos.find(e => e.fecha === fechaIso);
-        const modificacion = newsState.modificaciones.get(fechaIso);
+        // Buscamos TODOS los eventos del día
+        let eventosDelDia = adminEventos.filter(e => e.fecha === fechaIso);
         
-        let titulo = modificacion?.titulo || (eventoDB ? eventoDB.titulo : 'Bar Abierto');
-        
-        // --- 2. LÓGICA DE IMAGEN VISUAL (Actualizada) ---
-        let imgUrl = URL_BAR_ABIERTO; // Por defecto
+        let titulo = 'Bar Abierto';
+        let imgUrl = URL_BAR_ABIERTO;
+        let idRef = fechaIso; // ID por defecto para días sin evento
+        let tieneMulti = eventosDelDia.length > 1;
 
-        if (modificacion?.urlImgPreview) {
-            // Si hay una edición manual temporal, usamos esa
-            imgUrl = modificacion.urlImgPreview;
-        } else if (eventoDB) {
-            // Si viene de la base de datos
-            if (eventoDB.tipoEvento === 'Cerrado') {
+        if (tieneMulti) {
+            titulo = `🔥 ${eventosDelDia.length} Shows`;
+            imgUrl = URL_GENERICA; 
+        } else if (eventosDelDia.length === 1) {
+            let eventoDB = eventosDelDia[0];
+            idRef = eventoDB._id; // Usamos el ID real de la base de datos
+            const modificacion = newsState.modificaciones.get(idRef);
+            titulo = modificacion?.titulo || eventoDB.titulo;
+            if (modificacion?.urlImgPreview) {
+                imgUrl = modificacion.urlImgPreview;
+            } else if (eventoDB.tipoEvento === 'Cerrado') {
                 titulo = eventoDB.titulo || 'Cerrado';
                 imgUrl = URL_CERRADO;
-            }
-            else if (eventoDB.tipoEvento === 'Privado') {
+            } else if (eventoDB.tipoEvento === 'Privado') {
                 titulo = eventoDB.titulo || 'Evento Privado';
                 imgUrl = URL_PRIVADO;
-            }
-            else if (eventoDB.imagen) {
-                // Si la imagen ya es una URL (Cloudinary), la usamos.
-                // Si es un nombre de archivo local viejo, usamos la GENÉRICA para que no se vea roto.
+            } else if (eventoDB.imagen) {
                 imgUrl = eventoDB.imagen.startsWith('http') ? eventoDB.imagen : URL_GENERICA;
+            }
+        } else {
+            const modificacion = newsState.modificaciones.get(fechaIso);
+            if(modificacion) {
+                titulo = modificacion.titulo || titulo;
+                imgUrl = modificacion.urlImgPreview || imgUrl;
             }
         }
 
         const celda = document.createElement('div');
         celda.className = 'news-cal-day';
         if (newsState.seleccionados.has(fechaIso)) celda.classList.add('selected');
-        if (newsState.destacados.has(fechaIso)) celda.classList.add('featured');
-        if (modificacion) celda.classList.add('has-edits'); 
+
+        // Lógica visual para estrellas y edición
+        let isFeatured = tieneMulti ? eventosDelDia.some(e => newsState.destacados.has(e._id)) : newsState.destacados.has(idRef);
+        let hasEdits = tieneMulti ? eventosDelDia.some(e => newsState.modificaciones.has(e._id)) : newsState.modificaciones.has(idRef);
+        
+        if (isFeatured) celda.classList.add('featured');
+        if (hasEdits) celda.classList.add('has-edits'); 
 
         celda.innerHTML = `
             <img src="${imgUrl}" class="news-day-bg">
             <span class="news-day-number">${i}</span>
             <span class="news-day-status">${titulo}</span>
             
-            <div class="news-action-btn btn-star"><i class='bx bxs-star'></i></div>
-            <div class="news-action-btn btn-edit"><i class='bx bxs-pencil'></i></div>
+            ${tieneMulti ? 
+                `<div class="news-action-btn btn-list" title="Gestionar Shows"><i class='bx bx-list-ul'></i></div>` :
+                `<div class="news-action-btn btn-star"><i class='bx bxs-star'></i></div>
+                 <div class="news-action-btn btn-edit"><i class='bx bxs-pencil'></i></div>`
+            }
         `;
 
-        // Event Listeners
-        celda.querySelector('.btn-star').addEventListener('click', (e) => {
-            e.stopPropagation();
-            if(newsState.destacados.has(fechaIso)) newsState.destacados.delete(fechaIso);
-            else newsState.destacados.add(fechaIso);
-            renderizarCalendarioNewsletter();
-        });
-
-        celda.querySelector('.btn-edit').addEventListener('click', (e) => {
-            e.stopPropagation();
-            abrirEditorEfimero(fechaIso, eventoDB);
-        });
+        if (tieneMulti) {
+            celda.querySelector('.btn-list').addEventListener('click', (e) => {
+                e.stopPropagation();
+                abrirModalMultiEvento(fechaIso, eventosDelDia);
+            });
+        } else {
+            celda.querySelector('.btn-star').addEventListener('click', (e) => {
+                e.stopPropagation();
+                if(newsState.destacados.has(idRef)) newsState.destacados.delete(idRef);
+                else newsState.destacados.add(idRef);
+                renderizarCalendarioNewsletter();
+            });
+            celda.querySelector('.btn-edit').addEventListener('click', (e) => {
+                e.stopPropagation();
+                abrirEditorEfimero(idRef, eventosDelDia[0], fechaIso);
+            });
+        }
 
         celda.addEventListener('click', () => {
             if(newsState.seleccionados.has(fechaIso)) {
                 newsState.seleccionados.delete(fechaIso);
-                newsState.destacados.delete(fechaIso); 
+                if(tieneMulti) eventosDelDia.forEach(e => newsState.destacados.delete(e._id));
+                else newsState.destacados.delete(idRef);
             } else {
                 newsState.seleccionados.add(fechaIso);
+                // Si lo volvemos a seleccionar, borramos las exclusiones para que se manden todos
+                if(tieneMulti) eventosDelDia.forEach(e => newsState.excluidos.delete(e._id));
             }
             actualizarContadorNews();
             renderizarCalendarioNewsletter();
         });
 
         grid.appendChild(celda);
-
-        if (fechaDia.weekday === 6 && i < diasEnMes) {
-            grid.appendChild(crearCeldaSemana(i + 1, diasEnMes));
-        }
+        if (fechaDia.weekday === 6 && i < diasEnMes) grid.appendChild(crearCeldaSemana(i + 1, diasEnMes));
     }
     actualizarContadorNews();
 }
 
-// --- CORRECCIÓN 1: Nueva lógica de selección de semana ---
 function crearCeldaSemana(diaInicio, totalDiasMes) {
     const div = document.createElement('div');
     div.className = 'news-week-chk';
     div.innerHTML = `<input type="checkbox" title="Seleccionar Semana">`;
     
-    // Verificamos si toda esta "semana" (o lo que queda) ya está seleccionada para marcar el check
     let todosSeleccionados = true;
-    const fechaBase = newsState.fechaCursor.set({ day: diaInicio });
-    
-    // Calcular cuántos días quedan en esta semana (hasta el próximo sábado o fin de mes)
-    // El bucle avanza hasta que weekday sea 6 (Sábado) o se acabe el mes
     let dia = diaInicio;
     while(dia <= totalDiasMes) {
         const f = newsState.fechaCursor.set({ day: dia });
-        if(!newsState.seleccionados.has(f.toISODate())) {
-            todosSeleccionados = false;
-            break;
-        }
-        if(f.weekday === 6) break; // Llegamos al sábado
+        if(!newsState.seleccionados.has(f.toISODate())) { todosSeleccionados = false; break; }
+        if(f.weekday === 6) break;
         dia++;
     }
     div.querySelector('input').checked = todosSeleccionados;
 
-    // Evento Click
     div.querySelector('input').addEventListener('change', (e) => {
         const checked = e.target.checked;
         let d = diaInicio;
-        
         while(d <= totalDiasMes) {
             const f = newsState.fechaCursor.set({ day: d });
             const iso = f.toISODate();
+            const evs = adminEventos.filter(e => e.fecha === iso);
             
-            if(checked) newsState.seleccionados.add(iso);
-            else {
+            if(checked) {
+                newsState.seleccionados.add(iso);
+                evs.forEach(e => newsState.excluidos.delete(e._id)); // Limpiamos exclusiones
+            } else {
                 newsState.seleccionados.delete(iso);
+                evs.forEach(e => newsState.destacados.delete(e._id));
                 newsState.destacados.delete(iso);
             }
-            
-            if(f.weekday === 6) break; // Parar al llegar al sábado
+            if(f.weekday === 6) break;
             d++;
         }
-        renderizarCalendarioNewsletter(); // Re-renderizar UNA sola vez al final
+        renderizarCalendarioNewsletter(); 
         actualizarContadorNews();
     });
     return div;
 }
 
-function actualizarContadorNews() {
-    const counter = document.getElementById('news-selection-counter');
-    if(counter) counter.innerText = `${newsState.seleccionados.size} eventos seleccionados`;
+// --- NUEVA LÓGICA: GESTOR MINI-MODAL PARA MÚLTIPLES EVENTOS ---
+function abrirModalMultiEvento(fechaIso, eventosDelDia) {
+    const modal = document.getElementById('modal-multi-eventos-news');
+    document.getElementById('multi-event-date-title').textContent = DateTime.fromISO(fechaIso).toFormat('dd/MM/yyyy');
+    const lista = document.getElementById('multi-eventos-lista');
+    lista.innerHTML = '';
+
+    eventosDelDia.forEach(ev => {
+        const isExcluded = newsState.excluidos.has(ev._id);
+        const isStarred = newsState.destacados.has(ev._id);
+        const hasEdits = newsState.modificaciones.has(ev._id);
+
+        const div = document.createElement('div');
+        div.style.cssText = `background: #111; padding: 10px; border-radius: 6px; border-left: 4px solid ${isStarred ? '#C8AA6E' : '#444'}; display: flex; justify-content: space-between; align-items: center; opacity: ${isExcluded ? '0.5' : '1'}; transition: all 0.2s ease;`;
+
+        div.innerHTML = `
+            <div style="flex-grow: 1;">
+                <strong style="color: ${isExcluded ? '#888' : '#fff'};">${ev.titulo}</strong> <br>
+                <small style="color: #aaa;">${ev.horaInicio || '20:00'} hs</small>
+                ${hasEdits ? '<small style="color: #4CAF50; margin-left: 10px;"><i class="bx bxs-pencil"></i> Editado</small>' : ''}
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="btn btn-secondary btn-sm btn-star-multi" style="color: ${isStarred ? '#C8AA6E' : '#fff'}; border-color: ${isStarred ? '#C8AA6E' : '#444'};" title="Destacar"><i class='bx bxs-star'></i></button>
+                <button class="btn btn-secondary btn-sm btn-edit-multi" title="Editar para Mail"><i class='bx bxs-pencil'></i></button>
+                <input type="checkbox" class="chk-include-multi" title="Incluir en correo" style="transform: scale(1.3); margin-left:5px;" ${!isExcluded ? 'checked' : ''}>
+            </div>
+        `;
+
+        div.querySelector('.btn-star-multi').addEventListener('click', () => {
+            if(newsState.destacados.has(ev._id)) newsState.destacados.delete(ev._id);
+            else newsState.destacados.add(ev._id);
+            abrirModalMultiEvento(fechaIso, eventosDelDia); // Refrescar modal
+            renderizarCalendarioNewsletter(); // Refrescar fondo
+        });
+
+        div.querySelector('.btn-edit-multi').addEventListener('click', () => {
+            modal.style.display = 'none'; // Ocultamos este temporalmente
+            abrirEditorEfimero(ev._id, ev, fechaIso);
+        });
+
+        div.querySelector('.chk-include-multi').addEventListener('change', (e) => {
+            if(e.target.checked) newsState.excluidos.delete(ev._id);
+            else newsState.excluidos.add(ev._id);
+            abrirModalMultiEvento(fechaIso, eventosDelDia);
+        });
+
+        lista.appendChild(div);
+    });
+
+    modal.style.display = 'flex';
 }
 
-// LOGICA DE EDICIÓN EFÍMERA
-function abrirEditorEfimero(fechaIso, eventoDB) {
+// Listeners del nuevo modal
+document.getElementById('close-multi-eventos-news')?.addEventListener('click', () => document.getElementById('modal-multi-eventos-news').style.display = 'none');
+document.getElementById('btn-save-multi-news')?.addEventListener('click', () => {
+    document.getElementById('modal-multi-eventos-news').style.display = 'none';
+    renderizarCalendarioNewsletter(); 
+});
+
+// LÓGICA DE EDICIÓN EFÍMERA (Actualizada para usar ID en vez de Fecha)
+function abrirEditorEfimero(idRef, eventoDB, fechaIso) {
     const modal = document.getElementById('modal-edit-newsletter');
     const tituloInp = document.getElementById('edit-news-title');
     const descInp = document.getElementById('edit-news-desc');
-    const idInp = document.getElementById('edit-news-date');
+    const idInp = document.getElementById('edit-news-date'); // Ahora guarda el idRef (ID real)
     const imgPreview = document.getElementById('edit-news-img-preview');
     const imgFile = document.getElementById('edit-news-img');
 
     imgFile.value = '';
     imgPreview.style.display = 'none';
 
-    const modificacion = newsState.modificaciones.get(fechaIso);
-    idInp.value = fechaIso;
+    const modificacion = newsState.modificaciones.get(idRef);
+    idInp.value = idRef; 
     
     if (modificacion) {
         tituloInp.value = modificacion.titulo;
@@ -1992,12 +2072,12 @@ function abrirEditorEfimero(fechaIso, eventoDB) {
 }
 
 function guardarEdicionEfimera() {
-    const fechaIso = document.getElementById('edit-news-date').value;
+    const idRef = document.getElementById('edit-news-date').value;
     const titulo = document.getElementById('edit-news-title').value;
     const desc = document.getElementById('edit-news-desc').value;
     const fileInput = document.getElementById('edit-news-img');
 
-    const nuevaMod = newsState.modificaciones.get(fechaIso) || {};
+    const nuevaMod = newsState.modificaciones.get(idRef) || {};
     nuevaMod.titulo = titulo;
     nuevaMod.descripcion = desc;
 
@@ -2006,49 +2086,23 @@ function guardarEdicionEfimera() {
         nuevaMod.urlImgPreview = URL.createObjectURL(fileInput.files[0]);
     }
 
-    newsState.modificaciones.set(fechaIso, nuevaMod);
+    newsState.modificaciones.set(idRef, nuevaMod);
     document.getElementById('modal-edit-newsletter').style.display = 'none';
     renderizarCalendarioNewsletter();
 }
+
+
+function actualizarContadorNews() {
+    const counter = document.getElementById('news-selection-counter');
+    if(counter) counter.innerText = `${newsState.seleccionados.size} eventos seleccionados`;
+}
+
 
 // ==========================================
 // GENERACIÓN DE NEWSLETTER (HTML + UPLOAD)
 // ==========================================
 
-async function prepararDatosParaEnvio() {
-    const subject = document.getElementById('news-subject').value;
-    const title = document.getElementById('news-title').value;
-    // --- CORRECCIÓN 2: Leer estado del checkbox ---
-    const includeHeader = document.getElementById('news-custom-header') 
-        ? document.getElementById('news-custom-header').checked 
-        : true; 
 
-    if(!subject || !title) throw new Error("Asunto y Título son obligatorios.");
-
-    if (newsState.mode === 'calendar' && newsState.seleccionados.size === 0) {
-        throw new Error("Selecciona al menos una fecha.");
-    }
-    if (newsState.mode === 'custom') {
-        const file = document.getElementById('news-custom-img').files[0];
-        if(!file) throw new Error("En modo personalizado debes subir una imagen flyer.");
-    }
-
-    // Subida de imágenes editadas
-    for (const [fecha, mod] of newsState.modificaciones) {
-        if (newsState.seleccionados.has(fecha) && mod.archivoImg) {
-            const urlNube = await subirImagenAlVuelo(mod.archivoImg);
-            mod.urlFinal = urlNube; 
-        }
-    }
-
-    let urlFlyerCustom = null;
-    if (newsState.mode === 'custom') {
-        const file = document.getElementById('news-custom-img').files[0];
-        urlFlyerCustom = await subirImagenAlVuelo(file);
-    }
-
-    return { subject, title, urlFlyerCustom, includeHeader };
-}
 
 async function subirImagenAlVuelo(file) {
     const base64 = await toBase64(file);
@@ -2066,36 +2120,70 @@ async function subirImagenAlVuelo(file) {
 // FUNCIÓN: GENERAR HTML FINAL (REDISEÑO OVERLAY)
 // ==========================================
 
+async function prepararDatosParaEnvio() {
+    const subject = document.getElementById('news-subject').value;
+    const title = document.getElementById('news-title').value;
+    const includeHeader = document.getElementById('news-custom-header') ? document.getElementById('news-custom-header').checked : true; 
+
+    if(!subject || !title) throw new Error("Asunto y Título son obligatorios.");
+
+    if (newsState.mode === 'calendar' && newsState.seleccionados.size === 0) {
+        throw new Error("Selecciona al menos una fecha.");
+    }
+
+    // --- MAGIA: Atrapamos la fecha vinculada del flyer custom ---
+    let customLinkDate = null;
+    if (newsState.mode === 'custom') {
+        const file = document.getElementById('news-custom-img').files[0];
+        if(!file) throw new Error("En modo personalizado debes subir una imagen flyer.");
+        
+        if (document.getElementById('news-custom-link-event')?.checked) {
+            customLinkDate = document.getElementById('news-custom-date').value;
+            if(!customLinkDate) throw new Error("Activaste la vinculación. Selecciona una fecha en el calendario.");
+        }
+    }
+
+    // Subida de imágenes editadas
+    for (const [idRef, mod] of newsState.modificaciones) {
+        // En el modo calendario, los archivos ya se asocian si el día está seleccionado
+        if (mod.archivoImg) {
+            const urlNube = await subirImagenAlVuelo(mod.archivoImg);
+            mod.urlFinal = urlNube; 
+        }
+    }
+
+    let urlFlyerCustom = null;
+    if (newsState.mode === 'custom') {
+        const file = document.getElementById('news-custom-img').files[0];
+        urlFlyerCustom = await subirImagenAlVuelo(file);
+    }
+
+    return { subject, title, urlFlyerCustom, includeHeader, customLinkDate };
+}
+
+// ==========================================
+// FUNCIÓN: GENERAR HTML FINAL (REDISEÑO OVERLAY)
+// ==========================================
 function generarHTMLFinal(config) {
-    const { title, urlFlyerCustom, includeHeader } = config;
+    const { title, urlFlyerCustom, includeHeader, customLinkDate } = config; // <-- Ahora recibe customLinkDate
     
-    // Obtenemos los textos crudos
     const subtitleRaw = document.getElementById('news-subtitle').value;
     const introRaw = document.getElementById('news-intro').value;
     const footerRaw = document.getElementById('news-footer-text').value;
 
-    // --- MAGIA: Reemplazamos \n por <br> en los textos generales ---
     const titleHtml = title ? title.replace(/\n/g, '<br>') : '';
     const subtitle = subtitleRaw ? subtitleRaw.replace(/\n/g, '<br>') : '';
     const intro = introRaw ? introRaw.replace(/\n/g, '<br>') : '';
     const footer = footerRaw ? footerRaw.replace(/\n/g, '<br>') : '';
 
-    // --- RECURSOS GRÁFICOS ---
     const URL_NAV_HEADER = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770510881/altxerri_jazz_club/fsofcrsytqgauzdbo6pg.png";
     const URL_BG_TEXTURE = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770510788/altxerri_jazz_club/mflsoeegyr0lbr7osjxe.png";
-    
-    // URLs EVENTOS (Tus nuevas URLs)
     const URL_GENERICA = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770508071/altxerri_jazz_club/rnyma3epql4uxvkgkglu.jpg";
     const URL_PRIVADO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507610/altxerri_jazz_club/dop9klffc2xfzpq2x1ya.jpg";
     const URL_BAR_ABIERTO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507545/altxerri_jazz_club/p59y29pvh6t7rbbxuo5w.jpg";
     const URL_CERRADO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507506/altxerri_jazz_club/iroswh5blrl6tnplncnc.jpg";
 
-    const c = {
-        gold: "#C8AA6E",      
-        text: "#E0E0E0",      
-        dark: "#080a0f",      
-        cardBg: "#12141a"
-    };
+    const c = { gold: "#C8AA6E", text: "#E0E0E0", dark: "#080a0f", cardBg: "#12141a" };
 
     let html = `
     <!DOCTYPE html>
@@ -2110,151 +2198,119 @@ function generarHTMLFinal(config) {
         </style>
     </head>
     <body style="margin:0; padding:0; background-color:${c.dark}; background-image: url('${URL_BG_TEXTURE}'); background-repeat: repeat;">
-        
         <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-image: url('${URL_BG_TEXTURE}'); background-repeat: repeat;">
     `;
 
-    // 1. HEADER CON TEXTO SUPERPUESTO (OVERLAY)
     if (includeHeader) {
         html += `
         <tr><td valign="middle" style="height: 160px; background-image: url('${URL_NAV_HEADER}'); background-size: cover; background-position: center; text-align: center;">
-            <div style="padding-top: 55px;"> <h1 style="color: #ffffff; margin: 0; font-size: 32px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px rgba(0,0,0,0.8);">
-                    ${titleHtml}
-                </h1>
-                ${subtitle ? `
-                <h3 style="color: ${c.gold}; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: 3px; font-weight: normal; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
-                    ${subtitle}
-                </h3>` : ''}
+            <div style="padding-top: 55px;"> 
+                <h1 style="color: #ffffff; margin: 0; font-size: 32px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px rgba(0,0,0,0.8);">${titleHtml}</h1>
+                ${subtitle ? `<h3 style="color: ${c.gold}; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: 3px; font-weight: normal; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">${subtitle}</h3>` : ''}
             </div>
-
-            </td></tr>
-
-        ${intro ? `
-        <tr><td align="center" style="padding: 20px 30px 30px 30px;">
-            <p style="font-size: 15px; line-height: 1.6; color: #bbbbbb; margin: 0; font-style: italic;">
-                ${intro}
-            </p>
-        </td></tr>` : ''}
+        </td></tr>
+        ${intro ? `<tr><td align="center" style="padding: 20px 30px 30px 30px;"><p style="font-size: 15px; line-height: 1.6; color: #bbbbbb; margin: 0; font-style: italic;">${intro}</p></td></tr>` : ''}
         `;
     }
 
-    // CONTENIDO DINÁMICO
     if (newsState.mode === 'custom') {
+        // Envolvemos el flyer en un link a la landing o directo al popup
+        const targetLink = customLinkDate ? `${window.location.origin}/?evento=${customLinkDate}#eventos` : `${window.location.origin}/#eventos`;
         html += `
             <tr><td align="center" style="padding: 0 0 40px 0;">
-                <img src="${urlFlyerCustom}" style="width: 100%; max-width: 600px; display: block; border-radius: 4px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
+                <a href="${targetLink}" target="_blank" style="display:block; text-decoration:none;">
+                    <img src="${urlFlyerCustom}" style="width: 100%; max-width: 600px; display: block; border-radius: 4px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
+                </a>
             </td></tr>
         `;
     } else {
         const fechasOrdenadas = Array.from(newsState.seleccionados).sort();
         
         fechasOrdenadas.forEach(fecha => {
-            const eventoDB = adminEventos.find(e => e.fecha === fecha);
-            const mod = newsState.modificaciones.get(fecha) || {};
+            // Buscamos todas las bandas del día
+            let eventosDelDia = adminEventos.filter(e => e.fecha === fecha);
             
-            // Textos Crudos
-            let evtTituloRaw = mod.titulo;
-            let evtDescRaw = mod.descripcion;
+            // Filtramos las que excluyeron en el mini-modal
+            eventosDelDia = eventosDelDia.filter(e => !newsState.excluidos.has(e._id));
+            
+            // Si excluyeron a todas, saltamos este día
+            if (eventosDelDia.length === 0 && adminEventos.some(e => e.fecha === fecha)) return;
+            
+            // Si de por sí no había nadie (día vacío)
+            if (eventosDelDia.length === 0) eventosDelDia = [null];
 
-            if (!evtTituloRaw) {
-                if (eventoDB) {
-                    if (eventoDB.tipoEvento === 'Cerrado') evtTituloRaw = 'CERRADO';
-                    else if (eventoDB.tipoEvento === 'Privado') evtTituloRaw = 'EVENTO PRIVADO';
-                    else evtTituloRaw = eventoDB.titulo;
-                } else evtTituloRaw = 'BAR ABIERTO';
-            }
+            eventosDelDia.forEach(eventoDB => {
+                const idRef = eventoDB ? eventoDB._id : fecha;
+                const mod = newsState.modificaciones.get(idRef) || {};
+                
+                let evtTituloRaw = mod.titulo;
+                let evtDescRaw = mod.descripcion;
 
-            if (!evtDescRaw) {
-                if (eventoDB) evtDescRaw = eventoDB.descripcion || '';
-                if (!evtDescRaw && !eventoDB) evtDescRaw = 'Disfruta de nuestros cocteles y música ambiente.';
-                if (eventoDB && eventoDB.tipoEvento === 'Cerrado') evtDescRaw = 'Hoy descansamos.';
-            }
-
-            // --- MAGIA: Reemplazamos \n por <br> en las tarjetas ---
-            const evtTitulo = evtTituloRaw ? evtTituloRaw.replace(/\n/g, '<br>') : '';
-            const evtDesc = evtDescRaw ? evtDescRaw.replace(/\n/g, '<br>') : '';
-
-            // Imagen
-            let imgUrl = URL_BAR_ABIERTO;
-            if (mod.urlFinal) imgUrl = mod.urlFinal;
-            else if (eventoDB) {
-                if (eventoDB.tipoEvento === 'Cerrado') imgUrl = URL_CERRADO;
-                else if (eventoDB.tipoEvento === 'Privado') imgUrl = URL_PRIVADO;
-                else if (eventoDB.imagen) {
-                    if (eventoDB.imagen.startsWith('http')) imgUrl = eventoDB.imagen;
-                    else imgUrl = URL_GENERICA;
+                if (!evtTituloRaw) {
+                    if (eventoDB) {
+                        if (eventoDB.tipoEvento === 'Cerrado') evtTituloRaw = 'CERRADO';
+                        else if (eventoDB.tipoEvento === 'Privado') evtTituloRaw = 'EVENTO PRIVADO';
+                        else evtTituloRaw = eventoDB.titulo;
+                    } else evtTituloRaw = 'BAR ABIERTO';
                 }
-            }
 
-const isFeatured = newsState.destacados.has(fecha);
-            const fechaTxt = DateTime.fromISO(fecha).setLocale('es').toFormat('EEEE d').toUpperCase();
-            
-            // --- CONFIGURACIÓN DE ESTILOS (LIMPIA Y SIN DUPLICADOS) ---
-            const borderColor = isFeatured ? c.gold : "#333333";
-            const titleSize = isFeatured ? "28px" : "20px";
-            // Usamos un espaciador en lugar de altura fija para separar el titulo de la descripcion
-            const spacerHeight = isFeatured ? "60px" : "30px"; 
-            
-            const topLabelHTML = isFeatured 
-                ? `<span style="color:#ffffff !important;">${fechaTxt}</span> <span style="color:${c.gold}; margin: 0 5px;">|</span> <span style="color:${c.gold};">EVENTO DESTACADO</span>`
-                : `<span style="color:${c.gold};">${fechaTxt}</span>`;
+                if (!evtDescRaw) {
+                    if (eventoDB) evtDescRaw = eventoDB.descripcion || '';
+                    if (!evtDescRaw && !eventoDB) evtDescRaw = 'Disfruta de nuestros cocteles y música ambiente.';
+                    if (eventoDB && eventoDB.tipoEvento === 'Cerrado') evtDescRaw = 'Hoy descansamos.';
+                }
 
-            // --- MAGIA: EL ENLACE DIRECTO AL EVENTO ---
-            // Le agregamos ?evento=FECHA a la URL para que la web lo detecte
-            const linkEvento = `${window.location.origin}/?evento=${fecha}#eventos`;
+                const evtTitulo = evtTituloRaw ? evtTituloRaw.replace(/\n/g, '<br>') : '';
+                const evtDesc = evtDescRaw ? evtDescRaw.replace(/\n/g, '<br>') : '';
 
-            html += `
-            <tr><td style="padding: 0 10px 25px 10px;">
-                <a href="${linkEvento}" target="_blank" style="text-decoration: none; display: block;">
-                    
-                    <div style="background-color: #111111; background-image: url('${imgUrl}'); background-size: cover; background-position: center; border-radius: 6px; border: 1px solid ${borderColor}; box-shadow: 0 10px 20px rgba(0,0,0,0.6);">
-                        
-                        <div style="background: rgba(0,0,0,0.7); background: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.95) 100%); padding: 25px; border-radius: 6px;">
-                            
-                            <p style="font-weight: bold; margin: 0 0 5px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #ffffff !important;">
-                                ${topLabelHTML}
-                            </p>
-                            <h2 style="color: #ffffff !important; margin: 0; font-size: ${titleSize}; text-shadow: 0 2px 4px #000; line-height: 1.2;">
-                                ${evtTitulo}
-                            </h2>
+                let imgUrl = URL_BAR_ABIERTO;
+                if (mod.urlFinal) imgUrl = mod.urlFinal;
+                else if (eventoDB) {
+                    if (eventoDB.tipoEvento === 'Cerrado') imgUrl = URL_CERRADO;
+                    else if (eventoDB.tipoEvento === 'Privado') imgUrl = URL_PRIVADO;
+                    else if (eventoDB.imagen) {
+                        imgUrl = eventoDB.imagen.startsWith('http') ? eventoDB.imagen : URL_GENERICA;
+                    }
+                }
 
-                            <div style="height: ${spacerHeight};"></div>
+                const isFeatured = newsState.destacados.has(idRef);
+                const fechaTxt = DateTime.fromISO(fecha).setLocale('es').toFormat('EEEE d').toUpperCase();
+                
+                const borderColor = isFeatured ? c.gold : "#333333";
+                const titleSize = isFeatured ? "28px" : "20px";
+                const spacerHeight = isFeatured ? "60px" : "30px"; 
+                
+                const topLabelHTML = isFeatured 
+                    ? `<span style="color:#ffffff !important;">${fechaTxt}</span> <span style="color:${c.gold}; margin: 0 5px;">|</span> <span style="color:${c.gold};">EVENTO DESTACADO</span>`
+                    : `<span style="color:${c.gold};">${fechaTxt}</span>`;
 
-                            <p style="color: #eeeeee !important; margin: 0; font-size: 14px; line-height: 1.6; text-shadow: 0 1px 2px #000;">
-                                ${evtDesc}
-                            </p>
-                            
-                            <p style="color: ${c.gold}; margin: 20px 0 0 0; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">
-                                Mas información &rarr;
-                            </p>
+                const linkEvento = `${window.location.origin}/?evento=${fecha}#eventos`;
 
+                html += `
+                <tr><td style="padding: 0 10px 25px 10px;">
+                    <a href="${linkEvento}" target="_blank" style="text-decoration: none; display: block;">
+                        <div style="background-color: #111111; background-image: url('${imgUrl}'); background-size: cover; background-position: center; border-radius: 6px; border: 1px solid ${borderColor}; box-shadow: 0 10px 20px rgba(0,0,0,0.6);">
+                            <div style="background: rgba(0,0,0,0.7); background: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.95) 100%); padding: 25px; border-radius: 6px;">
+                                <p style="font-weight: bold; margin: 0 0 5px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #ffffff !important;">${topLabelHTML}</p>
+                                <h2 style="color: #ffffff !important; margin: 0; font-size: ${titleSize}; text-shadow: 0 2px 4px #000; line-height: 1.2;">${evtTitulo}</h2>
+                                <div style="height: ${spacerHeight};"></div>
+                                <p style="color: #eeeeee !important; margin: 0; font-size: 14px; line-height: 1.6; text-shadow: 0 1px 2px #000;">${evtDesc}</p>
+                                <p style="color: ${c.gold}; margin: 20px 0 0 0; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Mas información &rarr;</p>
+                            </div>
                         </div>
-                    </div>
-                </a>
-            </td></tr>`;
+                    </a>
+                </td></tr>`;
+            });
         });
     }
 
-    // FOOTER (Igual que antes)
     html += `
-            ${footer ? `
-            <tr><td align="center" style="padding: 10px 20px;">
-                <p style="color: #ccc; font-style: italic; font-size: 14px; margin: 0;">${footer}</p>
-            </td></tr>` : ''}
-            
-            <tr><td align="center" style="padding: 10px 20px;">
-                <div style="border-top: 1px solid ${c.gold}; width: 100px; opacity: 0.5;"></div>
-            </td></tr>
-
+            ${footer ? `<tr><td align="center" style="padding: 10px 20px;"><p style="color: #ccc; font-style: italic; font-size: 14px; margin: 0;">${footer}</p></td></tr>` : ''}
+            <tr><td align="center" style="padding: 10px 20px;"><div style="border-top: 1px solid ${c.gold}; width: 100px; opacity: 0.5;"></div></td></tr>
             <tr><td align="center" style="padding-bottom: 20px;">
-                <a href="https://instagram.com/altxerribar" style="text-decoration: none; margin: 0 10px;">
-                    <img src="https://cdn-icons-png.flaticon.com/512/174/174855.png" width="24" style="filter: grayscale(100%) brightness(150%);" alt="IG">
-                </a>
-                <a href="https://www.youtube.com/@AltxerriJazzClub" style="text-decoration: none; margin: 0 10px;">
-                    <img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" width="24" style="filter: grayscale(100%) brightness(150%);" alt="YT">
-                </a>
+                <a href="https://instagram.com/altxerribar" style="text-decoration: none; margin: 0 10px;"><img src="https://cdn-icons-png.flaticon.com/512/174/174855.png" width="24" style="filter: grayscale(100%) brightness(150%);" alt="IG"></a>
+                <a href="https://www.youtube.com/@AltxerriJazzClub" style="text-decoration: none; margin: 0 10px;"><img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" width="24" style="filter: grayscale(100%) brightness(150%);" alt="YT"></a>
             </td></tr>
-            
             <tr><td align="center" style="font-size: 11px; color: #666; padding-bottom: 40px; font-family: sans-serif;">
                 <p style="margin: 0;">Altxerri Jazz Bar | San Sebastián</p>
                 <p style="margin: 5px 0;"><a href="${window.location.origin}/api/baja?email={{EMAIL_DESTINATARIO}}" style="color: #666; text-decoration: underline;">Darse de baja</a></p>
@@ -2263,7 +2319,6 @@ const isFeatured = newsState.destacados.has(fecha);
     </body>
     </html>
     `;
-    
     return html;
 }
 
