@@ -1788,10 +1788,14 @@ function inicializarGestorNewsletter() {
         });
     }
 
-    function renderizarCalendarioSelector(fecha) {
+function renderizarCalendarioSelector(fecha) {
         const grid = document.getElementById('selector-calendar-grid');
         document.getElementById('sel-cal-month').textContent = fecha.setLocale('es').toFormat('MMMM yyyy').toUpperCase();
         grid.innerHTML = '';
+
+        // --- MAGIA PARA ALINEAR EL GRID A 7 DÍAS EXACTOS ---
+        grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+        // ---------------------------------------------------
 
         const URL_BAR_ABIERTO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507545/altxerri_jazz_club/p59y29pvh6t7rbbxuo5w.jpg";
         const URL_GENERICA = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770508071/altxerri_jazz_club/rnyma3epql4uxvkgkglu.jpg";
@@ -1842,6 +1846,9 @@ function setMode(mode) {
     const fieldsCustom = document.getElementById('custom-newsletter-fields');
     const btnCal = document.getElementById('btn-mode-calendar');
     const btnCust = document.getElementById('btn-mode-custom');
+    
+    // El nuevo contenedor del calendario custom
+    const customVisualCal = document.getElementById('custom-link-visual-container'); 
 
     // Forzamos limpieza total de clases antes de asignar
     btnCal.classList.remove('active');
@@ -1850,11 +1857,22 @@ function setMode(mode) {
     if (mode === 'calendar') {
         containerCal.style.display = 'block';
         fieldsCustom.style.display = 'none';
-        btnCal.classList.add('active'); // Solo agregamos al correcto
+        
+        // MAGIA: Apagamos el calendario superpuesto si estaba abierto
+        if(customVisualCal) customVisualCal.style.display = 'none'; 
+        
+        btnCal.classList.add('active');
     } else {
         containerCal.style.display = 'none';
         fieldsCustom.style.display = 'block';
-        btnCust.classList.add('active'); // Solo agregamos al correcto
+        
+        // MAGIA: Lo volvemos a mostrar solo si el toggle estaba prendido
+        const chkLink = document.getElementById('news-custom-link-event');
+        if(customVisualCal && chkLink && chkLink.checked) {
+            customVisualCal.style.display = 'block';
+        }
+        
+        btnCust.classList.add('active');
     }
 }
 
