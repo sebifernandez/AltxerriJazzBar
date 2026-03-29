@@ -1769,21 +1769,68 @@ function inicializarGestorNewsletter() {
         currentMod.borrarImagen = true; 
     });
 
-    // 5. Lógica del Flyer Personalizado (Link Inteligente)
+// 5. LÓGICA DEL FLYER PERSONALIZADO (SELECTOR VISUAL)
     const chkLink = document.getElementById('news-custom-link-event');
-    const containerDate = document.getElementById('custom-link-date-container');
-    const inputDate = document.getElementById('news-custom-date');
-    
-    if (chkLink && containerDate && inputDate) {
+    const containerDate = document.getElementById('custom-link-visual-container');
+    let selectorCursor = DateTime.now();
+
+    if (chkLink && containerDate) {
         chkLink.addEventListener('change', (e) => {
             containerDate.style.display = e.target.checked ? 'block' : 'none';
+            if(e.target.checked) renderizarCalendarioSelector(selectorCursor);
         });
-        // Le enchufamos el mismo calendario elegante que ya usás
-        new Litepicker({
-            element: inputDate,
-            format: 'YYYY-MM-DD',
-            lang: 'es-ES'
+
+        document.getElementById('sel-cal-prev').addEventListener('click', () => {
+            selectorCursor = selectorCursor.minus({ months: 1 }); renderizarCalendarioSelector(selectorCursor);
         });
+        document.getElementById('sel-cal-next').addEventListener('click', () => {
+            selectorCursor = selectorCursor.plus({ months: 1 }); renderizarCalendarioSelector(selectorCursor);
+        });
+    }
+
+    function renderizarCalendarioSelector(fecha) {
+        const grid = document.getElementById('selector-calendar-grid');
+        document.getElementById('sel-cal-month').textContent = fecha.setLocale('es').toFormat('MMMM yyyy').toUpperCase();
+        grid.innerHTML = '';
+
+        const URL_BAR_ABIERTO = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770507545/altxerri_jazz_club/p59y29pvh6t7rbbxuo5w.jpg";
+        const URL_GENERICA = "https://res.cloudinary.com/dpcrozjx0/image/upload/v1770508071/altxerri_jazz_club/rnyma3epql4uxvkgkglu.jpg";
+
+        ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].forEach(d => grid.innerHTML += `<div class="news-cal-header">${d}</div>`);
+
+        const diasEnMes = fecha.daysInMonth;
+        const offset = (fecha.startOf('month').weekday === 7) ? 0 : fecha.startOf('month').weekday;
+        for(let i=0; i<offset; i++) grid.appendChild(document.createElement('div'));
+
+        for(let i=1; i<=diasEnMes; i++) {
+            const fechaIso = fecha.set({ day: i }).toISODate();
+            const eventosDelDia = adminEventos.filter(e => e.fecha === fechaIso);
+            
+            const celda = document.createElement('div');
+            celda.className = 'news-cal-day';
+            celda.style.cursor = 'pointer';
+
+            if (eventosDelDia.length > 1) {
+                celda.innerHTML = `<img src="${URL_GENERICA}" class="news-day-bg"><span class="news-day-number">${i}</span><span class="news-day-status">🔥 ${eventosDelDia.length} Shows</span>`;
+                celda.addEventListener('click', () => abrirModalMultiEvento(fechaIso, eventosDelDia));
+            } else if (eventosDelDia.length === 1) {
+                const ev = eventosDelDia[0];
+                const img = ev.imagen && ev.imagen.startsWith('http') ? ev.imagen : URL_GENERICA;
+                celda.innerHTML = `<img src="${img}" class="news-day-bg"><span class="news-day-number">${i}</span><span class="news-day-status">${ev.titulo || 'Evento'}</span>`;
+                celda.addEventListener('click', () => seleccionarEventoParaFlyer(ev.fecha, ev.titulo));
+            } else {
+                celda.innerHTML = `<img src="${URL_BAR_ABIERTO}" class="news-day-bg" style="opacity:0.3;"><span class="news-day-number">${i}</span>`;
+            }
+            grid.appendChild(celda);
+        }
+    }
+
+    // Se expone al window para que la use el HTML/Modal
+    window.seleccionarEventoParaFlyer = function(fechaIso, titulo) {
+        document.getElementById('news-custom-date').value = fechaIso;
+        document.getElementById('selected-event-title').textContent = titulo;
+        document.getElementById('selected-event-date').textContent = DateTime.fromISO(fechaIso).setLocale('es').toFormat('EEEE d LLLL yyyy');
+        document.getElementById('selected-event-display').style.display = 'block';
     }
 
     renderizarCalendarioNewsletter();
@@ -1985,45 +2032,50 @@ function abrirModalMultiEvento(fechaIso, eventosDelDia) {
     const lista = document.getElementById('multi-eventos-lista');
     lista.innerHTML = '';
 
+// Adentro de abrirModalMultiEvento, reemplazá el forEach:
     eventosDelDia.forEach(ev => {
         const isExcluded = newsState.excluidos.has(ev._id);
         const isStarred = newsState.destacados.has(ev._id);
-        const hasEdits = newsState.modificaciones.has(ev._id);
+        
+        // --- DETECTAMOS SI ESTAMOS EN MODO SELECTOR ---
+        const modoSelector = document.getElementById('custom-link-visual-container').style.display === 'block';
 
         const div = document.createElement('div');
         div.style.cssText = `background: #111; padding: 10px; border-radius: 6px; border-left: 4px solid ${isStarred ? '#C8AA6E' : '#444'}; display: flex; justify-content: space-between; align-items: center; opacity: ${isExcluded ? '0.5' : '1'}; transition: all 0.2s ease;`;
 
-        div.innerHTML = `
-            <div style="flex-grow: 1;">
-                <strong style="color: ${isExcluded ? '#888' : '#fff'};">${ev.titulo}</strong> <br>
-                <small style="color: #aaa;">${ev.horaInicio || '20:00'} hs</small>
-                ${hasEdits ? '<small style="color: #4CAF50; margin-left: 10px;"><i class="bx bxs-pencil"></i> Editado</small>' : ''}
-            </div>
-            <div style="display: flex; gap: 8px; align-items: center;">
-                <button class="btn btn-secondary btn-sm btn-star-multi" style="color: ${isStarred ? '#C8AA6E' : '#fff'}; border-color: ${isStarred ? '#C8AA6E' : '#444'};" title="Destacar"><i class='bx bxs-star'></i></button>
-                <button class="btn btn-secondary btn-sm btn-edit-multi" title="Editar para Mail"><i class='bx bxs-pencil'></i></button>
-                <input type="checkbox" class="chk-include-multi" title="Incluir en correo" style="transform: scale(1.3); margin-left:5px;" ${!isExcluded ? 'checked' : ''}>
-            </div>
-        `;
-
-        div.querySelector('.btn-star-multi').addEventListener('click', () => {
-            if(newsState.destacados.has(ev._id)) newsState.destacados.delete(ev._id);
-            else newsState.destacados.add(ev._id);
-            abrirModalMultiEvento(fechaIso, eventosDelDia); // Refrescar modal
-            renderizarCalendarioNewsletter(); // Refrescar fondo
-        });
-
-        div.querySelector('.btn-edit-multi').addEventListener('click', () => {
-            modal.style.display = 'none'; // Ocultamos este temporalmente
-            abrirEditorEfimero(ev._id, ev, fechaIso);
-        });
-
-        div.querySelector('.chk-include-multi').addEventListener('change', (e) => {
-            if(e.target.checked) newsState.excluidos.delete(ev._id);
-            else newsState.excluidos.add(ev._id);
-            abrirModalMultiEvento(fechaIso, eventosDelDia);
-        });
-
+        if (modoSelector) {
+            // MODO SELECTOR DE VINCULACIÓN
+            div.innerHTML = `
+                <div><strong style="color: #fff;">${ev.titulo}</strong> <br><small style="color: #aaa;">${ev.horaInicio || '20:00'} hs</small></div>
+                <button class="btn btn-primary btn-sm btn-vincular-este">Vincular a Flyer</button>
+            `;
+            div.querySelector('.btn-vincular-este').addEventListener('click', () => {
+                seleccionarEventoParaFlyer(ev.fecha, ev.titulo);
+                modal.style.display = 'none';
+            });
+        } else {
+            // MODO NORMAL NEWSLETTER
+            div.innerHTML = `
+                <div><strong style="color: ${isExcluded ? '#888' : '#fff'};">${ev.titulo}</strong> <br><small style="color: #aaa;">${ev.horaInicio || '20:00'} hs</small></div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button class="btn btn-secondary btn-sm btn-star-multi" style="color: ${isStarred ? '#C8AA6E' : '#fff'}; border-color: ${isStarred ? '#C8AA6E' : '#444'};"><i class='bx bxs-star'></i></button>
+                    <button class="btn btn-secondary btn-sm btn-edit-multi"><i class='bx bxs-pencil'></i></button>
+                    <input type="checkbox" class="chk-include-multi" style="transform: scale(1.3); margin-left:5px;" ${!isExcluded ? 'checked' : ''}>
+                </div>
+            `;
+            // (Acá quedan los listeners viejos del modo normal que ya tenías)
+            div.querySelector('.btn-star-multi').addEventListener('click', () => {
+                if(newsState.destacados.has(ev._id)) newsState.destacados.delete(ev._id); else newsState.destacados.add(ev._id);
+                abrirModalMultiEvento(fechaIso, eventosDelDia); renderizarCalendarioNewsletter();
+            });
+            div.querySelector('.btn-edit-multi').addEventListener('click', () => {
+                modal.style.display = 'none'; abrirEditorEfimero(ev._id, ev, fechaIso);
+            });
+            div.querySelector('.chk-include-multi').addEventListener('change', (e) => {
+                if(e.target.checked) newsState.excluidos.delete(ev._id); else newsState.excluidos.add(ev._id);
+                abrirModalMultiEvento(fechaIso, eventosDelDia);
+            });
+        }
         lista.appendChild(div);
     });
 
