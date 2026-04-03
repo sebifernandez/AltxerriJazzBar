@@ -278,10 +278,30 @@ function createCoctelExpandedRow(prod, flexDirection) {
     // flexDirection viene como 'row' (img izquierda) o 'row-reverse' (img derecha)
     const layoutClass = (flexDirection === 'row') ? 'layout-img-texto' : 'layout-texto-img';
 
+    ///////////////////////////////////////////////////
+    //CAMBIO DEL 03/04/2026 - VER SI FUNCIONA - RETURN DE ABAJO POR ESTE
+    ///////////////////////////////////////////////////
+    // return `
+    // <div class="coctel-row-con-foto ${layoutClass}">
+    //     <div class="coctel-img-container">
+    //         <img src="${imgSrc}" alt="${prod.titulo}" loading="lazy">
+    //     </div>
+    //     <div class="coctel-info">
+    //         <div class="coctel-header">
+    //             <h3>${prod.titulo}</h3>
+    //             <span class="precio-destacado">${precio}</span>
+    //         </div>
+    //         <p class="descripcion">${prod.descripcion || ''}</p>
+    //     </div>
+    // </div>
+    // `;
+    ///////////////////////////////////////////////////
+    //HASTA ACA CAMBIO DEL 03/04/2026
+    ///////////////////////////////////////////////////
     return `
     <div class="coctel-row-con-foto ${layoutClass}">
-        <div class="coctel-img-container">
-            <img src="${imgSrc}" alt="${prod.titulo}" loading="lazy">
+        <div class="coctel-img-container" style="position: relative; overflow: hidden;">
+            <div style="width: 100%; height: 100%; background-image: url('${imgSrc}'); background-size: cover; background-position: center;"></div>
         </div>
         <div class="coctel-info">
             <div class="coctel-header">
@@ -595,9 +615,33 @@ function renderizarVinosDestacados(productos, textosUI) {
             ? `${[vino.region, vino.pais].filter(Boolean).join(' – ')}` 
             : '';
 
+        ///////////////////////////////////////////////////
+        //CAMBIO DEL 03/04/2026 - VER SI FUNCIONA - RETURN DE ABAJO POR ESTE
+        ///////////////////////////////////////////////////
+        // return `
+        //     <div class="banner-destacado ${claseLayout}">
+        //         <div class="banner-imagen" style="background-image: url('${rutaImagen}');">
+        //         </div>
+        //         <div class="banner-textos">
+        //             <h4 class="banner-titulo">${vino.titulo}</h4>
+        //             <p class="banner-region">${regionPais}</p>
+        //             <p class="banner-datos">${datosVino}</p>
+        //             <p class="banner-descripcion"><em>${vino.descripcion}</em></p>
+        //         </div>
+        //     </div>
+        // `;
+        ///////////////////////////////////////////////////
+        // FIN DE CAMBIO DEL 03/04/2026 
+        ///////////////////////////////////////////////////
+        // Calculamos hacia dónde va el degradado según de qué lado esté la foto
+        const direccionDegradado = esPar ? 'to right' : 'to left';
+        // Usamos un color oscuro estándar para el fondo que se funde (ajustá el #121212 si tu fondo es distinto)
+        const degradadoCSS = `linear-gradient(${direccionDegradado}, transparent 40%, #121212 95%)`;
+
         return `
             <div class="banner-destacado ${claseLayout}">
-                <div class="banner-imagen" style="background-image: url('${rutaImagen}');">
+                <div class="banner-imagen" style="position: relative; background-image: url('${rutaImagen}'); background-size: cover; background-position: center;">
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: ${degradadoCSS};"></div>
                 </div>
                 <div class="banner-textos">
                     <h4 class="banner-titulo">${vino.titulo}</h4>
