@@ -43,13 +43,26 @@ const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = 'altxerriDB';
 let db;
 
+// Estas dos variables van AFUERA, bien arriba de la función
+let cachedClient = null;
+let cachedDb = null;
+
 async function connectToDb() {
-    if (db) return db;
+    // 1. Si ya tenemos una conexión activa y guardada, la reciclamos
+    if (cachedDb) {
+        return cachedDb;
+    }
+
+    // 2. Si no hay conexión, abrimos el tubo nuevo
     const client = new MongoClient(MONGODB_URI);
     await client.connect();
-    db = client.db(DB_NAME);
-    console.log("Conectado a MongoDB Atlas!");
-    return db;
+
+    // 3. Guardamos la conexión entera en la memoria global para la próxima
+    cachedClient = client;
+    cachedDb = client.db(DB_NAME);
+
+    console.log("Conectado a MongoDB Atlas (¡Caché activada exitosamente!)");
+    return cachedDb;
 }
 
 cloudinary.config({
